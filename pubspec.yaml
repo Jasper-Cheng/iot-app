@@ -71,6 +71,12 @@ dependencies:
   
   # 二维码
   qr_flutter: ^4.1.0
+  
+  # 权限管理
+  permission_handler: ^11.3.0
+  
+  # 图片选择
+  image_picker: ^1.0.7
 
 dev_dependencies:
   flutter_test:

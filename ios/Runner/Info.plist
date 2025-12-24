@@ -45,5 +45,44 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	
+	<!-- 相机权限（用于扫码） -->
+	<key>NSCameraUsageDescription</key>
+	<string>需要访问相机以扫描设备二维码</string>
+	
+	<!-- 相册权限 -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>需要访问相册以选择头像或保存图片</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>需要保存图片到相册</string>
+	
+	<!-- 本地网络权限（用于设备发现和MQTT） -->
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>需要访问本地网络以连接智能设备</string>
+	
+	<!-- Bonjour服务（用于设备发现） -->
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_mqtt._tcp</string>
+		<string>_iot._tcp</string>
+	</array>
+	
+	<!-- 后台模式（用于MQTT长连接） -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>remote-notification</string>
+	</array>
+	
+	<!-- 通知权限 -->
+	<key>UIUserNotificationSettings</key>
+	<dict>
+		<key>UIUserNotificationTypeAlert</key>
+		<true/>
+		<key>UIUserNotificationTypeBadge</key>
+		<true/>
+		<key>UIUserNotificationTypeSound</key>
+		<true/>
+	</dict>
 </dict>
 </plist>

@@ -18,24 +18,31 @@ Authorization: Bearer {access_token}
 ```
 
 ### 响应格式
-所有接口统一返回JSON格式：
+所有接口直接返回数据，使用HTTP状态码表示请求状态：
 
+**成功响应** (HTTP 200):
 ```json
 {
-  "code": 200,
-  "message": "success",
-  "data": {}
+  // 直接返回数据对象
 }
 ```
 
-错误响应：
+**错误响应** (HTTP 4xx/5xx):
 ```json
 {
-  "code": 400,
-  "message": "错误信息",
-  "data": null
+  "message": "错误信息描述"
 }
 ```
+
+### HTTP状态码说明
+- `200 OK`: 请求成功
+- `201 Created`: 创建成功
+- `400 Bad Request`: 请求参数错误
+- `401 Unauthorized`: 未授权，Token无效或过期
+- `403 Forbidden`: 无权限访问
+- `404 Not Found`: 资源不存在
+- `409 Conflict`: 资源冲突（如重复创建）
+- `500 Internal Server Error`: 服务器内部错误
 
 ## 📑 目录
 
@@ -66,27 +73,30 @@ Authorization: Bearer {access_token}
 }
 ```
 
-**响应数据**:
+**响应数据** (HTTP 200):
 ```json
 {
-  "code": 200,
-  "message": "注册成功",
-  "data": {
-    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "token_type": "Bearer",
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer",
+  "role": "user",
+  "account": {
+    "id": 1,
+    "nickname": "用户昵称",
+    "gender": "male",
+    "phone": "13800138000",
+    "email": null,
+    "avatar": "头像URL",
     "role": "user",
-    "account": {
-      "id": 1,
-      "nickname": "用户昵称",
-      "gender": "male",
-      "phone": "13800138000",
-      "email": null,
-      "avatar": "头像URL",
-      "role": "user",
-      "current_family_id": null,
-      "created_at": "2025-01-01T00:00:00Z"
-    }
+    "current_family_id": null,
+    "created_at": "2025-01-01T00:00:00Z"
   }
+}
+```
+
+**错误响应** (HTTP 400):
+```json
+{
+  "message": "手机号已被注册"
 }
 ```
 
@@ -102,72 +112,13 @@ Authorization: Bearer {access_token}
 }
 ```
 
-**响应数据**:
+**响应数据** (HTTP 200):
 ```json
 {
-  "code": 200,
-  "message": "登录成功",
-  "data": {
-    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "token_type": "Bearer",
-    "role": "user",
-    "account": {
-      "id": 1,
-      "nickname": "用户昵称",
-      "gender": "male",
-      "phone": "13800138000",
-      "email": "user@example.com",
-      "avatar": "头像URL",
-      "role": "user",
-      "current_family_id": 1,
-      "created_at": "2025-01-01T00:00:00Z"
-    }
-  }
-}
-```
-
-### 1.3 退出登录
-
-**接口地址**: `POST /auth/logout`
-
-**请求头**: 需要Token认证
-
-**响应数据**:
-```json
-{
-  "code": 200,
-  "message": "退出成功",
-  "data": null
-}
-```
-
-### 1.4 获取RSA公钥
-
-**接口地址**: `GET /auth/rsa_public_key`
-
-**响应数据**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": {
-    "public_key": "-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----"
-  }
-}
-```
-
-### 1.5 获取用户信息
-
-**接口地址**: `GET /auth/profile`
-
-**请求头**: 需要Token认证
-
-**响应数据**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": {
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer",
+  "role": "user",
+  "account": {
     "id": 1,
     "nickname": "用户昵称",
     "gender": "male",
@@ -181,26 +132,65 @@ Authorization: Bearer {access_token}
 }
 ```
 
+### 1.3 退出登录
+
+**接口地址**: `POST /auth/logout`
+
+**请求头**: 需要Token认证
+
+**响应数据** (HTTP 200):
+```json
+{}
+```
+
+### 1.4 获取RSA公钥
+
+**接口地址**: `GET /auth/rsa_public_key`
+
+**响应数据** (HTTP 200):
+```json
+{
+  "public_key": "-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----"
+}
+```
+
+### 1.5 获取用户信息
+
+**接口地址**: `GET /auth/profile`
+
+**请求头**: 需要Token认证
+
+**响应数据** (HTTP 200):
+```json
+{
+  "id": 1,
+  "nickname": "用户昵称",
+  "gender": "male",
+  "phone": "13800138000",
+  "email": "user@example.com",
+  "avatar": "头像URL",
+  "role": "user",
+  "current_family_id": 1,
+  "created_at": "2025-01-01T00:00:00Z"
+}
+```
+
 ### 1.6 获取当前家庭
 
 **接口地址**: `GET /auth/current-family`
 
 **请求头**: 需要Token认证
 
-**响应数据**:
+**响应数据** (HTTP 200):
 ```json
 {
-  "code": 200,
-  "message": "success",
-  "data": {
-    "id": 1,
-    "name": "我的家",
-    "avatar": null,
-    "description": "温馨的家",
-    "invite_code": "ABC12345",
-    "created_at": "2025-01-01T00:00:00Z",
-    "updated_at": "2025-01-01T00:00:00Z"
-  }
+  "id": 1,
+  "name": "我的家",
+  "avatar": null,
+  "description": "温馨的家",
+  "invite_code": "ABC12345",
+  "created_at": "2025-01-01T00:00:00Z",
+  "updated_at": "2025-01-01T00:00:00Z"
 }
 ```
 
@@ -210,13 +200,9 @@ Authorization: Bearer {access_token}
 
 **请求头**: 需要Token认证
 
-**响应数据**:
+**响应数据** (HTTP 200):
 ```json
-{
-  "code": 200,
-  "message": "账户已删除",
-  "data": null
-}
+{}
 ```
 
 ---
@@ -236,32 +222,28 @@ Authorization: Bearer {access_token}
 | page | integer | 否 | 页码，默认1 |
 | page_size | integer | 否 | 每页数量，默认20 |
 
-**响应数据**:
+**响应数据** (HTTP 200):
 ```json
-{
-  "code": 200,
-  "message": "success",
-  "data": [
-    {
-      "id": 1,
-      "name": "客厅空调",
-      "sn": "AC001_250101_000001",
-      "status": "online",
-      "account_id": 1,
-      "model_id": 1,
-      "created_at": "2025-01-01T00:00:00Z"
-    },
-    {
-      "id": 2,
-      "name": "卧室灯",
-      "sn": "LIGHT001_250101_000002",
-      "status": "online",
-      "account_id": 1,
-      "model_id": 2,
-      "created_at": "2025-01-01T00:00:00Z"
-    }
-  ]
-}
+[
+  {
+    "id": 1,
+    "name": "客厅空调",
+    "sn": "AC001_250101_000001",
+    "status": "online",
+    "account_id": 1,
+    "model_id": 1,
+    "created_at": "2025-01-01T00:00:00Z"
+  },
+  {
+    "id": 2,
+    "name": "卧室灯",
+    "sn": "LIGHT001_250101_000002",
+    "status": "online",
+    "account_id": 1,
+    "model_id": 2,
+    "created_at": "2025-01-01T00:00:00Z"
+  }
+]
 ```
 
 ### 2.2 绑定设备
@@ -278,20 +260,16 @@ Authorization: Bearer {access_token}
 }
 ```
 
-**响应数据**:
+**响应数据** (HTTP 200):
 ```json
 {
-  "code": 200,
-  "message": "绑定成功",
-  "data": {
-    "id": 1,
-    "name": "客厅空调",
-    "sn": "AC001_250101_000001",
-    "status": "online",
-    "account_id": 1,
-    "model_id": 1,
-    "created_at": "2025-01-01T00:00:00Z"
-  }
+  "id": 1,
+  "name": "客厅空调",
+  "sn": "AC001_250101_000001",
+  "status": "online",
+  "account_id": 1,
+  "model_id": 1,
+  "created_at": "2025-01-01T00:00:00Z"
 }
 ```
 
@@ -306,13 +284,9 @@ Authorization: Bearer {access_token}
 |-----|------|------|
 | sn | string | 设备序列号 |
 
-**响应数据**:
+**响应数据** (HTTP 200):
 ```json
-{
-  "code": 200,
-  "message": "解绑成功",
-  "data": null
-}
+{}
 ```
 
 ### 2.4 更新设备名称
@@ -333,20 +307,16 @@ Authorization: Bearer {access_token}
 }
 ```
 
-**响应数据**:
+**响应数据** (HTTP 200):
 ```json
 {
-  "code": 200,
-  "message": "更新成功",
-  "data": {
-    "id": 1,
-    "name": "新的设备名称",
-    "sn": "AC001_250101_000001",
-    "status": "online",
-    "account_id": 1,
-    "model_id": 1,
-    "created_at": "2025-01-01T00:00:00Z"
-  }
+  "id": 1,
+  "name": "新的设备名称",
+  "sn": "AC001_250101_000001",
+  "status": "online",
+  "account_id": 1,
+  "model_id": 1,
+  "created_at": "2025-01-01T00:00:00Z"
 }
 ```
 
@@ -360,23 +330,19 @@ Authorization: Bearer {access_token}
 
 **请求头**: 需要Token认证
 
-**响应数据**:
+**响应数据** (HTTP 200):
 ```json
-{
-  "code": 200,
-  "message": "success",
-  "data": [
-    {
-      "id": 1,
-      "name": "我的家",
-      "avatar": null,
-      "description": "温馨的家",
-      "invite_code": "ABC12345",
-      "created_at": "2025-01-01T00:00:00Z",
-      "updated_at": "2025-01-01T00:00:00Z"
-    }
-  ]
-}
+[
+  {
+    "id": 1,
+    "name": "我的家",
+    "avatar": null,
+    "description": "温馨的家",
+    "invite_code": "ABC12345",
+    "created_at": "2025-01-01T00:00:00Z",
+    "updated_at": "2025-01-01T00:00:00Z"
+  }
+]
 ```
 
 ### 3.2 创建家庭
@@ -394,20 +360,16 @@ Authorization: Bearer {access_token}
 }
 ```
 
-**响应数据**:
+**响应数据** (HTTP 201):
 ```json
 {
-  "code": 200,
-  "message": "创建成功",
-  "data": {
-    "id": 1,
-    "name": "我的家",
-    "avatar": "头像URL",
-    "description": "温馨的家",
-    "invite_code": "ABC12345",
-    "created_at": "2025-01-01T00:00:00Z",
-    "updated_at": "2025-01-01T00:00:00Z"
-  }
+  "id": 1,
+  "name": "我的家",
+  "avatar": "头像URL",
+  "description": "温馨的家",
+  "invite_code": "ABC12345",
+  "created_at": "2025-01-01T00:00:00Z",
+  "updated_at": "2025-01-01T00:00:00Z"
 }
 ```
 
@@ -422,13 +384,9 @@ Authorization: Bearer {access_token}
 |-----|------|------|
 | id | integer | 家庭ID |
 
-**响应数据**:
+**响应数据** (HTTP 200):
 ```json
-{
-  "code": 200,
-  "message": "删除成功",
-  "data": null
-}
+{}
 ```
 
 ### 3.4 添加设备到家庭
@@ -443,13 +401,9 @@ Authorization: Bearer {access_token}
 | family_id | integer | 家庭ID |
 | device_id | integer | 设备ID |
 
-**响应数据**:
+**响应数据** (HTTP 200):
 ```json
-{
-  "code": 200,
-  "message": "添加成功",
-  "data": null
-}
+{}
 ```
 
 ### 3.5 从家庭移除设备
@@ -464,13 +418,9 @@ Authorization: Bearer {access_token}
 | family_id | integer | 家庭ID |
 | device_id | integer | 设备ID |
 
-**响应数据**:
+**响应数据** (HTTP 200):
 ```json
-{
-  "code": 200,
-  "message": "移除成功",
-  "data": null
-}
+{}
 ```
 
 ---
@@ -488,31 +438,27 @@ Authorization: Bearer {access_token}
 |-----|------|------|
 | family_id | integer | 家庭ID |
 
-**响应数据**:
+**响应数据** (HTTP 200):
 ```json
-{
-  "code": 200,
-  "message": "success",
-  "data": [
-    {
+[
+  {
+    "id": 1,
+    "nickname": "爸爸",
+    "role": "owner",
+    "joined_at": "2025-01-01T00:00:00Z",
+    "account": {
       "id": 1,
-      "nickname": "爸爸",
-      "role": "owner",
-      "joined_at": "2025-01-01T00:00:00Z",
-      "account": {
-        "id": 1,
-        "nickname": "测试用户",
-        "gender": "male",
-        "phone": "13800138000",
-        "email": "test@example.com",
-        "avatar": null,
-        "role": "user",
-        "current_family_id": 1,
-        "created_at": "2025-01-01T00:00:00Z"
-      }
+      "nickname": "测试用户",
+      "gender": "male",
+      "phone": "13800138000",
+      "email": "test@example.com",
+      "avatar": null,
+      "role": "user",
+      "current_family_id": 1,
+      "created_at": "2025-01-01T00:00:00Z"
     }
-  ]
-}
+  }
+]
 ```
 
 ### 4.2 通过邀请码加入家庭
@@ -529,20 +475,16 @@ Authorization: Bearer {access_token}
 }
 ```
 
-**响应数据**:
+**响应数据** (HTTP 200):
 ```json
 {
-  "code": 200,
-  "message": "加入成功",
-  "data": {
-    "id": 1,
-    "name": "我的家",
-    "avatar": null,
-    "description": "温馨的家",
-    "invite_code": "ABC12345",
-    "created_at": "2025-01-01T00:00:00Z",
-    "updated_at": "2025-01-01T00:00:00Z"
-  }
+  "id": 1,
+  "name": "我的家",
+  "avatar": null,
+  "description": "温馨的家",
+  "invite_code": "ABC12345",
+  "created_at": "2025-01-01T00:00:00Z",
+  "updated_at": "2025-01-01T00:00:00Z"
 }
 ```
 
@@ -564,27 +506,23 @@ Authorization: Bearer {access_token}
 }
 ```
 
-**响应数据**:
+**响应数据** (HTTP 200):
 ```json
 {
-  "code": 200,
-  "message": "更新成功",
-  "data": {
+  "id": 1,
+  "nickname": "新昵称",
+  "role": "member",
+  "joined_at": "2025-01-01T00:00:00Z",
+  "account": {
     "id": 1,
-    "nickname": "新昵称",
-    "role": "member",
-    "joined_at": "2025-01-01T00:00:00Z",
-    "account": {
-      "id": 1,
-      "nickname": "测试用户",
-      "gender": "male",
-      "phone": "13800138000",
-      "email": "test@example.com",
-      "avatar": null,
-      "role": "user",
-      "current_family_id": 1,
-      "created_at": "2025-01-01T00:00:00Z"
-    }
+    "nickname": "测试用户",
+    "gender": "male",
+    "phone": "13800138000",
+    "email": "test@example.com",
+    "avatar": null,
+    "role": "user",
+    "current_family_id": 1,
+    "created_at": "2025-01-01T00:00:00Z"
   }
 }
 ```
@@ -600,13 +538,9 @@ Authorization: Bearer {access_token}
 |-----|------|------|
 | id | integer | 成员ID |
 
-**响应数据**:
+**响应数据** (HTTP 200):
 ```json
-{
-  "code": 200,
-  "message": "移除成功",
-  "data": null
-}
+{}
 ```
 
 ---
@@ -627,36 +561,32 @@ Authorization: Bearer {access_token}
 | page | integer | 否 | 页码，默认1 |
 | page_size | integer | 否 | 每页数量，默认20 |
 
-**响应数据**:
+**响应数据** (HTTP 200):
 ```json
-{
-  "code": 200,
-  "message": "success",
-  "data": [
-    {
-      "id": 1,
-      "device_id": 1,
-      "level": "normal",
-      "message": "空调已开启",
-      "detail": {
-        "temperature": 26
-      },
-      "status": "new",
-      "created_at": "2025-01-01T10:00:00Z",
-      "updated_at": null
+[
+  {
+    "id": 1,
+    "device_id": 1,
+    "level": "normal",
+    "message": "空调已开启",
+    "detail": {
+      "temperature": 26
     },
-    {
-      "id": 2,
-      "device_id": 3,
-      "level": "error",
-      "message": "摄像头离线",
-      "detail": null,
-      "status": "new",
-      "created_at": "2025-01-01T09:00:00Z",
-      "updated_at": null
-    }
-  ]
-}
+    "status": "new",
+    "created_at": "2025-01-01T10:00:00Z",
+    "updated_at": null
+  },
+  {
+    "id": 2,
+    "device_id": 3,
+    "level": "error",
+    "message": "摄像头离线",
+    "detail": null,
+    "status": "new",
+    "created_at": "2025-01-01T09:00:00Z",
+    "updated_at": null
+  }
+]
 ```
 
 ### 5.2 标记消息为已读
@@ -670,13 +600,9 @@ Authorization: Bearer {access_token}
 |-----|------|------|
 | id | integer | 消息ID |
 
-**响应数据**:
+**响应数据** (HTTP 200):
 ```json
-{
-  "code": 200,
-  "message": "标记成功",
-  "data": null
-}
+{}
 ```
 
 ### 5.3 标记所有消息为已读
@@ -685,13 +611,9 @@ Authorization: Bearer {access_token}
 
 **请求头**: 需要Token认证
 
-**响应数据**:
+**响应数据** (HTTP 200):
 ```json
-{
-  "code": 200,
-  "message": "标记成功",
-  "data": null
-}
+{}
 ```
 
 ### 5.4 获取系统消息列表
@@ -707,25 +629,21 @@ Authorization: Bearer {access_token}
 | page | integer | 否 | 页码，默认1 |
 | page_size | integer | 否 | 每页数量，默认20 |
 
-**响应数据**:
+**响应数据** (HTTP 200):
 ```json
-{
-  "code": 200,
-  "message": "success",
-  "data": [
-    {
-      "id": 1,
-      "title": "系统维护通知",
-      "content": "系统将于今晚22:00-24:00进行维护",
-      "type": "maintenance",
-      "priority": "high",
-      "platforms": ["web", "mobile"],
-      "extra": null,
-      "created_at": "2025-01-01T08:00:00Z",
-      "updated_at": "2025-01-01T08:00:00Z"
-    }
-  ]
-}
+[
+  {
+    "id": 1,
+    "title": "系统维护通知",
+    "content": "系统将于今晚22:00-24:00进行维护",
+    "type": "maintenance",
+    "priority": "high",
+    "platforms": ["web", "mobile"],
+    "extra": null,
+    "created_at": "2025-01-01T08:00:00Z",
+    "updated_at": "2025-01-01T08:00:00Z"
+  }
+]
 ```
 
 ### 5.5 获取未读消息数量
@@ -734,15 +652,11 @@ Authorization: Bearer {access_token}
 
 **请求头**: 需要Token认证
 
-**响应数据**:
+**响应数据** (HTTP 200):
 ```json
 {
-  "code": 200,
-  "message": "success",
-  "data": {
-    "device_messages": 2,
-    "system_messages": 1
-  }
+  "device_messages": 2,
+  "system_messages": 1
 }
 ```
 
@@ -756,19 +670,15 @@ Authorization: Bearer {access_token}
 
 **请求头**: 需要Token认证
 
-**响应数据**:
+**响应数据** (HTTP 200):
 ```json
 {
-  "code": 200,
-  "message": "签到成功",
-  "data": {
-    "id": 1,
-    "check_in_type": "normal",
-    "points_earned": 5,
-    "continuous_days": 8,
-    "check_in_time": "2025-01-01T08:00:00Z",
-    "extra": null
-  }
+  "id": 1,
+  "check_in_type": "normal",
+  "points_earned": 5,
+  "continuous_days": 8,
+  "check_in_time": "2025-01-01T08:00:00Z",
+  "extra": null
 }
 ```
 
@@ -784,22 +694,18 @@ Authorization: Bearer {access_token}
 | year | integer | 否 | 年份，默认当前年 |
 | month | integer | 否 | 月份，默认当前月 |
 
-**响应数据**:
+**响应数据** (HTTP 200):
 ```json
 {
-  "code": 200,
-  "message": "success",
-  "data": {
-    "dates": [
-      "2025-01-01",
-      "2025-01-02",
-      "2025-01-03",
-      "2025-01-04",
-      "2025-01-05",
-      "2025-01-06",
-      "2025-01-07"
-    ]
-  }
+  "dates": [
+    "2025-01-01",
+    "2025-01-02",
+    "2025-01-03",
+    "2025-01-04",
+    "2025-01-05",
+    "2025-01-06",
+    "2025-01-07"
+  ]
 }
 ```
 
@@ -809,16 +715,12 @@ Authorization: Bearer {access_token}
 
 **请求头**: 需要Token认证
 
-**响应数据**:
+**响应数据** (HTTP 200):
 ```json
 {
-  "code": 200,
-  "message": "success",
-  "data": {
-    "total_check_ins": 30,
-    "continuous_days": 7,
-    "longest_continuous": 15
-  }
+  "total_check_ins": 30,
+  "continuous_days": 7,
+  "longest_continuous": 15
 }
 ```
 
@@ -834,30 +736,26 @@ Authorization: Bearer {access_token}
 | page | integer | 否 | 页码，默认1 |
 | page_size | integer | 否 | 每页数量，默认20 |
 
-**响应数据**:
+**响应数据** (HTTP 200):
 ```json
-{
-  "code": 200,
-  "message": "success",
-  "data": [
-    {
-      "id": 1,
-      "check_in_type": "bonus",
-      "points_earned": 20,
-      "continuous_days": 7,
-      "check_in_time": "2025-01-07T08:00:00Z",
-      "extra": null
-    },
-    {
-      "id": 2,
-      "check_in_type": "normal",
-      "points_earned": 5,
-      "continuous_days": 6,
-      "check_in_time": "2025-01-06T08:00:00Z",
-      "extra": null
-    }
-  ]
-}
+[
+  {
+    "id": 1,
+    "check_in_type": "bonus",
+    "points_earned": 20,
+    "continuous_days": 7,
+    "check_in_time": "2025-01-07T08:00:00Z",
+    "extra": null
+  },
+  {
+    "id": 2,
+    "check_in_type": "normal",
+    "points_earned": 5,
+    "continuous_days": 6,
+    "check_in_time": "2025-01-06T08:00:00Z",
+    "extra": null
+  }
+]
 ```
 
 ### 6.5 获取积分余额
@@ -866,14 +764,10 @@ Authorization: Bearer {access_token}
 
 **请求头**: 需要Token认证
 
-**响应数据**:
+**响应数据** (HTTP 200):
 ```json
 {
-  "code": 200,
-  "message": "success",
-  "data": {
-    "balance": 520
-  }
+  "balance": 520
 }
 ```
 
@@ -889,28 +783,24 @@ Authorization: Bearer {access_token}
 | page | integer | 否 | 页码，默认1 |
 | page_size | integer | 否 | 每页数量，默认20 |
 
-**响应数据**:
+**响应数据** (HTTP 200):
 ```json
-{
-  "code": 200,
-  "message": "success",
-  "data": [
-    {
-      "id": 1,
-      "type": "earn",
-      "amount": 5,
-      "description": "每日签到",
-      "created_at": "2025-01-01T08:00:00Z"
-    },
-    {
-      "id": 2,
-      "type": "earn",
-      "amount": 20,
-      "description": "连续签到7天奖励",
-      "created_at": "2025-01-01T08:00:00Z"
-    }
-  ]
-}
+[
+  {
+    "id": 1,
+    "type": "earn",
+    "amount": 5,
+    "description": "每日签到",
+    "created_at": "2025-01-01T08:00:00Z"
+  },
+  {
+    "id": 2,
+    "type": "earn",
+    "amount": 20,
+    "description": "连续签到7天奖励",
+    "created_at": "2025-01-01T08:00:00Z"
+  }
+]
 ```
 
 ---
@@ -932,19 +822,15 @@ Authorization: Bearer {access_token}
 }
 ```
 
-**响应数据**:
+**响应数据** (HTTP 201):
 ```json
 {
-  "code": 200,
-  "message": "提交成功",
-  "data": {
-    "id": 1,
-    "type": "bug",
-    "content": "反馈内容详细描述...",
-    "contact": "联系方式",
-    "status": "pending",
-    "created_at": "2025-01-01T08:00:00Z"
-  }
+  "id": 1,
+  "type": "bug",
+  "content": "反馈内容详细描述...",
+  "contact": "联系方式",
+  "status": "pending",
+  "created_at": "2025-01-01T08:00:00Z"
 }
 ```
 
@@ -952,19 +838,15 @@ Authorization: Bearer {access_token}
 
 **接口地址**: `GET /version-info/`
 
-**响应数据**:
+**响应数据** (HTTP 200):
 ```json
 {
-  "code": 200,
-  "message": "success",
-  "data": {
-    "version": "1.0.0",
-    "build_number": 1,
-    "update_time": "2025-01-01",
-    "description": "首次发布版本",
-    "download_url": "https://example.com/download",
-    "force_update": false
-  }
+  "version": "1.0.0",
+  "build_number": 1,
+  "update_time": "2025-01-01",
+  "description": "首次发布版本",
+  "download_url": "https://example.com/download",
+  "force_update": false
 }
 ```
 
@@ -1102,19 +984,17 @@ Authorization: Bearer {access_token}
 
 ### 错误响应示例
 
+**401 Unauthorized**:
 ```json
 {
-  "code": 401,
-  "message": "Token已过期，请重新登录",
-  "data": null
+  "message": "Token已过期，请重新登录"
 }
 ```
 
+**409 Conflict**:
 ```json
 {
-  "code": 409,
-  "message": "设备已被其他用户绑定",
-  "data": null
+  "message": "设备已被其他用户绑定"
 }
 ```
 

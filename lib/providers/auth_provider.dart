@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models/user.dart';
 import '../core/storage/storage_service.dart';
 import '../data/repositories/auth_repository.dart';
+import '../core/utils/error_handler.dart';
 import 'dart:convert';
 
 /// 认证状态
@@ -94,7 +95,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: e.toString(),
+        error: ErrorHandler.extractErrorMessage(e),
       );
     }
   }
@@ -138,7 +139,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: e.toString(),
+        error: ErrorHandler.extractErrorMessage(e),
       );
     }
   }

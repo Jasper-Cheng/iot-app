@@ -3,6 +3,7 @@ import 'package:mqtt_client/mqtt_client.dart';
 import 'dart:convert';
 import '../core/mqtt/mqtt_service.dart';
 import '../core/constants/api_constants.dart';
+import '../core/utils/error_handler.dart';
 
 /// MQTT 状态
 class MqttState {
@@ -76,7 +77,7 @@ class MqttNotifier extends StateNotifier<MqttState> {
         state = state.copyWith(error: '连接失败');
       }
     } catch (e) {
-      state = state.copyWith(error: e.toString());
+      state = state.copyWith(error: ErrorHandler.extractErrorMessage(e));
     }
   }
 

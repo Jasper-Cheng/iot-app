@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models/checkin.dart';
 import '../data/repositories/checkin_repository.dart';
+import '../core/utils/error_handler.dart';
 
 /// 签到状态
 class CheckinState {
@@ -85,7 +86,7 @@ class CheckinNotifier extends StateNotifier<CheckinState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: e.toString(),
+        error: ErrorHandler.extractErrorMessage(e),
       );
     }
   }
@@ -105,7 +106,7 @@ class CheckinNotifier extends StateNotifier<CheckinState> {
       
       return record;
     } catch (e) {
-      state = state.copyWith(error: e.toString());
+      state = state.copyWith(error: ErrorHandler.extractErrorMessage(e));
       return null;
     }
   }

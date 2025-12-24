@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models/device.dart';
 import '../data/repositories/device_repository.dart';
+import '../core/utils/error_handler.dart';
 
 /// 设备列表状态
 class DeviceListState {
@@ -48,7 +49,7 @@ class DeviceListNotifier extends StateNotifier<DeviceListState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: e.toString(),
+        error: ErrorHandler.extractErrorMessage(e),
       );
     }
   }
@@ -61,7 +62,7 @@ class DeviceListNotifier extends StateNotifier<DeviceListState> {
         devices: [...state.devices, device],
       );
     } catch (e) {
-      state = state.copyWith(error: e.toString());
+      state = state.copyWith(error: ErrorHandler.extractErrorMessage(e));
     }
   }
 
@@ -73,7 +74,7 @@ class DeviceListNotifier extends StateNotifier<DeviceListState> {
         devices: state.devices.where((d) => d.sn != sn).toList(),
       );
     } catch (e) {
-      state = state.copyWith(error: e.toString());
+      state = state.copyWith(error: ErrorHandler.extractErrorMessage(e));
     }
   }
 
@@ -86,7 +87,7 @@ class DeviceListNotifier extends StateNotifier<DeviceListState> {
       }).toList();
       state = state.copyWith(devices: devices);
     } catch (e) {
-      state = state.copyWith(error: e.toString());
+      state = state.copyWith(error: ErrorHandler.extractErrorMessage(e));
     }
   }
 

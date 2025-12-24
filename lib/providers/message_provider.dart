@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models/message.dart';
 import '../data/repositories/message_repository.dart';
+import '../core/utils/error_handler.dart';
 
 /// 消息状态
 class MessageState {
@@ -68,7 +69,7 @@ class MessageNotifier extends StateNotifier<MessageState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: e.toString(),
+        error: ErrorHandler.extractErrorMessage(e),
       );
     }
   }
@@ -92,7 +93,7 @@ class MessageNotifier extends StateNotifier<MessageState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: e.toString(),
+        error: ErrorHandler.extractErrorMessage(e),
       );
     }
   }
@@ -110,7 +111,7 @@ class MessageNotifier extends StateNotifier<MessageState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: e.toString(),
+        error: ErrorHandler.extractErrorMessage(e),
       );
     }
   }
@@ -144,7 +145,7 @@ class MessageNotifier extends StateNotifier<MessageState> {
             : 0,
       );
     } catch (e) {
-      state = state.copyWith(error: e.toString());
+      state = state.copyWith(error: ErrorHandler.extractErrorMessage(e));
     }
   }
 
@@ -172,7 +173,7 @@ class MessageNotifier extends StateNotifier<MessageState> {
         unreadDeviceCount: 0,
       );
     } catch (e) {
-      state = state.copyWith(error: e.toString());
+      state = state.copyWith(error: ErrorHandler.extractErrorMessage(e));
     }
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models/family.dart' as family_models;
 import '../data/repositories/family_repository.dart';
+import '../core/utils/error_handler.dart';
 
 /// 家庭列表状态
 class FamilyListState {
@@ -56,7 +57,7 @@ class FamilyListNotifier extends StateNotifier<FamilyListState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: e.toString(),
+        error: ErrorHandler.extractErrorMessage(e),
       );
     }
   }
@@ -77,7 +78,7 @@ class FamilyListNotifier extends StateNotifier<FamilyListState> {
         families: [...state.families, family],
       );
     } catch (e) {
-      state = state.copyWith(error: e.toString());
+      state = state.copyWith(error: ErrorHandler.extractErrorMessage(e));
     }
   }
 
@@ -89,7 +90,7 @@ class FamilyListNotifier extends StateNotifier<FamilyListState> {
         families: state.families.where((f) => f.id != id).toList(),
       );
     } catch (e) {
-      state = state.copyWith(error: e.toString());
+      state = state.copyWith(error: ErrorHandler.extractErrorMessage(e));
     }
   }
 
@@ -101,7 +102,7 @@ class FamilyListNotifier extends StateNotifier<FamilyListState> {
         families: [...state.families, family],
       );
     } catch (e) {
-      state = state.copyWith(error: e.toString());
+      state = state.copyWith(error: ErrorHandler.extractErrorMessage(e));
     }
   }
 
@@ -128,7 +129,7 @@ class FamilyListNotifier extends StateNotifier<FamilyListState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: e.toString(),
+        error: ErrorHandler.extractErrorMessage(e),
       );
     }
   }
@@ -145,7 +146,7 @@ class FamilyListNotifier extends StateNotifier<FamilyListState> {
       }).toList();
       state = state.copyWith(members: members);
     } catch (e) {
-      state = state.copyWith(error: e.toString());
+      state = state.copyWith(error: ErrorHandler.extractErrorMessage(e));
     }
   }
 
@@ -157,7 +158,7 @@ class FamilyListNotifier extends StateNotifier<FamilyListState> {
         members: state.members.where((m) => m.id != memberId).toList(),
       );
     } catch (e) {
-      state = state.copyWith(error: e.toString());
+      state = state.copyWith(error: ErrorHandler.extractErrorMessage(e));
     }
   }
 

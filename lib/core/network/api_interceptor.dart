@@ -41,18 +41,44 @@ class ApiInterceptor extends Interceptor {
         break;
       case DioExceptionType.badResponse:
         final statusCode = err.response?.statusCode;
+        bool hasCustomMessage = false;
+        
         // 尝试从响应中获取错误信息
         try {
           if (err.response?.data != null && err.response?.data is Map) {
             final data = err.response?.data as Map<String, dynamic>;
-            if (data.containsKey('message')) {
-              errorMessage = data['message'] as String;
-              // 如果是401错误，清除Token
-              if (statusCode == 401) {
-                _storage.remove(StorageService.keyToken);
-                _storage.remove(StorageService.keyTokenType);
-                _storage.remove(StorageService.keyUserInfo);
+            
+            // 优先使用 detail 字段
+            if (data.containsKey('detail')) {
+              final detail = data['detail'];
+              if (detail is String && detail.isNotEmpty) {
+                errorMessage = detail;
+                hasCustomMessage = true;
+              } else if (detail is List && detail.isNotEmpty) {
+                // 如果 detail 是数组，取第一个错误信息
+                errorMessage = detail[0].toString();
+                hasCustomMessage = true;
               }
+            }
+            
+            // 如果没有 detail，使用 message 字段
+            if (!hasCustomMessage && data.containsKey('message')) {
+              final message = data['message'];
+              if (message is String && message.isNotEmpty) {
+                errorMessage = message;
+                hasCustomMessage = true;
+              }
+            }
+            
+            // 如果是401错误，清除Token
+            if (statusCode == 401) {
+              _storage.remove(StorageService.keyToken);
+              _storage.remove(StorageService.keyTokenType);
+              _storage.remove(StorageService.keyUserInfo);
+            }
+            
+            // 如果找到了自定义错误消息，直接跳出
+            if (hasCustomMessage) {
               break;
             }
           }
@@ -60,7 +86,7 @@ class ApiInterceptor extends Interceptor {
           // 解析失败，使用默认错误消息
         }
         
-        // 默认错误消息
+        // 默认HTTP状态码错误消息
         switch (statusCode) {
           case 400:
             errorMessage = '请求参数错误';
@@ -80,6 +106,9 @@ class ApiInterceptor extends Interceptor {
             break;
           case 409:
             errorMessage = '资源冲突';
+            break;
+          case 422:
+            errorMessage = '请求参数验证失败';
             break;
           case 500:
             errorMessage = '服务器内部错误';

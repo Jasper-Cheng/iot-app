@@ -12,8 +12,8 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _phoneController = TextEditingController(text: '13800138000');
-  final _passwordController = TextEditingController(text: '123456');
+  final _phoneController = TextEditingController(text: '13800000002');
+  final _passwordController = TextEditingController(text: 'password123');
   bool _obscurePassword = true;
   bool _rememberPassword = false;
 

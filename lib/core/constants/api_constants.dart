@@ -9,7 +9,7 @@ class ApiConstants {
   // iOS模拟器可以直接使用: http://localhost:8000
   // 真机测试: 使用电脑的局域网IP，如 http://192.168.1.100:8000
   // 生产环境: 使用正式的 API 域名
-  static const String baseUrl = 'http://localhost:8000/api/v1/app';
+  static const String baseUrl = 'http://192.168.12.119:8000/api/v1/app';
   
   // 超时时间
   static const Duration connectTimeout = Duration(seconds: 30);

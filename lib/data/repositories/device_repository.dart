@@ -6,7 +6,7 @@ import '../mock/mock_data.dart';
 /// 设备数据仓库
 class DeviceRepository {
   final _dio = DioClient().dio;
-  final bool useMock = true; // 是否使用 Mock 数据
+  final bool useMock = false; // 是否使用 Mock 数据，改为 false 连接实际后端
 
   /// 获取设备列表
   Future<List<Device>> getDevices() async {

@@ -4,9 +4,12 @@ class ApiConstants {
 
   // Base URL
   // 注意: 移动平台需要完整的 URL (包含协议和域名)
-  // 开发环境: 将 localhost 替换为实际的服务器地址
+  // 开发环境: http://localhost:8000 (需要使用实际设备IP或模拟器可访问的地址)
+  // Android模拟器访问本机: http://10.0.2.2:8000
+  // iOS模拟器可以直接使用: http://localhost:8000
+  // 真机测试: 使用电脑的局域网IP，如 http://192.168.1.100:8000
   // 生产环境: 使用正式的 API 域名
-  static const String baseUrl = 'https://mock.api.com/api/v1/web'; // Mock URL，实际使用时需替换
+  static const String baseUrl = 'http://localhost:8000/api/v1/app';
   
   // 超时时间
   static const Duration connectTimeout = Duration(seconds: 30);
@@ -35,6 +38,7 @@ class ApiConstants {
   static const String deviceMessages = '/device-messages/';
   static String markMessageRead(int id) => '/device-messages/$id/make-read';
   static const String markAllRead = '/device-messages/mark-all-read';
+  static const String unreadCount = '/device-messages/unread-count';
 
   // 家庭接口
   static const String families = '/families/';

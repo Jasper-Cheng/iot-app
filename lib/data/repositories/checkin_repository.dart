@@ -6,7 +6,7 @@ import '../mock/mock_data.dart';
 /// 签到数据仓库
 class CheckinRepository {
   final _dio = DioClient().dio;
-  final bool useMock = true; // 是否使用 Mock 数据
+  final bool useMock = false; // 是否使用 Mock 数据，改为 false 连接实际后端
 
   /// 签到
   Future<CheckinRecord> checkIn() async {

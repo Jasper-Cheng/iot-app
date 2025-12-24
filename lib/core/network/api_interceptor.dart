@@ -41,6 +41,26 @@ class ApiInterceptor extends Interceptor {
         break;
       case DioExceptionType.badResponse:
         final statusCode = err.response?.statusCode;
+        // 尝试从响应中获取错误信息
+        try {
+          if (err.response?.data != null && err.response?.data is Map) {
+            final data = err.response?.data as Map<String, dynamic>;
+            if (data.containsKey('message')) {
+              errorMessage = data['message'] as String;
+              // 如果是401错误，清除Token
+              if (statusCode == 401) {
+                _storage.remove(StorageService.keyToken);
+                _storage.remove(StorageService.keyTokenType);
+                _storage.remove(StorageService.keyUserInfo);
+              }
+              break;
+            }
+          }
+        } catch (e) {
+          // 解析失败，使用默认错误消息
+        }
+        
+        // 默认错误消息
         switch (statusCode) {
           case 400:
             errorMessage = '请求参数错误';
@@ -57,6 +77,9 @@ class ApiInterceptor extends Interceptor {
             break;
           case 404:
             errorMessage = '请求的资源不存在';
+            break;
+          case 409:
+            errorMessage = '资源冲突';
             break;
           case 500:
             errorMessage = '服务器内部错误';

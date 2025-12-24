@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models/user.dart';
 import '../core/storage/storage_service.dart';
-import '../data/mock/mock_data.dart';
+import '../data/repositories/auth_repository.dart';
 import 'dart:convert';
 
 /// 认证状态
@@ -40,6 +40,7 @@ class AuthState {
 /// 认证状态管理
 class AuthNotifier extends StateNotifier<AuthState> {
   final StorageService _storage;
+  final AuthRepository _authRepository = AuthRepository();
 
   AuthNotifier(this._storage) : super(const AuthState()) {
     _checkAuthStatus();
@@ -70,11 +71,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      // 模拟网络请求
-      await Future.delayed(const Duration(seconds: 1));
-
-      // 使用 Mock 数据
-      final loginResponse = LoginResponse.fromJson(MockData.mockLoginResponse);
+      // 调用实际的登录接口
+      final loginResponse = await _authRepository.login(
+        phone: phone,
+        password: password,
+      );
 
       // 保存 Token 和用户信息
       await _storage.setString(StorageService.keyToken, loginResponse.accessToken);
@@ -110,11 +111,30 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      // 模拟网络请求
-      await Future.delayed(const Duration(seconds: 1));
+      // 调用实际的注册接口（后端注册成功后会自动返回登录信息）
+      final loginResponse = await _authRepository.register(
+        phone: phone,
+        password: password,
+        nickname: nickname,
+        gender: gender,
+        email: email,
+        avatar: avatar,
+      );
 
-      // 注册成功后自动登录
-      await login(phone, password);
+      // 保存 Token 和用户信息
+      await _storage.setString(StorageService.keyToken, loginResponse.accessToken);
+      await _storage.setString(StorageService.keyTokenType, loginResponse.tokenType);
+      await _storage.setString(
+        StorageService.keyUserInfo,
+        jsonEncode(loginResponse.account.toJson()),
+      );
+
+      state = state.copyWith(
+        isAuthenticated: true,
+        account: loginResponse.account,
+        token: loginResponse.accessToken,
+        isLoading: false,
+      );
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -125,12 +145,21 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   /// 登出
   Future<void> logout() async {
-    await _storage.remove(StorageService.keyToken);
-    await _storage.remove(StorageService.keyTokenType);
-    await _storage.remove(StorageService.keyUserInfo);
-    await _storage.remove(StorageService.keyCurrentFamilyId);
+    try {
+      // 调用后端登出接口
+      await _authRepository.logout();
+    } catch (e) {
+      // 即使后端登出失败，也要清除本地数据
+      print('Logout error: $e');
+    } finally {
+      // 清除本地存储
+      await _storage.remove(StorageService.keyToken);
+      await _storage.remove(StorageService.keyTokenType);
+      await _storage.remove(StorageService.keyUserInfo);
+      await _storage.remove(StorageService.keyCurrentFamilyId);
 
-    state = const AuthState();
+      state = const AuthState();
+    }
   }
 
   /// 更新用户信息

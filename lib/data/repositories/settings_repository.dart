@@ -4,7 +4,7 @@ import '../../core/constants/api_constants.dart';
 /// 设置数据仓库
 class SettingsRepository {
   final _dio = DioClient().dio;
-  final bool useMock = true; // 是否使用 Mock 数据
+  final bool useMock = false; // 是否使用 Mock 数据，改为 false 连接实际后端
 
   /// 提交反馈
   Future<void> submitFeedback({

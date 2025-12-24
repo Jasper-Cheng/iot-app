@@ -6,7 +6,7 @@ import '../mock/mock_data.dart';
 /// 消息数据仓库
 class MessageRepository {
   final _dio = DioClient().dio;
-  final bool useMock = true; // 是否使用 Mock 数据
+  final bool useMock = false; // 是否使用 Mock 数据，改为 false 连接实际后端
 
   /// 获取设备消息列表
   Future<List<DeviceMessage>> getDeviceMessages({
@@ -90,7 +90,7 @@ class MessageRepository {
       );
     }
 
-    final response = await _dio.get('${ApiConstants.deviceMessages}unread-count');
+    final response = await _dio.get(ApiConstants.unreadCount);
     return MessageUnreadCount.fromJson(response.data);
   }
 }

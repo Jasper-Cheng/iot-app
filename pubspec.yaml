@@ -77,6 +77,10 @@ dependencies:
   
   # 图片选择
   image_picker: ^1.0.7
+  
+  # 加密
+  encrypt: ^5.0.3
+  pointycastle: ^3.9.1
 
 dev_dependencies:
   flutter_test:

@@ -3,6 +3,7 @@ import '../data/models/user.dart';
 import '../core/storage/storage_service.dart';
 import '../data/repositories/auth_repository.dart';
 import '../core/utils/error_handler.dart';
+import '../core/utils/rsa_helper.dart';
 import 'dart:convert';
 
 /// 认证状态
@@ -72,13 +73,19 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      // 调用实际的登录接口
+      // 1. 获取RSA公钥
+      final publicKey = await _authRepository.getRsaPublicKey();
+      
+      // 2. 使用公钥加密密码
+      final encryptedPassword = RsaHelper.encryptWithPublicKey(password, publicKey);
+      
+      // 3. 调用登录接口（使用加密后的密码）
       final loginResponse = await _authRepository.login(
         phone: phone,
-        password: password,
+        password: encryptedPassword,
       );
 
-      // 保存 Token 和用户信息
+      // 4. 保存 Token 和用户信息
       await _storage.setString(StorageService.keyToken, loginResponse.accessToken);
       await _storage.setString(StorageService.keyTokenType, loginResponse.tokenType);
       await _storage.setString(
@@ -112,17 +119,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      // 调用实际的注册接口（后端注册成功后会自动返回登录信息）
+      // 1. 获取RSA公钥
+      final publicKey = await _authRepository.getRsaPublicKey();
+      
+      // 2. 使用公钥加密密码
+      final encryptedPassword = RsaHelper.encryptWithPublicKey(password, publicKey);
+      
+      // 3. 调用注册接口（使用加密后的密码，后端注册成功后会自动返回登录信息）
       final loginResponse = await _authRepository.register(
         phone: phone,
-        password: password,
+        password: encryptedPassword,
         nickname: nickname,
         gender: gender,
         email: email,
         avatar: avatar,
       );
 
-      // 保存 Token 和用户信息
+      // 4. 保存 Token 和用户信息
       await _storage.setString(StorageService.keyToken, loginResponse.accessToken);
       await _storage.setString(StorageService.keyTokenType, loginResponse.tokenType);
       await _storage.setString(

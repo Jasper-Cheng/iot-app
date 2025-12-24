@@ -117,6 +117,16 @@ Authorization: Bearer {access_token}
 
 应用已自动配置拦截器，会自动添加Token到请求头。
 
+### RSA密码加密 ⭐
+登录和注册时，密码会先使用RSA公钥加密再发送：
+
+1. **获取公钥**：调用 `GET /auth/rsa_public_key` 获取RSA公钥
+2. **加密密码**：使用公钥加密用户输入的明文密码
+3. **发送请求**：将加密后的Base64字符串发送给后端
+4. **后端解密**：后端使用私钥解密并验证
+
+详细说明请参考 [RSA_ENCRYPTION_GUIDE.md](./RSA_ENCRYPTION_GUIDE.md)
+
 ### 注册即登录
 后端的注册接口成功后会直接返回Token和用户信息，无需再次调用登录接口。
 

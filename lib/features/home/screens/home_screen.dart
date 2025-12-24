@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../providers/device_provider.dart';
 import '../../../providers/theme_provider.dart';
-import '../widgets/device_card.dart';
+import '../widgets/device_card_factory.dart';
 
 /// 首页（设备列表）
 class HomeScreen extends ConsumerWidget {
@@ -55,7 +55,8 @@ class HomeScreen extends ConsumerWidget {
                       final device = deviceState.devices[index];
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 16),
-                        child: DeviceCard(device: device),
+                        // 使用工厂方法根据SN动态创建对应的设备卡片
+                        child: DeviceCardFactory.createCard(device),
                       );
                     },
                   ),

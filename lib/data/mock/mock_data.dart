@@ -20,12 +20,12 @@ class MockData {
     }
   };
 
-  /// Mock 设备列表
+  /// Mock 设备列表（使用下划线格式的SN）
   static final mockDevices = [
     {
       'id': 1,
       'name': '客厅空调',
-      'sn': 'AC001-250101-000001',
+      'sn': 'AC001_250101_000001',
       'status': 'online',
       'account_id': 1,
       'model_id': 1,
@@ -34,7 +34,7 @@ class MockData {
     {
       'id': 2,
       'name': '卧室灯',
-      'sn': 'LIGHT001-250101-000002',
+      'sn': 'LIGHT001_250101_000002',
       'status': 'online',
       'account_id': 1,
       'model_id': 2,
@@ -43,7 +43,7 @@ class MockData {
     {
       'id': 3,
       'name': '门口摄像头',
-      'sn': 'CAM001-250101-000003',
+      'sn': 'CAM001_250101_000003',
       'status': 'offline',
       'account_id': 1,
       'model_id': 3,
@@ -52,7 +52,7 @@ class MockData {
     {
       'id': 4,
       'name': '客厅电视',
-      'sn': 'TV001-250101-000004',
+      'sn': 'TV001_250101_000004',
       'status': 'online',
       'account_id': 1,
       'model_id': 4,
@@ -61,10 +61,73 @@ class MockData {
     {
       'id': 5,
       'name': '卧室跌倒检测器',
-      'sn': 'FALL001-250101-000005',
+      'sn': 'FALL001_250101_000005',
       'status': 'online',
       'account_id': 1,
       'model_id': 5,
+      'created_at': '2025-01-01T00:00:00',
+    },
+    {
+      'id': 6,
+      'name': '主卧路由器',
+      'sn': 'WIFI001_250101_000006',
+      'status': 'online',
+      'account_id': 1,
+      'model_id': 6,
+      'created_at': '2025-01-01T00:00:00',
+    },
+    {
+      'id': 7,
+      'name': '客厅扫地机器人',
+      'sn': 'ROBOT001_250101_000007',
+      'status': 'online',
+      'account_id': 1,
+      'model_id': 7,
+      'created_at': '2025-01-01T00:00:00',
+    },
+    {
+      'id': 8,
+      'name': '洗衣房洗衣机',
+      'sn': 'WASH001_250101_000008',
+      'status': 'online',
+      'account_id': 1,
+      'model_id': 8,
+      'created_at': '2025-01-01T00:00:00',
+    },
+    {
+      'id': 9,
+      'name': '厨房冰箱',
+      'sn': 'FRIDGE001_250101_000009',
+      'status': 'online',
+      'account_id': 1,
+      'model_id': 9,
+      'created_at': '2025-01-01T00:00:00',
+    },
+    {
+      'id': 10,
+      'name': '书房音箱',
+      'sn': 'SPEAKER001_250101_000010',
+      'status': 'online',
+      'account_id': 1,
+      'model_id': 10,
+      'created_at': '2025-01-01T00:00:00',
+    },
+    {
+      'id': 11,
+      'name': '客厅空气净化器',
+      'sn': 'AIR001_250101_000011',
+      'status': 'online',
+      'account_id': 1,
+      'model_id': 11,
+      'created_at': '2025-01-01T00:00:00',
+    },
+    {
+      'id': 12,
+      'name': '阳台环境监测器',
+      'sn': 'M701001_250101_000012',
+      'status': 'online',
+      'account_id': 1,
+      'model_id': 12,
       'created_at': '2025-01-01T00:00:00',
     },
   ];

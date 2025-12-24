@@ -64,18 +64,24 @@ class DeviceMapping {
   };
 
   /// 根据 SN 获取卡片类型
+  /// SN 格式支持: MODEL-YYMMDD-SERIAL 或 MODEL_YYMMDD_SERIAL
   static String getCardTypeBySN(String sn) {
-    // SN 格式: MODEL-YYMMDD-SERIAL
-    final parts = sn.split('-');
-    if (parts.isEmpty) return 'UnknownCard';
-
-    final modelCode = parts[0];
+    final modelCode = getModelCodeBySN(sn);
     return deviceTypeMapping[modelCode] ?? 'UnknownCard';
   }
 
   /// 根据 SN 获取型号代码
+  /// SN 格式支持: MODEL-YYMMDD-SERIAL 或 MODEL_YYMMDD_SERIAL
   static String getModelCodeBySN(String sn) {
-    final parts = sn.split('-');
+    // 支持两种格式分隔符: - 或 _
+    List<String> parts;
+    if (sn.contains('_')) {
+      parts = sn.split('_');
+    } else if (sn.contains('-')) {
+      parts = sn.split('-');
+    } else {
+      return sn; // 如果没有分隔符，整个字符串就是型号
+    }
     return parts.isNotEmpty ? parts[0] : '';
   }
 

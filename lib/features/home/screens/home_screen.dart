@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../../providers/device_provider.dart';
@@ -143,28 +144,22 @@ class HomeScreen extends ConsumerWidget {
 
     // 打开扫码页面
     if (context.mounted) {
-      final result = await Navigator.push<String>(
-        context,
+      final result = await Navigator.of(context).push<String>(
         MaterialPageRoute(
-          builder: (context) => const QRScannerScreen(),
+          builder: (context) => const ScanPage(),
         ),
       );
 
       // 处理扫码结果
-      if (result != null && result.isNotEmpty) {
-        // 使用扫码结果绑定设备
-        await ref.read(deviceListProvider.notifier).bindDevice(result);
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('设备绑定成功')),
-          );
-        }
+      if (result != null && result.isNotEmpty && context.mounted) {
+        // 打开输入SN弹窗，并将扫描结果填充到SN输入框
+        _showBindDeviceDialog(context, ref, initialSn: result);
       }
     }
   }
 
-  static void _showBindDeviceDialog(BuildContext context, WidgetRef ref) {
-    final snController = TextEditingController();
+  static void _showBindDeviceDialog(BuildContext context, WidgetRef ref, {String? initialSn}) {
+    final snController = TextEditingController(text: initialSn ?? '');
     final nameController = TextEditingController();
 
     showDialog(
@@ -234,15 +229,46 @@ class HomeScreen extends ConsumerWidget {
 }
 
 /// 二维码扫描页面
-class QRScannerScreen extends StatefulWidget {
-  const QRScannerScreen({super.key});
+class ScanPage extends StatefulWidget {
+  const ScanPage({super.key});
 
   @override
-  State<QRScannerScreen> createState() => _QRScannerScreenState();
+  State<ScanPage> createState() => _ScanPageState();
 }
 
-class _QRScannerScreenState extends State<QRScannerScreen> {
-  final MobileScannerController controller = MobileScannerController();
+class _ScanPageState extends State<ScanPage> {
+  final MobileScannerController controller = MobileScannerController(
+    detectionSpeed: DetectionSpeed.noDuplicates,
+    formats: [BarcodeFormat.qrCode],
+  );
+
+  bool _isInitializing = true;
+  bool _isProcessing = false;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeCamera();
+  }
+
+  Future<void> _initializeCamera() async {
+    try {
+      await controller.start();
+      if (mounted) {
+        setState(() {
+          _isInitializing = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isInitializing = false;
+          _errorMessage = '相机初始化失败: ${e.toString()}';
+        });
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -250,44 +276,143 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
     super.dispose();
   }
 
+  void _handleScanResult(String result) {
+    if (_isProcessing) return;
+
+    _isProcessing = true;
+    controller.stop();
+
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted) {
+        context.pop(result); // 返回扫描结果
+      }
+    });
+  }
+
+  void _onDetect(BarcodeCapture capture) {
+    for (final barcode in capture.barcodes) {
+      if (barcode.rawValue != null && !_isProcessing) {
+        _handleScanResult(barcode.rawValue!);
+        break;
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    const double frameSize = 250;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('扫描二维码'),
+        title: const Text("二维码扫描"),
+        actions: [
+          IconButton(
+            onPressed: () => controller.toggleTorch(),
+            icon: const Icon(Icons.flash_on),
+          ),
+          IconButton(
+            onPressed: () => controller.switchCamera(),
+            icon: const Icon(Icons.cameraswitch),
+          ),
+        ],
       ),
       body: Stack(
         children: [
-          MobileScanner(
-            controller: controller,
-            onDetect: (capture) {
-              final List<Barcode> barcodes = capture.barcodes;
-              for (final barcode in barcodes) {
-                if (barcode.rawValue != null) {
-                  // 返回扫描结果
-                  Navigator.pop(context, barcode.rawValue);
-                  break;
-                }
-              }
-            },
-          ),
-          // 扫描框指示器
-          Center(
-            child: Container(
-              width: 250,
-              height: 250,
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: Colors.white,
-                  width: 2,
-                ),
-                borderRadius: BorderRadius.circular(12),
+          // 相机预览
+          if (!_isInitializing && _errorMessage == null)
+            MobileScanner(
+              controller: controller,
+              onDetect: _onDetect,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, child) {
+                return Center(
+                  child: Text(
+                    "相机无法使用：$error",
+                    style: const TextStyle(color: Colors.red),
+                    textAlign: TextAlign.center,
+                  ),
+                );
+              },
+            ),
+
+          // 初始化状态
+          if (_isInitializing)
+            const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text("正在初始化相机..."),
+                ],
               ),
             ),
-          ),
+
+          // 错误状态
+          if (_errorMessage != null)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                    const SizedBox(height: 16),
+                    Text(
+                      _errorMessage!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _isInitializing = true;
+                          _errorMessage = null;
+                        });
+                        _initializeCamera();
+                      },
+                      child: const Text("重试"),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+          // 扫描框
+          if (!_isInitializing && _errorMessage == null)
+            Center(
+              child: SizedBox(
+                width: frameSize,
+                height: frameSize,
+                child: CustomPaint(
+                  painter: _ScannerFramePainter(),
+                ),
+              ),
+            ),
         ],
       ),
     );
   }
 }
+
+// 扫描框画笔
+class _ScannerFramePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+
+    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
+    canvas.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(12)), paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+
+
 

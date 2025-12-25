@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../providers/device_provider.dart';
-import '../../../providers/theme_provider.dart';
 import '../widgets/device_card_factory.dart';
 
 /// 首页（设备列表）
@@ -11,7 +10,6 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final deviceState = ref.watch(deviceListProvider);
-    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -27,15 +25,12 @@ class HomeScreen extends ConsumerWidget {
               // TODO: 打开通知页面
             },
           ),
-          // 主题切换
+          // 添加设备按钮
           IconButton(
-            icon: Icon(
-              theme.brightness == Brightness.dark
-                  ? Icons.light_mode_outlined
-                  : Icons.dark_mode_outlined,
-            ),
+            icon: const Icon(Icons.add, size: 28),
+            tooltip: '添加设备',
             onPressed: () {
-              ref.read(themeModeProvider.notifier).toggleTheme();
+              _showBindDeviceDialog(context, ref);
             },
           ),
         ],
@@ -60,13 +55,6 @@ class HomeScreen extends ConsumerWidget {
                       );
                     },
                   ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          _showBindDeviceDialog(context, ref);
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('添加设备'),
       ),
     );
   }

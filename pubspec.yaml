@@ -71,6 +71,7 @@ dependencies:
   
   # 二维码
   qr_flutter: ^4.1.0
+  mobile_scanner: ^5.2.3
   
   # 权限管理
   permission_handler: ^11.3.0

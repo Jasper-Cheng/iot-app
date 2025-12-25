@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../app/routes/router.dart';
 
 /// 登录页面
 class LoginScreen extends ConsumerStatefulWidget {
@@ -37,6 +39,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final theme = Theme.of(context);
+
+    // 监听登录成功，自动跳转到首页
+    ref.listen<AuthState>(authProvider, (previous, next) {
+      if (next.isAuthenticated && !next.isLoading && previous?.isAuthenticated != true) {
+        // 登录成功，跳转到首页
+        context.go(AppRouter.main);
+      }
+    });
 
     return Scaffold(
       body: SafeArea(

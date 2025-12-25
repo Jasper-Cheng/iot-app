@@ -247,6 +247,8 @@ class SettingsScreen extends ConsumerWidget {
               await ref.read(authProvider.notifier).logout();
               if (context.mounted) {
                 Navigator.pop(context);
+                // 登出成功后，跳转到登录页
+                context.go(AppRouter.login);
               }
             },
             child: const Text('确定'),

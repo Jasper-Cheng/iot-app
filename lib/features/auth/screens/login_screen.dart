@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../app/routes/router.dart';
 import '../../../core/storage/storage_service.dart';
@@ -84,6 +85,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             _passwordController.text,
           );
     }
+  }
+
+  /// 显示忘记密码提示
+  void _showForgotPasswordHint() {
+    Fluttertoast.showToast(
+      msg: '你没忘',
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.CENTER,
+    );
   }
 
   @override
@@ -208,9 +218,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       const Text('记住我'),
                       const Spacer(),
                       TextButton(
-                        onPressed: () {
-                          // TODO: 忘记密码
-                        },
+                        onPressed: _showForgotPasswordHint,
                         child: const Text('忘记密码?'),
                       ),
                     ],

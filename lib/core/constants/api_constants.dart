@@ -19,6 +19,7 @@ class ApiConstants {
   static const String register = '/auth/register';
   static const String login = '/auth/login';
   static const String logout = '/auth/logout';
+  static const String wechatLogin = '/auth/login/wechat'; // 微信登录
   static const String qrcode = '/auth/login/qrcode';
   static const String checkStatus = '/auth/login/check_status';
   static const String bindPhone = '/auth/login/bind_phone';

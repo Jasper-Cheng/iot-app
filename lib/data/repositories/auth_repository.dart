@@ -50,6 +50,18 @@ class AuthRepository {
     return LoginResponse.fromJson(response.data);
   }
 
+  /// 微信登录
+  /// [code] 微信授权码
+  Future<LoginResponse> wechatLogin(String code) async {
+    final response = await _dio.post(
+      ApiConstants.wechatLogin,
+      data: {
+        'code': code,
+      },
+    );
+    return LoginResponse.fromJson(response.data);
+  }
+
   /// 用户登出
   Future<void> logout() async {
     await _dio.post(ApiConstants.logout);

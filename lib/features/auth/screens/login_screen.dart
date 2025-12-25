@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+// import 'package:fluwx/fluwx.dart'; // TODO: 配置微信AppID后启用
 import '../../../providers/auth_provider.dart';
 import '../../../app/routes/router.dart';
 import '../../../core/storage/storage_service.dart';
@@ -26,7 +27,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   void initState() {
     super.initState();
     _loadRememberedCredentials();
+    // _initWechat(); // TODO: 配置微信AppID后启用
   }
+
+  /// 初始化微信SDK
+  /// 注意：需要在微信开放平台注册应用并获取AppID
+  /// 1. 前往 https://open.weixin.qq.com/ 注册开发者账号
+  /// 2. 创建应用并获取AppID
+  /// 3. 在Android和iOS项目中配置AppID
+  /// 4. 取消注释下面的代码并替换YOUR_WECHAT_APP_ID
+  /*
+  Future<void> _initWechat() async {
+    const String wechatAppId = 'YOUR_WECHAT_APP_ID'; // 替换为真实的微信AppID
+    
+    await registerWxApi(
+      appId: wechatAppId,
+      doOnAndroid: true,
+      doOnIOS: true,
+    );
+  }
+  */
 
   @override
   void dispose() {
@@ -96,12 +116,68 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
+  /// 处理微信登录
+  /// 注意：需要先配置微信AppID并启用相关代码
+  Future<void> _handleWechatLogin() async {
+    // TODO: 配置微信AppID后启用以下代码
+    /*
+    try {
+      // 检查是否安装了微信
+      final isWeChatInstalled = await isWeChatAppInstalled();
+      if (!isWeChatInstalled) {
+        if (mounted) {
+          Fluttertoast.showToast(
+            msg: '请先安装微信',
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.CENTER,
+          );
+        }
+        return;
+      }
+
+      // 发起微信登录
+      final result = await sendWeChatAuth(
+        scope: 'snsapi_userinfo',
+        state: 'wechat_login',
+      );
+
+      if (result.isSuccessful && result.code != null) {
+        // 获取到授权码，调用后端登录接口
+        await ref.read(authProvider.notifier).wechatLogin(result.code!);
+      } else {
+        if (mounted) {
+          Fluttertoast.showToast(
+            msg: result.errorMsg ?? '微信登录失败',
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.CENTER,
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        Fluttertoast.showToast(
+          msg: '微信登录失败: ${e.toString()}',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.CENTER,
+        );
+      }
+    }
+    */
+    
+    // 临时提示：没有配置微信AppID
+    Fluttertoast.showToast(
+      msg: '微信shit',
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.CENTER,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final theme = Theme.of(context);
 
-    // 监听登录成功，自动跳转到首页
+    // 监听登录成功，自动跳转到首页（包括微信登录）
     ref.listen<AuthState>(authProvider, (previous, next) {
       if (next.isAuthenticated && !next.isLoading && previous?.isAuthenticated != true) {
         // 登录成功，跳转到首页
@@ -297,9 +373,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     child: IconButton(
                       icon: const Icon(Icons.wechat, size: 48),
                       color: Colors.green,
-                      onPressed: () {
-                        // TODO: 微信登录
-                      },
+                      onPressed: authState.isLoading ? null : _handleWechatLogin,
                     ),
                   ),
 

@@ -84,6 +84,9 @@ dependencies:
   
   # Toast提示
   fluttertoast: ^8.2.4
+  
+  # 微信登录
+  fluwx: ^4.0.0
 
 dev_dependencies:
   flutter_test:

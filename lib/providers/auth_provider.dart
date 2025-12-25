@@ -157,6 +157,36 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// 微信登录
+  Future<void> wechatLogin(String code) async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      // 调用微信登录接口
+      final loginResponse = await _authRepository.wechatLogin(code);
+
+      // 保存 Token 和用户信息
+      await _storage.setString(StorageService.keyToken, loginResponse.accessToken);
+      await _storage.setString(StorageService.keyTokenType, loginResponse.tokenType);
+      await _storage.setString(
+        StorageService.keyUserInfo,
+        jsonEncode(loginResponse.account.toJson()),
+      );
+
+      state = state.copyWith(
+        isAuthenticated: true,
+        account: loginResponse.account,
+        token: loginResponse.accessToken,
+        isLoading: false,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: ErrorHandler.extractErrorMessage(e),
+      );
+    }
+  }
+
   /// 登出
   Future<void> logout() async {
     try {

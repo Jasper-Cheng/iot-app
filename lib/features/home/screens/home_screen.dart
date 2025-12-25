@@ -275,13 +275,15 @@ class _ScanPageState extends State<ScanPage> {
   void dispose() {
     _isDisposing = true;
     
-    // 停止并释放扫描器
-    // dispose 是同步方法，但 MobileScannerController 内部会处理异步清理
-    try {
-      controller.dispose();
-    } catch (e) {
-      // 忽略错误
-    }
+    // 延迟释放扫描器，确保导航动画完全结束
+    // 这样可以避免在动画期间访问无效纹理
+    Future.delayed(const Duration(milliseconds: 500), () {
+      try {
+        controller.dispose();
+      } catch (e) {
+        // 忽略错误
+      }
+    });
     
     super.dispose();
   }
@@ -298,11 +300,11 @@ class _ScanPageState extends State<ScanPage> {
       });
     }
 
-    // 短暂延迟确保 UI 更新
-    await Future.delayed(const Duration(milliseconds: 100));
+    // 等待足够长的时间，确保 UI 完全更新且稳定
+    // 这样即使后续的 dispose 操作触发纹理错误，用户也看不到闪烁
+    await Future.delayed(const Duration(milliseconds: 300));
 
     // 直接返回，让 dispose 处理相机关闭
-    // 不在这里停止相机，避免在导航动画期间操作纹理资源
     if (mounted && !_isDisposing) {
       context.pop(result);
     }
@@ -324,23 +326,12 @@ class _ScanPageState extends State<ScanPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("二维码扫描"),
-        actions: [
-          IconButton(
-            onPressed: () => controller.toggleTorch(),
-            icon: const Icon(Icons.flash_on),
-          ),
-          IconButton(
-            onPressed: () => controller.switchCamera(),
-            icon: const Icon(Icons.cameraswitch),
-          ),
-        ],
-      ),
-      body: PopScope(
-        canPop: !_isProcessing, // 处理中时不允许返回
-        onPopInvokedWithResult: (didPop, result) async {
-          if (didPop) return;
-          // 处理返回按钮
-          if (!_isDisposing) {
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () async {
+            // 自定义返回按钮行为
+            if (_isDisposing || _isProcessing) return;
+            
             _isDisposing = true;
             
             // 先隐藏预览，显示黑色背景
@@ -353,14 +344,53 @@ class _ScanPageState extends State<ScanPage> {
             // 在异步操作前保存 Navigator 引用
             final navigator = Navigator.of(context);
             
-            // 短暂延迟确保 UI 更新
-            await Future.delayed(const Duration(milliseconds: 100));
+            // 等待足够长的时间，确保 UI 完全更新且稳定
+            await Future.delayed(const Duration(milliseconds: 300));
             
-            // 直接返回，让 dispose 处理相机关闭
-            // 不在这里停止相机，避免在导航动画期间操作纹理资源
+            // 返回
             if (mounted && navigator.canPop()) {
               navigator.pop();
             }
+          },
+        ),
+        actions: [
+          IconButton(
+            onPressed: () => controller.toggleTorch(),
+            icon: const Icon(Icons.flash_on),
+          ),
+          IconButton(
+            onPressed: () => controller.switchCamera(),
+            icon: const Icon(Icons.cameraswitch),
+          ),
+        ],
+      ),
+      body: PopScope(
+        canPop: false, // 阻止默认返回行为，手动处理
+        onPopInvokedWithResult: (didPop, result) async {
+          if (didPop) return;
+          
+          // 处理返回按钮
+          if (_isDisposing || _isProcessing) return;
+          
+          _isDisposing = true;
+          
+          // 先隐藏预览，显示黑色背景
+          if (mounted) {
+            setState(() {
+              _isProcessing = true;
+            });
+          }
+          
+          // 在异步操作前保存 Navigator 引用
+          final navigator = Navigator.of(context);
+          
+          // 等待足够长的时间，确保 UI 完全更新且稳定
+          // 这样即使后续的 dispose 操作触发纹理错误，用户也看不到闪烁
+          await Future.delayed(const Duration(milliseconds: 300));
+          
+          // 直接返回，让 dispose 处理相机关闭
+          if (navigator.canPop()) {
+            navigator.pop();
           }
         },
         child: Stack(

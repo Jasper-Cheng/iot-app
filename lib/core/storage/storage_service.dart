@@ -110,9 +110,9 @@ class StorageService {
   static const String keyUserId = 'user_id';
   static const String keyUserInfo = 'user_info';
   static const String keyThemeMode = 'theme_mode';
-  static const String keyRememberPassword = 'remember_password';
-  static const String keyRememberPhone = 'remember_phone';
-  static const String keyRememberPasswordTime = 'remember_password_time';
+  static const String keyRememberMe = 'remember_me'; // 是否记住我
+  static const String keyRememberPhone = 'remember_phone'; // 记住的手机号
+  static const String keyRememberPassword = 'remember_password'; // 记住的密码（安全存储）
   static const String keyCurrentFamilyId = 'current_family_id';
 }
 

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../app/routes/router.dart';
+import '../../../core/storage/storage_service.dart';
 
 /// 登录页面
 class LoginScreen extends ConsumerStatefulWidget {
@@ -14,10 +15,17 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _phoneController = TextEditingController(text: '13800000002');
-  final _passwordController = TextEditingController(text: 'password123');
+  final _phoneController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _storage = StorageService();
   bool _obscurePassword = true;
-  bool _rememberPassword = false;
+  bool _rememberMe = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRememberedCredentials();
+  }
 
   @override
   void dispose() {
@@ -26,8 +34,51 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
+  /// 加载记住的账号密码
+  Future<void> _loadRememberedCredentials() async {
+    final rememberMe = _storage.getBool(StorageService.keyRememberMe) ?? false;
+    final savedPhone = _storage.getString(StorageService.keyRememberPhone);
+    final savedPassword = await _storage.getSecure(StorageService.keyRememberPassword);
+
+    // 检查组件是否仍然挂载
+    if (!mounted) return;
+
+    setState(() {
+      _rememberMe = rememberMe;
+      // 只加载已保存的手机号
+      if (savedPhone != null && savedPhone.isNotEmpty) {
+        _phoneController.text = savedPhone;
+      }
+      // 只加载已保存的密码（如果勾选了"记住我"）
+      if (rememberMe && savedPassword != null && savedPassword.isNotEmpty) {
+        _passwordController.text = savedPassword;
+      }
+    });
+  }
+
+  /// 保存记住的账号密码
+  Future<void> _saveRememberedCredentials() async {
+    if (_rememberMe) {
+      // 保存"记住我"状态
+      await _storage.setBool(StorageService.keyRememberMe, true);
+      // 保存手机号
+      await _storage.setString(StorageService.keyRememberPhone, _phoneController.text);
+      // 保存密码（使用安全存储）
+      await _storage.setSecure(StorageService.keyRememberPassword, _passwordController.text);
+    } else {
+      // 清除保存的信息
+      await _storage.setBool(StorageService.keyRememberMe, false);
+      await _storage.remove(StorageService.keyRememberPhone);
+      await _storage.deleteSecure(StorageService.keyRememberPassword);
+    }
+  }
+
   Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
+      // 先保存"记住我"状态
+      await _saveRememberedCredentials();
+      
+      // 执行登录
       await ref.read(authProvider.notifier).login(
             _phoneController.text,
             _passwordController.text,
@@ -137,18 +188,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                   const SizedBox(height: 8),
 
-                  // 记住密码
+                  // 记住我
                   Row(
                     children: [
                       Checkbox(
-                        value: _rememberPassword,
+                        value: _rememberMe,
                         onChanged: (value) {
                           setState(() {
-                            _rememberPassword = value ?? false;
+                            _rememberMe = value ?? false;
                           });
+                          // 如果取消勾选，立即清除保存的密码
+                          if (!_rememberMe) {
+                            _storage.setBool(StorageService.keyRememberMe, false);
+                            _storage.remove(StorageService.keyRememberPhone);
+                            _storage.deleteSecure(StorageService.keyRememberPassword);
+                          }
                         },
                       ),
-                      const Text('记住密码'),
+                      const Text('记住我'),
                       const Spacer(),
                       TextButton(
                         onPressed: () {

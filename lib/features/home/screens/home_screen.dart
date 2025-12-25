@@ -244,6 +244,7 @@ class _ScanPageState extends State<ScanPage> {
 
   bool _isInitializing = true;
   bool _isProcessing = false;
+  bool _isDisposing = false; // 标记是否正在销毁
   String? _errorMessage;
 
   @override
@@ -272,21 +273,39 @@ class _ScanPageState extends State<ScanPage> {
 
   @override
   void dispose() {
-    controller.dispose();
+    _isDisposing = true;
+    
+    // 停止并释放扫描器
+    // dispose 是同步方法，但 MobileScannerController 内部会处理异步清理
+    try {
+      controller.dispose();
+    } catch (e) {
+      // 忽略错误
+    }
+    
     super.dispose();
   }
 
-  void _handleScanResult(String result) {
-    if (_isProcessing) return;
+  void _handleScanResult(String result) async {
+    if (_isProcessing || _isDisposing) return;
 
     _isProcessing = true;
-    controller.stop();
+    
+    // 先隐藏预览，显示黑色背景
+    if (mounted) {
+      setState(() {
+        _isProcessing = true;
+      });
+    }
 
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (mounted) {
-        context.pop(result); // 返回扫描结果
-      }
-    });
+    // 短暂延迟确保 UI 更新
+    await Future.delayed(const Duration(milliseconds: 100));
+
+    // 直接返回，让 dispose 处理相机关闭
+    // 不在这里停止相机，避免在导航动画期间操作纹理资源
+    if (mounted && !_isDisposing) {
+      context.pop(result);
+    }
   }
 
   void _onDetect(BarcodeCapture capture) {
@@ -316,24 +335,66 @@ class _ScanPageState extends State<ScanPage> {
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          // 相机预览
-          if (!_isInitializing && _errorMessage == null)
-            MobileScanner(
-              controller: controller,
-              onDetect: _onDetect,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, child) {
-                return Center(
-                  child: Text(
-                    "相机无法使用：$error",
-                    style: const TextStyle(color: Colors.red),
-                    textAlign: TextAlign.center,
+      body: PopScope(
+        canPop: !_isProcessing, // 处理中时不允许返回
+        onPopInvokedWithResult: (didPop, result) async {
+          if (didPop) return;
+          // 处理返回按钮
+          if (!_isDisposing) {
+            _isDisposing = true;
+            
+            // 先隐藏预览，显示黑色背景
+            if (mounted) {
+              setState(() {
+                _isProcessing = true;
+              });
+            }
+            
+            // 在异步操作前保存 Navigator 引用
+            final navigator = Navigator.of(context);
+            
+            // 短暂延迟确保 UI 更新
+            await Future.delayed(const Duration(milliseconds: 100));
+            
+            // 直接返回，让 dispose 处理相机关闭
+            // 不在这里停止相机，避免在导航动画期间操作纹理资源
+            if (mounted && navigator.canPop()) {
+              navigator.pop();
+            }
+          }
+        },
+        child: Stack(
+          children: [
+            // 黑色背景（避免花屏）
+            Container(color: Colors.black),
+            
+            // 相机预览（处理中时隐藏，避免花屏）
+            if (!_isInitializing && _errorMessage == null && !_isProcessing)
+              MobileScanner(
+                controller: controller,
+                onDetect: _onDetect,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, child) {
+                  return Center(
+                    child: Text(
+                      "相机无法使用：$error",
+                      style: const TextStyle(color: Colors.red),
+                      textAlign: TextAlign.center,
+                    ),
+                  );
+                },
+              ),
+            
+            // 处理中状态（返回前隐藏预览，避免花屏）
+            if (_isProcessing)
+              Container(
+                color: Colors.black,
+                child: const Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                   ),
-                );
-              },
-            ),
+                ),
+              ),
 
           // 初始化状态
           if (_isInitializing)
@@ -379,8 +440,8 @@ class _ScanPageState extends State<ScanPage> {
               ),
             ),
 
-          // 扫描框
-          if (!_isInitializing && _errorMessage == null)
+          // 扫描框（仅在扫描器正常工作时显示）
+          if (!_isInitializing && _errorMessage == null && !_isProcessing)
             Center(
               child: SizedBox(
                 width: frameSize,
@@ -390,7 +451,8 @@ class _ScanPageState extends State<ScanPage> {
                 ),
               ),
             ),
-        ],
+          ],
+        ),
       ),
     );
   }

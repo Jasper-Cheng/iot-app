@@ -173,7 +173,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
 
                 // 头像选择
                 _buildAvatarSelector(),
@@ -354,7 +354,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 20),
 
                 // 注册按钮
                 ElevatedButton(
@@ -370,7 +370,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         )
                       : const Text('注册'),
                 ),
-                const SizedBox(height: 16),
 
                 // 返回登录
                 TextButton(

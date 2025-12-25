@@ -239,21 +239,42 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           )
                         : const Text('登录'),
                   ),
-                  const SizedBox(height: 16),
-
-                  // 注册按钮
-                  OutlinedButton(
-                    onPressed: authState.isLoading
-                        ? null
-                        : () {
-                            context.push(AppRouter.register);
-                          },
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                  const SizedBox(height: 4),
+                  // 注册文本（右下角）
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '还没有账号? ',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: theme.textTheme.bodySmall?.color,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: authState.isLoading
+                                ? null
+                                : () {
+                                    context.push(AppRouter.register);
+                                  },
+                            child: Text(
+                              '立即注册',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: theme.colorScheme.primary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    child: const Text('注册账号'),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 12),
 
                   // 其他登录方式
                   Row(

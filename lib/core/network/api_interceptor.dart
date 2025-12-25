@@ -1,9 +1,19 @@
 import 'package:dio/dio.dart';
+import 'package:go_router/go_router.dart';
 import '../storage/storage_service.dart';
+import '../../app/routes/router.dart';
 
 /// API 拦截器
 class ApiInterceptor extends Interceptor {
   final _storage = StorageService();
+  
+  // 静态路由实例引用
+  static GoRouter? _router;
+  
+  /// 设置路由实例（在应用启动时调用）
+  static void setRouter(GoRouter router) {
+    _router = router;
+  }
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
@@ -70,11 +80,16 @@ class ApiInterceptor extends Interceptor {
               }
             }
             
-            // 如果是401错误，清除Token
+            // 如果是401错误，清除Token并跳转到登录页
             if (statusCode == 401) {
               _storage.remove(StorageService.keyToken);
               _storage.remove(StorageService.keyTokenType);
               _storage.remove(StorageService.keyUserInfo);
+              
+              // 使用 GoRouter 跳转到登录页
+              if (_router != null) {
+                _router!.go(AppRouter.login);
+              }
             }
             
             // 如果找到了自定义错误消息，直接跳出
@@ -97,6 +112,11 @@ class ApiInterceptor extends Interceptor {
             _storage.remove(StorageService.keyToken);
             _storage.remove(StorageService.keyTokenType);
             _storage.remove(StorageService.keyUserInfo);
+            
+            // 使用 GoRouter 跳转到登录页
+            if (_router != null) {
+              _router!.go(AppRouter.login);
+            }
             break;
           case 403:
             errorMessage = '禁止访问';

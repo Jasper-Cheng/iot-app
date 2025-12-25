@@ -37,6 +37,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   Future<void> _handleRegister() async {
     if (_formKey.currentState!.validate()) {
+      // 将头像路径从 assets/avatars/avatar1.png 转换为 /avatars/avatar1.png
+      String? avatarPath;
+      if (_selectedAvatar != null) {
+        // 从 assets/avatars/avatar1.png 提取 avatar1.png
+        final fileName = _selectedAvatar!.split('/').last;
+        avatarPath = '/avatars/$fileName';
+      }
+
       await ref.read(authProvider.notifier).register(
             nickname: _nicknameController.text.trim(),
             phone: _phoneController.text.trim(),
@@ -45,7 +53,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             email: _emailController.text.trim().isEmpty 
                 ? null 
                 : _emailController.text.trim(),
-            avatar: _selectedAvatar,
+            avatar: avatarPath,
           );
     }
   }

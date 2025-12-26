@@ -5,6 +5,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../../providers/device_provider.dart';
 import '../widgets/device_card_factory.dart';
+import '../../../core/utils/error_handler.dart';
 
 /// 首页（设备列表）
 class HomeScreen extends ConsumerWidget {
@@ -206,17 +207,29 @@ class HomeScreen extends ConsumerWidget {
           ElevatedButton(
             onPressed: () async {
               if (snController.text.isNotEmpty) {
-                await ref.read(deviceListProvider.notifier).bindDevice(
-                      snController.text,
-                      name: nameController.text.isEmpty
-                          ? null
-                          : nameController.text,
+                try {
+                  await ref.read(deviceListProvider.notifier).bindDevice(
+                        snController.text,
+                        name: nameController.text.isEmpty
+                            ? null
+                            : nameController.text,
+                      );
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('设备绑定成功')),
                     );
-                if (context.mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('设备绑定成功')),
-                  );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('设备绑定失败: ${ErrorHandler.extractErrorMessage(e)}'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
                 }
               }
             },

@@ -9,6 +9,7 @@ class AboutScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
+        toolbarHeight: 48,
         title: const Text('关于我们'),
       ),
       body: ListView(

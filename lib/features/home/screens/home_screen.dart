@@ -1540,6 +1540,7 @@ class _ScanPageState extends State<ScanPage> {
 
     return Scaffold(
       appBar: AppBar(
+        toolbarHeight: 48,
         title: const Text("二维码扫描"),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),

@@ -62,17 +62,23 @@ Map<String, dynamic> _$PointsBalanceToJson(PointsBalance instance) =>
 PointsHistory _$PointsHistoryFromJson(Map<String, dynamic> json) =>
     PointsHistory(
       id: (json['id'] as num).toInt(),
+      accountId: (json['account_id'] as num).toInt(),
+      points: (json['points'] as num).toInt(),
+      balance: (json['balance'] as num?)?.toInt(),
       type: json['type'] as String,
-      amount: (json['amount'] as num).toInt(),
       description: json['description'] as String,
+      extra: json['extra'] as Map<String, dynamic>?,
       createdAt: DateTime.parse(json['created_at'] as String),
     );
 
 Map<String, dynamic> _$PointsHistoryToJson(PointsHistory instance) =>
     <String, dynamic>{
       'id': instance.id,
+      'account_id': instance.accountId,
+      'points': instance.points,
+      'balance': instance.balance,
       'type': instance.type,
-      'amount': instance.amount,
       'description': instance.description,
+      'extra': instance.extra,
       'created_at': instance.createdAt.toIso8601String(),
     };

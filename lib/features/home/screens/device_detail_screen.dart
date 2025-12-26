@@ -18,6 +18,7 @@ class DeviceDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
+        toolbarHeight: 48,
         title: Text(device.name),
         actions: [
           IconButton(

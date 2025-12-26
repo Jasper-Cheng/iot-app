@@ -108,18 +108,28 @@ class PointsBalance extends Equatable {
 @JsonSerializable()
 class PointsHistory extends Equatable {
   final int id;
-  final String type; // earn/spend/expire
-  final int amount;
+  
+  @JsonKey(name: 'account_id')
+  final int accountId;
+  
+  final int points;
+  final int? balance;
+  final String type; // check_in/penalty/reward/earn/spend/expire
   final String description;
+  
+  final Map<String, dynamic>? extra;
   
   @JsonKey(name: 'created_at')
   final DateTime createdAt;
 
   const PointsHistory({
     required this.id,
+    required this.accountId,
+    required this.points,
+    this.balance,
     required this.type,
-    required this.amount,
     required this.description,
+    this.extra,
     required this.createdAt,
   });
 
@@ -129,6 +139,6 @@ class PointsHistory extends Equatable {
   Map<String, dynamic> toJson() => _$PointsHistoryToJson(this);
 
   @override
-  List<Object?> get props => [id, type, amount, description, createdAt];
+  List<Object?> get props => [id, accountId, points, balance, type, description, extra, createdAt];
 }
 

@@ -10,6 +10,7 @@ class CustomerServiceScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
+        toolbarHeight: 48,
         title: const Text('联系客服'),
       ),
       body: ListView(

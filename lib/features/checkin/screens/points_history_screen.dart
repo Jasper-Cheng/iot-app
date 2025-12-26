@@ -98,6 +98,12 @@ class _PointsHistoryScreenState extends ConsumerState<PointsHistoryScreen> {
 
   String _getTypeText(String type) {
     switch (type) {
+      case 'check_in':
+        return '签到奖励';
+      case 'penalty':
+        return '违规扣除';
+      case 'reward':
+        return '活动奖励';
       case 'earn':
         return '获得';
       case 'spend':
@@ -111,8 +117,11 @@ class _PointsHistoryScreenState extends ConsumerState<PointsHistoryScreen> {
 
   Color _getTypeColor(String type) {
     switch (type) {
+      case 'check_in':
+      case 'reward':
       case 'earn':
         return Colors.green;
+      case 'penalty':
       case 'spend':
         return Colors.orange;
       case 'expire':
@@ -124,6 +133,12 @@ class _PointsHistoryScreenState extends ConsumerState<PointsHistoryScreen> {
 
   IconData _getTypeIcon(String type) {
     switch (type) {
+      case 'check_in':
+        return Icons.calendar_today;
+      case 'penalty':
+        return Icons.remove_circle_outline;
+      case 'reward':
+        return Icons.card_giftcard;
       case 'earn':
         return Icons.add_circle_outline;
       case 'spend':
@@ -132,6 +147,21 @@ class _PointsHistoryScreenState extends ConsumerState<PointsHistoryScreen> {
         return Icons.cancel_outlined;
       default:
         return Icons.info_outline;
+    }
+  }
+  
+  bool _isPositive(String type) {
+    switch (type) {
+      case 'check_in':
+      case 'reward':
+      case 'earn':
+        return true;
+      case 'penalty':
+      case 'spend':
+      case 'expire':
+        return false;
+      default:
+        return true;
     }
   }
 
@@ -236,7 +266,7 @@ class _PointsHistoryScreenState extends ConsumerState<PointsHistoryScreen> {
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
-                                    item.type == 'earn' ? '+${item.amount}' : '-${item.amount}',
+                                    _isPositive(item.type) ? '+${item.points}' : '${item.points}',
                                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                           color: _getTypeColor(item.type),
                                           fontWeight: FontWeight.bold,

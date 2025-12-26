@@ -19,8 +19,11 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
   bool _isSubmitting = false;
 
   final _types = const {
-    'bug': '问题反馈',
+    'bug': 'bug',
     'feature': '功能建议',
+    'improvement': '改进建议',
+    'complaint': '投诉',
+    'praise': '表扬',
     'other': '其他',
   };
 
@@ -35,6 +38,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        toolbarHeight: 48,
         title: const Text('意见反馈'),
       ),
       body: Form(
@@ -59,9 +63,13 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                     const SizedBox(height: 12),
                     Wrap(
                       spacing: 8,
+                      runSpacing: 8,
                       children: _types.entries.map((entry) {
                         return ChoiceChip(
-                          label: Text(entry.value),
+                          label: Text(
+                            entry.value,
+                            style: const TextStyle(fontSize: 13),
+                          ),
                           selected: _selectedType == entry.key,
                           onSelected: (selected) {
                             if (selected) {
@@ -70,6 +78,9 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                               });
                             }
                           },
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         );
                       }).toList(),
                     ),
@@ -77,7 +88,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
 
             // 反馈内容
             Card(
@@ -116,7 +127,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
 
             // 联系方式（可选）
             Card(

@@ -1,12 +1,10 @@
 import '../../core/network/dio_client.dart';
 import '../../core/constants/api_constants.dart';
 import '../models/message.dart';
-import '../mock/mock_data.dart';
 
 /// 消息数据仓库
 class MessageRepository {
   final _dio = DioClient().dio;
-  final bool useMock = false; // 是否使用 Mock 数据，改为 false 连接实际后端
 
   /// 获取设备消息列表
   Future<List<DeviceMessage>> getDeviceMessages({
@@ -15,13 +13,6 @@ class MessageRepository {
     int page = 1,
     int pageSize = 20,
   }) async {
-    if (useMock) {
-      await Future.delayed(const Duration(milliseconds: 500));
-      return MockData.mockDeviceMessages
-          .map((e) => DeviceMessage.fromJson(e))
-          .toList();
-    }
-
     final response = await _dio.get(
       ApiConstants.deviceMessages,
       queryParameters: {
@@ -37,21 +28,11 @@ class MessageRepository {
 
   /// 标记消息为已读
   Future<void> markMessageAsRead(int id) async {
-    if (useMock) {
-      await Future.delayed(const Duration(milliseconds: 300));
-      return;
-    }
-
     await _dio.patch(ApiConstants.markMessageRead(id));
   }
 
   /// 标记所有消息为已读
   Future<void> markAllAsRead() async {
-    if (useMock) {
-      await Future.delayed(const Duration(milliseconds: 300));
-      return;
-    }
-
     await _dio.patch(ApiConstants.markAllRead);
   }
 
@@ -61,13 +42,6 @@ class MessageRepository {
     int page = 1,
     int pageSize = 20,
   }) async {
-    if (useMock) {
-      await Future.delayed(const Duration(milliseconds: 500));
-      return MockData.mockSystemMessages
-          .map((e) => SystemMessage.fromJson(e))
-          .toList();
-    }
-
     final response = await _dio.get(
       ApiConstants.systemMessages,
       queryParameters: {
@@ -82,14 +56,6 @@ class MessageRepository {
 
   /// 获取未读消息数量
   Future<MessageUnreadCount> getUnreadCount() async {
-    if (useMock) {
-      await Future.delayed(const Duration(milliseconds: 300));
-      return const MessageUnreadCount(
-        deviceMessages: 2,
-        systemMessages: 1,
-      );
-    }
-
     final response = await _dio.get(ApiConstants.unreadCount);
     return MessageUnreadCount.fromJson(response.data);
   }

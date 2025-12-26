@@ -4,7 +4,6 @@ import '../../core/constants/api_constants.dart';
 /// 设置数据仓库
 class SettingsRepository {
   final _dio = DioClient().dio;
-  final bool useMock = false; // 是否使用 Mock 数据，改为 false 连接实际后端
 
   /// 提交反馈
   Future<void> submitFeedback({
@@ -12,11 +11,6 @@ class SettingsRepository {
     required String content,
     String? contact,
   }) async {
-    if (useMock) {
-      await Future.delayed(const Duration(milliseconds: 1000));
-      return;
-    }
-
     await _dio.post(
       ApiConstants.feedback,
       data: {
@@ -29,16 +23,6 @@ class SettingsRepository {
 
   /// 获取版本信息
   Future<VersionInfo> getVersionInfo() async {
-    if (useMock) {
-      await Future.delayed(const Duration(milliseconds: 500));
-      return const VersionInfo(
-        version: '1.0.0',
-        buildNumber: 1,
-        updateTime: '2025-01-01',
-        description: '首次发布版本',
-      );
-    }
-
     final response = await _dio.get(ApiConstants.versionInfo);
     return VersionInfo.fromJson(response.data);
   }

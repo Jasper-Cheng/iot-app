@@ -31,7 +31,7 @@ class DeviceRepository {
       return Device.fromJson(newDevice);
     }
 
-    final request = BindDeviceRequest(sn: sn, name: name);
+    final request = BindDeviceRequest(sn: sn, name: name??'新设备');
     final response = await _dio.post(
       ApiConstants.bindDevice,
       data: request.toJson(),

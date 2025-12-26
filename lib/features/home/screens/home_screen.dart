@@ -218,7 +218,10 @@ class HomeScreen extends ConsumerWidget {
                   if (context.mounted) {
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('设备绑定成功')),
+                      const SnackBar(
+                        content: Text('设备绑定成功'),
+                        backgroundColor: Colors.green,
+                      ),
                     );
                   }
                 } catch (e) {

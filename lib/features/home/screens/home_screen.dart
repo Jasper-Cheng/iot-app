@@ -39,6 +39,7 @@ class HomeScreen extends ConsumerWidget {
               minHeight: 48,
             ), // 增加点击范围
             offset: const Offset(0, 48), // 菜单在按钮下方弹出
+            popUpAnimationStyle: AnimationStyle.noAnimation, // 移除动画效果
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
               side: BorderSide(

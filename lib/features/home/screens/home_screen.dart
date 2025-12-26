@@ -165,6 +165,7 @@ class HomeScreen extends ConsumerWidget {
 
     showDialog(
       context: context,
+      barrierDismissible: false, // 点击外部不关闭弹窗
       builder: (context) => AlertDialog(
         title: const Text('绑定设备'),
         content: Column(

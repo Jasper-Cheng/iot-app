@@ -261,84 +261,77 @@ class _FeedbackListScreenState extends ConsumerState<FeedbackListScreen> {
                                       ),
                                 ),
                               ),
+                              expandedAlignment: Alignment.center,
                               children: [
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                if (item.content.isNotEmpty) ...[
+                                  Text(
+                                    '反馈内容',
+                                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    item.content,
+                                    style: Theme.of(context).textTheme.bodyMedium,
+                                    textAlign: TextAlign.left,
+                                  ),
+                                  const SizedBox(height: 12),
+                                ],
+                                if (item.contactInfo != null && item.contactInfo!.isNotEmpty) ...[
+                                  Text(
+                                    '联系方式',
+                                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    item.contactInfo!,
+                                    style: Theme.of(context).textTheme.bodyMedium,
+                                    textAlign: TextAlign.left,
+                                  ),
+                                  const SizedBox(height: 12),
+                                ],
+                                if (item.replay != null && item.replay!.isNotEmpty) ...[
+                                  Text(
+                                    '管理员回复',
+                                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(context).colorScheme.primary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      item.replay!,
+                                      style: Theme.of(context).textTheme.bodyMedium,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                ],
+                                if (item.updatedAt != null)
+                                  Row(
                                     children: [
-                                      if (item.content.isNotEmpty) ...[
-                                        Text(
-                                          '反馈内容',
-                                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                                fontWeight: FontWeight.bold,
-                                              ),
+                                      Text(
+                                        '更新时间: ',
+                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                          color: Theme.of(context).disabledColor,
                                         ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          item.content,
-                                          style: Theme.of(context).textTheme.bodyMedium,
-                                          textAlign: TextAlign.left,
+                                      ),
+                                      Text(
+                                        AppDateUtils.formatDateTime(item.updatedAt!),
+                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                          color: Theme.of(context).disabledColor,
                                         ),
-                                        const SizedBox(height: 12),
-                                      ],
-                                      if (item.contactInfo != null && item.contactInfo!.isNotEmpty) ...[
-                                        Text(
-                                          '联系方式',
-                                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          item.contactInfo!,
-                                          style: Theme.of(context).textTheme.bodyMedium,
-                                          textAlign: TextAlign.left,
-                                        ),
-                                        const SizedBox(height: 12),
-                                      ],
-                                      if (item.replay != null && item.replay!.isNotEmpty) ...[
-                                        Text(
-                                          '管理员回复',
-                                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                                fontWeight: FontWeight.bold,
-                                                color: Theme.of(context).colorScheme.primary,
-                                              ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Container(
-                                          padding: const EdgeInsets.all(12),
-                                          decoration: BoxDecoration(
-                                            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Text(
-                                            item.replay!,
-                                            style: Theme.of(context).textTheme.bodyMedium,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 16),
-                                      ],
-                                      if (item.updatedAt != null)
-                                        Row(
-                                          children: [
-                                            Text(
-                                              '更新时间: ',
-                                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                                    color: Theme.of(context).disabledColor,
-                                                  ),
-                                            ),
-                                            Text(
-                                              AppDateUtils.formatDateTime(item.updatedAt!),
-                                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                                    color: Theme.of(context).disabledColor,
-                                                  ),
-                                            ),
-                                          ],
-                                        ),
+                                      ),
                                     ],
                                   ),
-                                ),
                               ],
                             ),
                           );

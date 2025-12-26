@@ -25,13 +25,8 @@ class DeviceRepository {
     if (useMock) {
       await Future.delayed(const Duration(milliseconds: 500));
       final newDevice = {
-        'id': DateTime.now().millisecondsSinceEpoch,
         'name': name ?? '新设备',
-        'sn': sn,
-        'status': 'bound',
-        'account_id': 1,
-        'model_id': 1,
-        'created_at': DateTime.now().toIso8601String(),
+        'sn': sn
       };
       return Device.fromJson(newDevice);
     }

@@ -37,6 +37,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
 
     return Scaffold(
       appBar: AppBar(
+        toolbarHeight: 48,
         title: const Text('家庭管理'),
         actions: [
           PopupMenuButton<String>(
@@ -74,6 +75,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
         ],
         bottom: TabBar(
           controller: _tabController,
+          dividerColor: Theme.of(context).dividerColor.withValues(alpha: 0.2),
           tabs: const [
             Tab(text: '我的家庭'),
             Tab(text: '家庭成员'),

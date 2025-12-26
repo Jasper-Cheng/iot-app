@@ -20,6 +20,7 @@ class SettingsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
+        toolbarHeight: 48,
         title: const Text('设置'),
       ),
       body: ListView(

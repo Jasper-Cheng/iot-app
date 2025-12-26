@@ -23,6 +23,7 @@ class HomeScreen extends ConsumerWidget {
     return Scaffold(
       drawer: _buildDrawer(context, ref),
       appBar: AppBar(
+        toolbarHeight: 48,
         title: const Text('我的设备'),
         actions: [
           // 通知图标
@@ -50,7 +51,7 @@ class HomeScreen extends ConsumerWidget {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
               side: BorderSide(
-                color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+                color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
                 width: 1,
               ),
             ),
@@ -679,7 +680,7 @@ class _MessageMenuWidgetState extends State<MessageMenuWidget> with SingleTicker
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
           width: 1,
         ),
       ),

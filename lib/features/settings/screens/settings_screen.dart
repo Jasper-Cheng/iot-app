@@ -122,22 +122,6 @@ class SettingsScreen extends ConsumerWidget {
             ],
           ),
 
-          // 消息通知
-          _buildSection(
-            context,
-            '消息通知',
-            [
-              ListTile(
-                leading: const Icon(Icons.notifications_outlined),
-                title: const Text('消息通知'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  context.push(AppRouter.messages);
-                },
-              ),
-            ],
-          ),
-
           // 帮助与反馈
           _buildSection(
             context,

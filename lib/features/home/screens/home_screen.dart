@@ -8,6 +8,7 @@ import '../../../providers/message_provider.dart';
 import '../widgets/device_card_factory.dart';
 import '../../../core/utils/error_handler.dart';
 import '../../../core/utils/date_utils.dart';
+import '../../../core/utils/device_mapping.dart';
 
 /// 首页（设备列表）
 class HomeScreen extends ConsumerWidget {
@@ -386,12 +387,18 @@ class HomeScreen extends ConsumerWidget {
   /// 构建侧边栏设备项
   Widget _buildDrawerDeviceItem(BuildContext context, WidgetRef ref, device) {
     final isOnline = device.isOnline;
+    final modelCode = DeviceMapping.getModelCodeBySN(device.sn);
+    final deviceIcon = DeviceMapping.getDeviceIconByModel(modelCode);
     
     return Card(
       margin: EdgeInsets.symmetric(vertical: 4),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 8),
         dense: true,
+        leading: Text(
+          deviceIcon,
+          style: const TextStyle(fontSize: 24),
+        ),
         title: Text(
           device.name,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -436,14 +443,14 @@ class HomeScreen extends ConsumerWidget {
           onPressed: () {
             _handleDeviceConfigure(context, ref, device);
           },
-          child: const Text(
-            '配网',
-            style: TextStyle(fontSize: 12),
-          ),
           style: TextButton.styleFrom(
             padding: EdgeInsets.zero,
             minimumSize: Size.zero,
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+          child: const Text(
+            '配网',
+            style: TextStyle(fontSize: 13),
           ),
         ),
       ),

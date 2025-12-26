@@ -49,4 +49,3 @@ Map<String, dynamic> _$UpdateDeviceNameRequestToJson(
     <String, dynamic>{
       'name': instance.name,
     };
-

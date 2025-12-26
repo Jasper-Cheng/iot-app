@@ -7,27 +7,47 @@ part 'feedback.g.dart';
 @JsonSerializable()
 class FeedbackModel extends Equatable {
   final int id;
+  
+  @JsonKey(name: 'account_id')
+  final int accountId;
+  
+  final String? name;
   final String type; // bug/feature/improvement/complaint/praise/other
   final String content;
-  final String? contact;
-  final String? images; // JSON 字符串数组
-  final String status; // pending/processing/resolved/closed
+  
+  @JsonKey(name: 'contact_info')
+  final String? contactInfo;
+  
+  final String status; // pending/processing/resolved/rejected/closed
+  final String source; // app/web
+  
+  final String? replay; // 管理员回复
+  
+  @JsonKey(name: 'processed_at')
+  final DateTime? processedAt;
   
   @JsonKey(name: 'created_at')
   final DateTime createdAt;
   
   @JsonKey(name: 'updated_at')
-  final DateTime updatedAt;
+  final DateTime? updatedAt;
+  
+  final Map<String, dynamic>? extra;
 
   const FeedbackModel({
     required this.id,
+    required this.accountId,
+    this.name,
     required this.type,
     required this.content,
-    this.contact,
-    this.images,
+    this.contactInfo,
     required this.status,
+    required this.source,
+    this.replay,
+    this.processedAt,
     required this.createdAt,
-    required this.updatedAt,
+    this.updatedAt,
+    this.extra,
   });
 
   factory FeedbackModel.fromJson(Map<String, dynamic> json) =>
@@ -36,22 +56,41 @@ class FeedbackModel extends Equatable {
   Map<String, dynamic> toJson() => _$FeedbackModelToJson(this);
 
   @override
-  List<Object?> get props => [id, type, content, contact, images, status, createdAt, updatedAt];
+  List<Object?> get props => [
+        id,
+        accountId,
+        name,
+        type,
+        content,
+        contactInfo,
+        status,
+        source,
+        replay,
+        processedAt,
+        createdAt,
+        updatedAt,
+        extra,
+      ];
 }
 
 /// 提交反馈请求
 @JsonSerializable()
 class SubmitFeedbackRequest {
+  final String? name;
   final String type;
   final String content;
-  final String? contact;
-  final List<String>? images;
+  
+  @JsonKey(name: 'contact_info')
+  final String? contactInfo;
+  
+  final Map<String, dynamic>? extra;
 
   const SubmitFeedbackRequest({
+    this.name,
     required this.type,
     required this.content,
-    this.contact,
-    this.images,
+    this.contactInfo,
+    this.extra,
   });
 
   factory SubmitFeedbackRequest.fromJson(Map<String, dynamic> json) =>

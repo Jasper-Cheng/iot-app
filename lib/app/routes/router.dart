@@ -4,6 +4,8 @@ import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
 import '../../features/main/main_screen.dart';
 import '../../features/checkin/screens/checkin_screen.dart';
+import '../../features/checkin/screens/points_history_screen.dart';
+import '../../features/settings/screens/feedback_list_screen.dart';
 import '../../providers/auth_provider.dart';
 
 /// 路由配置
@@ -12,6 +14,8 @@ class AppRouter {
   static const String register = '/register';
   static const String main = '/';
   static const String checkin = '/checkin';
+  static const String pointsHistory = '/points-history';
+  static const String feedbackList = '/feedback-list';
 
   /// 创建路由
   static GoRouter createRouter(Ref ref) {
@@ -59,6 +63,18 @@ class AppRouter {
         GoRoute(
           path: checkin,
           builder: (context, state) => const CheckinScreen(),
+        ),
+
+        // 积分记录页
+        GoRoute(
+          path: pointsHistory,
+          builder: (context, state) => const PointsHistoryScreen(),
+        ),
+
+        // 反馈列表页
+        GoRoute(
+          path: feedbackList,
+          builder: (context, state) => const FeedbackListScreen(),
         ),
       ],
     );

@@ -66,8 +66,7 @@ Map<String, dynamic> _$RegisterRequestToJson(RegisterRequest instance) =>
       'avatar': instance.avatar,
     };
 
-LoginRequest _$LoginRequestFromJson(Map<String, dynamic> json) =>
-    LoginRequest(
+LoginRequest _$LoginRequestFromJson(Map<String, dynamic> json) => LoginRequest(
       phone: json['phone'] as String,
       password: json['password'] as String,
     );
@@ -77,4 +76,3 @@ Map<String, dynamic> _$LoginRequestToJson(LoginRequest instance) =>
       'phone': instance.phone,
       'password': instance.password,
     };
-

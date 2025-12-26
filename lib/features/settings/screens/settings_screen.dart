@@ -119,6 +119,14 @@ class SettingsScreen extends ConsumerWidget {
                   context.push(AppRouter.checkin);
                 },
               ),
+              ListTile(
+                leading: const Icon(Icons.history_outlined),
+                title: const Text('积分记录'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  context.push(AppRouter.pointsHistory);
+                },
+              ),
             ],
           ),
 
@@ -136,6 +144,14 @@ class SettingsScreen extends ConsumerWidget {
                     context,
                     MaterialPageRoute(builder: (_) => const FeedbackScreen()),
                   );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.list_outlined),
+                title: const Text('反馈列表'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  context.push(AppRouter.feedbackList);
                 },
               ),
               ListTile(

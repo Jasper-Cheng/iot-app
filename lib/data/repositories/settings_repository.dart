@@ -1,5 +1,6 @@
 import '../../core/network/dio_client.dart';
 import '../../core/constants/api_constants.dart';
+import '../../data/models/feedback.dart';
 
 /// 设置数据仓库
 class SettingsRepository {
@@ -7,18 +8,50 @@ class SettingsRepository {
 
   /// 提交反馈
   Future<void> submitFeedback({
+    String? name,
     required String type,
     required String content,
-    String? contact,
+    String? contactInfo,
+    Map<String, dynamic>? extra,
   }) async {
     await _dio.post(
       ApiConstants.feedback,
       data: {
+        if (name != null) 'name': name,
         'type': type,
         'content': content,
-        'contact': contact,
+        if (contactInfo != null) 'contact_info': contactInfo,
+        if (extra != null) 'extra': extra,
       },
     );
+  }
+
+  /// 获取反馈列表
+  Future<List<FeedbackModel>> getFeedbackList({
+    int skip = 0,
+    int limit = 20,
+    String? type,
+    String? status,
+  }) async {
+    final queryParams = <String, dynamic>{
+      'skip': skip,
+      'limit': limit,
+    };
+    
+    if (type != null) {
+      queryParams['type'] = type;
+    }
+    
+    if (status != null) {
+      queryParams['status'] = status;
+    }
+    
+    final response = await _dio.get(
+      ApiConstants.feedback,
+      queryParameters: queryParams,
+    );
+    final List<dynamic> data = response.data;
+    return data.map((e) => FeedbackModel.fromJson(e)).toList();
   }
 
   /// 获取版本信息

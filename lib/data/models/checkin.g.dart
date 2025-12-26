@@ -6,8 +6,7 @@ part of 'checkin.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-CheckinStats _$CheckinStatsFromJson(Map<String, dynamic> json) =>
-    CheckinStats(
+CheckinStats _$CheckinStatsFromJson(Map<String, dynamic> json) => CheckinStats(
       totalCheckIns: (json['total_check_ins'] as num).toInt(),
       continuousDays: (json['continuous_days'] as num).toInt(),
       longestContinuous: (json['longest_continuous'] as num).toInt(),
@@ -77,4 +76,3 @@ Map<String, dynamic> _$PointsHistoryToJson(PointsHistory instance) =>
       'description': instance.description,
       'created_at': instance.createdAt.toIso8601String(),
     };
-

@@ -26,8 +26,7 @@ Map<String, dynamic> _$FamilyToJson(Family instance) => <String, dynamic>{
       'updated_at': instance.updatedAt.toIso8601String(),
     };
 
-FamilyMember _$FamilyMemberFromJson(Map<String, dynamic> json) =>
-    FamilyMember(
+FamilyMember _$FamilyMemberFromJson(Map<String, dynamic> json) => FamilyMember(
       id: (json['id'] as num).toInt(),
       nickname: json['nickname'] as String,
       role: json['role'] as String,
@@ -83,4 +82,3 @@ Map<String, dynamic> _$UpdateMemberRequestToJson(
     <String, dynamic>{
       'nickname': instance.nickname,
     };
-

@@ -184,7 +184,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
       await repository.submitFeedback(
         type: _selectedType,
         content: _contentController.text,
-        contact: _contactController.text.isEmpty ? null : _contactController.text,
+        contactInfo: _contactController.text.isEmpty ? null : _contactController.text,
       );
 
       if (mounted) {

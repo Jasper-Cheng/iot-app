@@ -7,35 +7,28 @@ import '../core/utils/error_handler.dart';
 class MessageState {
   final List<DeviceMessage> deviceMessages;
   final List<SystemMessage> systemMessages;
-  final int unreadDeviceCount;
-  final int unreadSystemCount;
   final bool isLoading;
   final String? error;
 
   const MessageState({
     this.deviceMessages = const [],
     this.systemMessages = const [],
-    this.unreadDeviceCount = 0,
-    this.unreadSystemCount = 0,
     this.isLoading = false,
     this.error,
   });
 
-  int get totalUnread => unreadDeviceCount + unreadSystemCount;
+  /// 未读设备消息数量（deviceMessages已经是未读消息）
+  int get unreadDeviceCount => deviceMessages.length;
 
   MessageState copyWith({
     List<DeviceMessage>? deviceMessages,
     List<SystemMessage>? systemMessages,
-    int? unreadDeviceCount,
-    int? unreadSystemCount,
     bool? isLoading,
     String? error,
   }) {
     return MessageState(
       deviceMessages: deviceMessages ?? this.deviceMessages,
       systemMessages: systemMessages ?? this.systemMessages,
-      unreadDeviceCount: unreadDeviceCount ?? this.unreadDeviceCount,
-      unreadSystemCount: unreadSystemCount ?? this.unreadSystemCount,
       isLoading: isLoading ?? this.isLoading,
       error: error,
     );
@@ -50,20 +43,18 @@ class MessageNotifier extends StateNotifier<MessageState> {
     loadMessages();
   }
 
-  /// 加载消息
+  /// 加载消息（初始只加载未读设备消息）
   Future<void> loadMessages() async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final deviceMessages = await _repository.getDeviceMessages();
+      // 只加载未读的设备消息
+      final deviceMessages = await _repository.getDeviceMessages(status: 'new');
       final systemMessages = await _repository.getSystemMessages();
-      final unreadCount = await _repository.getUnreadCount();
 
       state = state.copyWith(
         deviceMessages: deviceMessages,
         systemMessages: systemMessages,
-        unreadDeviceCount: unreadCount.deviceMessages,
-        unreadSystemCount: unreadCount.systemMessages,
         isLoading: false,
       );
     } catch (e) {
@@ -71,6 +62,16 @@ class MessageNotifier extends StateNotifier<MessageState> {
         isLoading: false,
         error: ErrorHandler.extractErrorMessage(e),
       );
+    }
+  }
+
+  /// 加载已读设备消息（用于消息日志）
+  Future<List<DeviceMessage>> loadReadDeviceMessages() async {
+    try {
+      final messages = await _repository.getDeviceMessages(status: 'read');
+      return messages;
+    } catch (e) {
+      return [];
     }
   }
 
@@ -121,28 +122,11 @@ class MessageNotifier extends StateNotifier<MessageState> {
     try {
       await _repository.markMessageAsRead(id);
       
-      // 更新本地状态
-      final updatedMessages = state.deviceMessages.map((msg) {
-        if (msg.id == id) {
-          return DeviceMessage(
-            id: msg.id,
-            deviceId: msg.deviceId,
-            level: msg.level,
-            message: msg.message,
-            detail: msg.detail,
-            status: 'read',
-            createdAt: msg.createdAt,
-            updatedAt: DateTime.now(),
-          );
-        }
-        return msg;
-      }).toList();
+      // 从未读列表中移除该消息
+      final updatedMessages = state.deviceMessages.where((msg) => msg.id != id).toList();
 
       state = state.copyWith(
         deviceMessages: updatedMessages,
-        unreadDeviceCount: state.unreadDeviceCount > 0
-            ? state.unreadDeviceCount - 1
-            : 0,
       );
     } catch (e) {
       state = state.copyWith(error: ErrorHandler.extractErrorMessage(e));
@@ -154,23 +138,9 @@ class MessageNotifier extends StateNotifier<MessageState> {
     try {
       await _repository.markAllAsRead();
       
-      // 更新本地状态
-      final updatedMessages = state.deviceMessages.map((msg) {
-        return DeviceMessage(
-          id: msg.id,
-          deviceId: msg.deviceId,
-          level: msg.level,
-          message: msg.message,
-          detail: msg.detail,
-          status: 'read',
-          createdAt: msg.createdAt,
-          updatedAt: DateTime.now(),
-        );
-      }).toList();
-
+      // 清空未读消息列表
       state = state.copyWith(
-        deviceMessages: updatedMessages,
-        unreadDeviceCount: 0,
+        deviceMessages: [],
       );
     } catch (e) {
       state = state.copyWith(error: ErrorHandler.extractErrorMessage(e));
@@ -188,9 +158,9 @@ final messageProvider = StateNotifierProvider<MessageNotifier, MessageState>((re
   return MessageNotifier(MessageRepository());
 });
 
-/// 未读消息数量 Provider
+/// 未读设备消息数量 Provider
 final unreadCountProvider = Provider<int>((ref) {
   final state = ref.watch(messageProvider);
-  return state.totalUnread;
+  return state.unreadDeviceCount;
 });
 

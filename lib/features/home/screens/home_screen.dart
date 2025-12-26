@@ -4,8 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../../providers/device_provider.dart';
+import '../../../providers/message_provider.dart';
 import '../widgets/device_card_factory.dart';
 import '../../../core/utils/error_handler.dart';
+import '../../../core/utils/date_utils.dart';
 
 /// 首页（设备列表）
 class HomeScreen extends ConsumerWidget {
@@ -14,6 +16,8 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final deviceState = ref.watch(deviceListProvider);
+    final messageState = ref.watch(messageProvider);
+    final unreadCount = messageState.unreadDeviceCount;
 
     return Scaffold(
       appBar: AppBar(
@@ -21,12 +25,13 @@ class HomeScreen extends ConsumerWidget {
         actions: [
           // 通知图标
           IconButton(
-            icon: const Badge(
-              label: Text('2'),
-              child: Icon(Icons.notifications_outlined),
+            icon: Badge(
+              label: Text('$unreadCount'),
+              isLabelVisible: unreadCount > 0,
+              child: const Icon(Icons.notifications_outlined),
             ),
             onPressed: () {
-              // TODO: 打开通知页面
+              _showMessageMenu(context, ref);
             },
           ),
           // 添加设备按钮（弹出菜单）
@@ -241,6 +246,814 @@ class HomeScreen extends ConsumerWidget {
             child: const Text('绑定'),
           ),
         ],
+      ),
+    );
+  }
+
+  /// 显示消息菜单
+  static void _showMessageMenu(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black26,
+      builder: (context) => Dialog(
+        alignment: Alignment.topRight,
+        insetPadding: const EdgeInsets.only(top: 48, right: 8,left: 48),
+        child: const MessageMenuWidget(),
+      ),
+    );
+  }
+}
+
+/// 消息菜单组件
+class MessageMenuWidget extends StatefulWidget {
+  const MessageMenuWidget({super.key});
+
+  @override
+  State<MessageMenuWidget> createState() => _MessageMenuWidgetState();
+}
+
+class _MessageMenuWidgetState extends State<MessageMenuWidget> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 320,
+      height: 500,
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        children: [
+          // Tab栏
+          Consumer(
+            builder: (context, ref, child) {
+              final messageState = ref.watch(messageProvider);
+              // 设备消息显示未读数量（deviceMessages已经是未读消息）
+              final unreadDeviceCount = messageState.deviceMessages.length;
+              
+              return TabBar(
+                controller: _tabController,
+                dividerColor: Theme.of(context).dividerColor.withValues(alpha: 0.2),
+                tabs: [
+                  Tab(text: '设备消息 ($unreadDeviceCount)'),
+                  const Tab(text: '系统消息'),
+                ],
+              );
+            },
+          ),
+          // Tab内容
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: const [
+                _DeviceMessagesTab(),
+                _SystemMessagesTab(),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 设备消息Tab
+class _DeviceMessagesTab extends ConsumerWidget {
+  const _DeviceMessagesTab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final messageState = ref.watch(messageProvider);
+    final deviceMessages = messageState.deviceMessages;
+
+    if (messageState.isLoading && deviceMessages.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return Column(
+      children: [
+        // 消息列表或空状态
+        Expanded(
+          child: deviceMessages.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.notifications_none,
+                        size: 64,
+                        color: Theme.of(context).disabledColor,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        '暂无未读消息',
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              color: Theme.of(context).disabledColor,
+                            ),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  padding: EdgeInsets.zero,
+                  itemCount: deviceMessages.length,
+                  itemBuilder: (context, index) {
+                    final message = deviceMessages[index];
+                    return _buildDeviceMessageItem(context, ref, message, Key('message_${message.id}'));
+                  },
+                ),
+        ),
+        // 底部操作按钮栏
+        Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(12),
+              bottomRight: Radius.circular(12),
+            ),
+            border: Border(
+              top: BorderSide(
+                color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
+                width: 1,
+              ),
+            ),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Row(
+            children: [
+              Expanded(
+                child: Opacity(
+                  opacity: deviceMessages.isEmpty ? 0.5 : 1.0,
+                  child: InkWell(
+                    onTap: deviceMessages.isEmpty ? null : () async {
+                      await ref.read(messageProvider.notifier).markAllDeviceMessagesAsRead();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('已全部标记为已读'),
+                            backgroundColor: Colors.green,
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.check_circle_outline,
+                            size: 20,
+                            color: Theme.of(context).textTheme.bodyMedium?.color,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '一键已读',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              ),
+              Container(
+                width: 1,
+                height: 24,
+                color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
+              ),
+              Expanded(
+                child: InkWell(
+                  onTap: () {
+                    _showMessageLogDialog(context, ref);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.description_outlined,
+                          size: 20,
+                          color: Theme.of(context).textTheme.bodyMedium?.color,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '消息日志',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDeviceMessageItem(
+    BuildContext context,
+    WidgetRef ref,
+    message,
+    Key key,
+  ) {
+    return _AnimatedDeviceMessageItem(
+      key: key,
+      message: message,
+      onMarkAsRead: () {
+        ref.read(messageProvider.notifier).markDeviceMessageAsRead(message.id);
+      },
+    );
+  }
+
+  /// 显示消息日志弹窗（已读消息）
+  static void _showMessageLogDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black26,
+      builder: (context) => Dialog(
+        insetPadding: EdgeInsets.zero,
+        alignment: Alignment.center,
+        child: _MessageLogDialog(ref: ref),
+      ),
+    );
+  }
+}
+
+/// 带动画的设备消息项
+class _AnimatedDeviceMessageItem extends StatefulWidget {
+  final dynamic message;
+  final VoidCallback onMarkAsRead;
+
+  const _AnimatedDeviceMessageItem({
+    super.key,
+    required this.message,
+    required this.onMarkAsRead,
+  });
+
+  @override
+  State<_AnimatedDeviceMessageItem> createState() => _AnimatedDeviceMessageItemState();
+}
+
+class _AnimatedDeviceMessageItemState extends State<_AnimatedDeviceMessageItem> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _sizeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.0,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOut,
+    ));
+
+    _slideAnimation = Tween<Offset>(
+      begin: Offset.zero,
+      end: const Offset(1.0, 0.0),
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOut,
+    ));
+
+    _sizeAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.0,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOut,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Color _getLevelColor() {
+    switch (widget.message.level) {
+      case 'fatal':
+      case 'error':
+        return Colors.red;
+      case 'normal':
+        return Colors.orange;
+      case 'low':
+      default:
+        return Colors.green;
+    }
+  }
+
+  String _getLevelText() {
+    switch (widget.message.level) {
+      case 'fatal':
+        return '致命';
+      case 'error':
+        return '错误';
+      case 'normal':
+        return '警告';
+      case 'low':
+      default:
+        return '低';
+    }
+  }
+
+  void _handleTap() async {
+    if (widget.message.status == 'new') {
+      // 开始播放动画
+      await _controller.forward();
+      // 动画完成后调用回调
+      if (mounted) {
+        widget.onMarkAsRead();
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizeTransition(
+      sizeFactor: _sizeAnimation,
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SlideTransition(
+          position: _slideAnimation,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              border: Border(
+                bottom: BorderSide(
+                  color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
+                  width: 0.5,
+                ),
+              ),
+            ),
+            child: InkWell(
+              onTap: _handleTap,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // 中间内容
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.message.message,
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w500,
+                                ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.devices,
+                                size: 14,
+                                color: Theme.of(context).hintColor,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '设备${widget.message.deviceId}',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context).hintColor,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // 右侧状态和时间
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          _getLevelText(),
+                          style: TextStyle(
+                            color: _getLevelColor(),
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          AppDateUtils.formatDateTime(widget.message.createdAt, format: 'yyyy-MM-dd HH:mm:ss'),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context).hintColor,
+                                fontSize: 11,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 消息日志弹窗（显示已读消息）
+class _MessageLogDialog extends StatefulWidget {
+  final WidgetRef ref;
+  
+  const _MessageLogDialog({required this.ref});
+
+  @override
+  State<_MessageLogDialog> createState() => _MessageLogDialogState();
+}
+
+class _MessageLogDialogState extends State<_MessageLogDialog> {
+  List<dynamic> _readMessages = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadReadMessages();
+  }
+
+  Future<void> _loadReadMessages() async {
+    setState(() => _isLoading = true);
+    final messages = await widget.ref.read(messageProvider.notifier).loadReadDeviceMessages();
+    setState(() {
+      _readMessages = messages;
+      _isLoading = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 320,
+      height: 500,
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+          width: 1,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          // 标题栏
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
+                  width: 1,
+                ),
+              ),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.history, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  '消息日志 (${_readMessages.length})',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.close, size: 20),
+                  onPressed: () => Navigator.pop(context),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
+            ),
+          ),
+          // 消息列表
+          Expanded(
+            child: ClipRRect(
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(12),
+                bottomRight: Radius.circular(12),
+              ),
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _readMessages.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.inbox_outlined,
+                                size: 64,
+                                color: Theme.of(context).disabledColor,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                '暂无已读消息',
+                                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                      color: Theme.of(context).disabledColor,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          itemCount: _readMessages.length,
+                          itemBuilder: (context, index) {
+                            final message = _readMessages[index];
+                            return _buildReadMessageItem(context, message);
+                          },
+                        ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReadMessageItem(BuildContext context, message) {
+    Color getLevelColor() {
+      switch (message.level) {
+        case 'fatal':
+        case 'error':
+          return Colors.red;
+        case 'normal':
+          return Colors.orange;
+        case 'low':
+        default:
+          return Colors.green;
+      }
+    }
+
+    String getLevelText() {
+      switch (message.level) {
+        case 'fatal':
+          return '致命';
+        case 'error':
+          return '错误';
+        case 'normal':
+          return '警告';
+        case 'low':
+        default:
+          return '低';
+      }
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        border: Border(
+          bottom: BorderSide(
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
+            width: 0.5,
+          ),
+        ),
+      ),
+      child: InkWell(
+        onTap: () {
+          // 可以在这里添加查看详情的功能
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // 中间内容
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      message.message,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w500,
+                            color: Theme.of(context).textTheme.bodyMedium?.color,
+                          ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.devices,
+                          size: 14,
+                          color: Theme.of(context).hintColor,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '设备${message.deviceId}',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context).hintColor,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              // 右侧状态和时间
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    getLevelText(),
+                    style: TextStyle(
+                      color: getLevelColor(),
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    AppDateUtils.formatDateTime(message.createdAt, format: 'yyyy-MM-dd HH:mm:ss'),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).hintColor,
+                          fontSize: 11,
+                        ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 系统消息Tab
+class _SystemMessagesTab extends ConsumerWidget {
+  const _SystemMessagesTab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final messageState = ref.watch(messageProvider);
+    final systemMessages = messageState.systemMessages;
+
+    if (messageState.isLoading && systemMessages.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (systemMessages.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.campaign_outlined,
+              size: 64,
+              color: Theme.of(context).disabledColor,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '暂无系统消息',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Theme.of(context).disabledColor,
+                  ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: const BorderRadius.only(
+        bottomLeft: Radius.circular(12),
+        bottomRight: Radius.circular(12),
+      ),
+      child: ListView.builder(
+        padding: const EdgeInsets.only(bottom: 8,top: 8),
+        itemCount: systemMessages.length,
+        itemBuilder: (context, index) {
+          final message = systemMessages[index];
+          return _buildSystemMessageItem(context, message);
+        },
+      ),
+    );
+  }
+
+  Widget _buildSystemMessageItem(BuildContext context, message) {
+    Color getPriorityColor() {
+      switch (message.priority) {
+        case 'urgent':
+          return Colors.red;
+        case 'high':
+          return Colors.orange;
+        case 'normal':
+          return Colors.blue;
+        case 'low':
+        default:
+          return Colors.grey;
+      }
+    }
+
+    IconData getTypeIcon() {
+      switch (message.type) {
+        case 'announcement':
+          return Icons.campaign;
+        case 'maintenance':
+          return Icons.build;
+        case 'update':
+          return Icons.system_update;
+        case 'alert':
+          return Icons.warning;
+        case 'notification':
+        default:
+          return Icons.notifications;
+      }
+    }
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: InkWell(
+        onTap: () {
+          // TODO: 显示消息详情
+        },
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    getTypeIcon(),
+                    size: 16,
+                    color: getPriorityColor(),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      message.title,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Text(
+                    AppDateUtils.formatDateTime(message.createdAt, format: 'yyyy-MM-dd HH:mm:ss'),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).hintColor,
+                        ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                message.content,
+                style: Theme.of(context).textTheme.bodyMedium,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

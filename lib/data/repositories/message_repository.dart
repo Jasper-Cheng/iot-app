@@ -42,13 +42,19 @@ class MessageRepository {
     int page = 1,
     int pageSize = 20,
   }) async {
+    final queryParameters = <String, dynamic>{
+      'page': page,
+      'page_size': pageSize,
+    };
+    
+    // 只在type不为null时才添加type参数
+    if (type != null) {
+      queryParameters['type'] = type;
+    }
+    
     final response = await _dio.get(
       ApiConstants.systemMessages,
-      queryParameters: {
-        'type': type,
-        'page': page,
-        'page_size': pageSize,
-      },
+      queryParameters: queryParameters,
     );
     final List<dynamic> data = response.data;
     return data.map((e) => SystemMessage.fromJson(e)).toList();

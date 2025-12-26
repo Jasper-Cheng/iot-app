@@ -21,6 +21,7 @@ class _PointsHistoryScreenState extends ConsumerState<PointsHistoryScreen> {
   int _page = 1;
   final int _pageSize = 20;
   bool _hasMore = true;
+  int? _currentBalance;
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -56,10 +57,12 @@ class _PointsHistoryScreenState extends ConsumerState<PointsHistoryScreen> {
         page: 1,
         pageSize: _pageSize,
       );
+      final balance = await _repository.getPointsBalance();
       setState(() {
         _history = history;
         _page = 1;
         _hasMore = history.length >= _pageSize;
+        _currentBalance = balance;
         _isLoading = false;
       });
     } catch (e) {
@@ -171,6 +174,20 @@ class _PointsHistoryScreenState extends ConsumerState<PointsHistoryScreen> {
       appBar: AppBar(
         toolbarHeight: 48,
         title: const Text('积分记录'),
+        actions: [
+          if (_currentBalance != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Center(
+                child: Text(
+                  '当前积分: $_currentBalance',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                ),
+              ),
+            ),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: _loadHistory,
@@ -238,56 +255,63 @@ class _PointsHistoryScreenState extends ConsumerState<PointsHistoryScreen> {
                           final item = _history[index];
                           return Card(
                             margin: const EdgeInsets.only(bottom: 12),
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              leading: Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: _getTypeColor(item.type).withValues(alpha: 0.1),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  _getTypeIcon(item.type),
-                                  color: _getTypeColor(item.type),
-                                  size: 20,
-                                ),
-                              ),
-                              title: Row(
-                                children: [
-                                  Text(
-                                    _getTypeText(item.type),
-                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    _isPositive(item.type) ? '+${item.points}' : '${item.points}',
-                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                          color: _getTypeColor(item.type),
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                  ),
-                                ],
-                              ),
-                              subtitle: Column(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    item.description,
-                                    style: Theme.of(context).textTheme.bodySmall,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    AppDateUtils.formatDateTime(item.createdAt),
-                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                          color: Theme.of(context).disabledColor,
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          item.description,
+                                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                                fontWeight: FontWeight.w500,
+                                              ),
                                         ),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: _isPositive(item.type)
+                                              ? Colors.teal
+                                              : Colors.orange,
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          _isPositive(item.type) ? '+${item.points}' : '${item.points}',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      if (item.balance != null)
+                                        Text(
+                                          '余额: ${item.balance}',
+                                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                color: Theme.of(context).disabledColor,
+                                              ),
+                                        ),
+                                      if (item.balance == null) const SizedBox.shrink(),
+                                      Text(
+                                        AppDateUtils.formatDateTime(item.createdAt, format: 'yyyy/MM/dd HH:mm:ss'),
+                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                              color: Theme.of(context).disabledColor,
+                                            ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),

@@ -263,7 +263,7 @@ class _FeedbackListScreenState extends ConsumerState<FeedbackListScreen> {
                               ),
                               children: [
                                 Padding(
-                                  padding: const EdgeInsets.all(16),
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
@@ -274,12 +274,13 @@ class _FeedbackListScreenState extends ConsumerState<FeedbackListScreen> {
                                                 fontWeight: FontWeight.bold,
                                               ),
                                         ),
-                                        const SizedBox(height: 8),
+                                        const SizedBox(height: 4),
                                         Text(
                                           item.content,
                                           style: Theme.of(context).textTheme.bodyMedium,
+                                          textAlign: TextAlign.left,
                                         ),
-                                        const SizedBox(height: 16),
+                                        const SizedBox(height: 12),
                                       ],
                                       if (item.contactInfo != null && item.contactInfo!.isNotEmpty) ...[
                                         Text(
@@ -288,12 +289,13 @@ class _FeedbackListScreenState extends ConsumerState<FeedbackListScreen> {
                                                 fontWeight: FontWeight.bold,
                                               ),
                                         ),
-                                        const SizedBox(height: 8),
+                                        const SizedBox(height: 4),
                                         Text(
                                           item.contactInfo!,
                                           style: Theme.of(context).textTheme.bodyMedium,
+                                          textAlign: TextAlign.left,
                                         ),
-                                        const SizedBox(height: 16),
+                                        const SizedBox(height: 12),
                                       ],
                                       if (item.replay != null && item.replay!.isNotEmpty) ...[
                                         Text(

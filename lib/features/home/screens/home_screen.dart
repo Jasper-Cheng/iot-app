@@ -8,7 +8,6 @@ import '../../../providers/message_provider.dart';
 import '../widgets/device_card_factory.dart';
 import '../../../core/utils/error_handler.dart';
 import '../../../core/utils/date_utils.dart';
-import '../../../core/utils/device_mapping.dart';
 
 /// 首页（设备列表）
 class HomeScreen extends ConsumerWidget {
@@ -187,7 +186,6 @@ class HomeScreen extends ConsumerWidget {
                                 ),
                                 child: const Icon(
                                   Icons.power_settings_new,
-                                  color: Colors.white,
                                   size: 28,
                                 ),
                               ),
@@ -196,7 +194,6 @@ class HomeScreen extends ConsumerWidget {
                               Text(
                                 '离家断电',
                                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                      color: Colors.white,
                                       fontWeight: FontWeight.bold,
                                       fontSize: 14,
                                     ),
@@ -206,7 +203,6 @@ class HomeScreen extends ConsumerWidget {
                               Text(
                                 '关闭所有设备',
                                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Colors.white.withValues(alpha: 0.5),
                                       fontSize: 10,
                                     ),
                                 textAlign: TextAlign.center,
@@ -244,7 +240,6 @@ class HomeScreen extends ConsumerWidget {
                                 ),
                                 child: const Icon(
                                   Icons.power,
-                                  color: Colors.white,
                                   size: 28,
                                 ),
                               ),
@@ -253,7 +248,6 @@ class HomeScreen extends ConsumerWidget {
                               Text(
                                 '回家通电',
                                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                      color: Colors.white,
                                       fontWeight: FontWeight.bold,
                                       fontSize: 14,
                                     ),
@@ -263,7 +257,6 @@ class HomeScreen extends ConsumerWidget {
                               Text(
                                 '开启常用设备',
                                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Colors.white.withValues(alpha: 0.5),
                                       fontSize: 10,
                                     ),
                                 textAlign: TextAlign.center,
@@ -283,7 +276,6 @@ class HomeScreen extends ConsumerWidget {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 8),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).cardColor,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
@@ -301,7 +293,6 @@ class HomeScreen extends ConsumerWidget {
                                 ),
                                 child: const Icon(
                                   Icons.flash_on,
-                                  color: Colors.white,
                                   size: 28,
                                 ),
                               ),
@@ -310,7 +301,6 @@ class HomeScreen extends ConsumerWidget {
                               Text(
                                 '全部打开',
                                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                      color: Colors.white,
                                       fontWeight: FontWeight.bold,
                                       fontSize: 14,
                                     ),
@@ -320,7 +310,6 @@ class HomeScreen extends ConsumerWidget {
                               Text(
                                 '开启所有设备',
                                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Colors.white.withValues(alpha: 0.5),
                                       fontSize: 10,
                                     ),
                                 textAlign: TextAlign.center,
@@ -394,77 +383,15 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  /// 根据型号代码获取设备缩略图路径
-  String _getDeviceThumbnailPath(String modelCode) {
-    // 型号代码到图片文件名的映射
-    final Map<String, String> modelToImage = {
-      'AC001': 'air_cooler',
-      'AC002': 'air_cooler',
-      'AC003': 'air_cooler',
-      'CAM001': 'camera',
-      'CAM002': 'camera',
-      'CAM003': 'camera',
-      'LIGHT001': 'smart_light',
-      'LIGHT002': 'smart_light',
-      'LIGHT003': 'smart_light',
-      'TV001': 'smart_tv',
-      'TV002': 'smart_tv',
-      'TV003': 'smart_tv',
-      'FALL001': 'fall_detection',
-      'FALL002': 'fall_detection',
-      'FALL003': 'fall_detection',
-      'WIFI001': 'smart_socket',
-      'WIFI002': 'smart_socket',
-      'WIFI003': 'smart_socket',
-      'ROBOT001': 'smart_vacuum',
-      'ROBOT002': 'smart_vacuum',
-      'ROBOT003': 'smart_vacuum',
-      'WASH001': 'washing_machine',
-      'WASH002': 'washing_machine',
-      'WASH003': 'washing_machine',
-      'FRIDGE001': 'refrigerator',
-      'FRIDGE002': 'refrigerator',
-      'FRIDGE003': 'refrigerator',
-      'SPEAKER001': 'smart_speaker',
-      'SPEAKER002': 'smart_speaker',
-      'SPEAKER003': 'smart_speaker',
-      'AIR001': 'air_purifier',
-      'AIR002': 'air_purifier',
-      'AIR003': 'air_purifier',
-      'M701001': 'smart_socket', // 环境监测器使用智能插座图标作为默认
-    };
-    
-    final imageName = modelToImage[modelCode] ?? 'smart_socket';
-    return 'assets/devices/$imageName.png';
-  }
-
   /// 构建侧边栏设备项
   Widget _buildDrawerDeviceItem(BuildContext context, WidgetRef ref, device) {
     final isOnline = device.isOnline;
-    final modelCode = DeviceMapping.getModelCodeBySN(device.sn);
-    final thumbnailPath = _getDeviceThumbnailPath(modelCode);
     
     return Card(
       margin: EdgeInsets.symmetric(vertical: 4),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 12),
         dense: true,
-        leading: SizedBox(
-          width: 40,
-          height: 40,
-          child: Image.asset(
-            thumbnailPath,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) {
-              // 如果图片加载失败，显示默认图标
-              return Icon(
-                Icons.devices,
-                size: 24,
-                color: Theme.of(context).disabledColor,
-              );
-            },
-          ),
-        ),
         title: Text(
           device.name,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(

@@ -20,6 +20,7 @@ class HomeScreen extends ConsumerWidget {
     final unreadCount = messageState.unreadDeviceCount;
 
     return Scaffold(
+      drawer: _buildDrawer(context, ref),
       appBar: AppBar(
         title: const Text('我的设备'),
         actions: [
@@ -129,6 +130,391 @@ class HomeScreen extends ConsumerWidget {
             style: Theme.of(context).textTheme.bodyMedium,
           ),
         ],
+      ),
+    );
+  }
+
+  /// 构建侧边栏
+  Widget _buildDrawer(BuildContext context, WidgetRef ref) {
+    final deviceState = ref.watch(deviceListProvider);
+    
+    return Drawer(
+      width: 280,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        child: Column(
+          children: [
+            // 快捷操作区域
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '快捷操作',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: () {
+                          _handleQuickAction(context, ref, 'leave');
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 2,vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).cardColor,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // 图标容器
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.5),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(
+                                  Icons.power_settings_new,
+                                  color: Colors.white,
+                                  size: 28,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              // 主标题
+                              Text(
+                                '离家断电',
+                                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                textAlign: TextAlign.center,
+                              ),
+                              // 副标题
+                              Text(
+                                '关闭所有设备',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Colors.white.withValues(alpha: 0.5),
+                                      fontSize: 10,
+                                    ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: InkWell(
+                        onTap: () {
+                          _handleQuickAction(context, ref, 'home');
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).cardColor,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // 图标容器
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.5),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(
+                                  Icons.power,
+                                  color: Colors.white,
+                                  size: 28,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              // 主标题
+                              Text(
+                                '回家通电',
+                                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                textAlign: TextAlign.center,
+                              ),
+                              // 副标题
+                              Text(
+                                '开启常用设备',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Colors.white.withValues(alpha: 0.5),
+                                      fontSize: 10,
+                                    ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: InkWell(
+                        onTap: () {
+                          _handleQuickAction(context, ref, 'all_on');
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).cardColor,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // 图标容器
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.5),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(
+                                  Icons.flash_on,
+                                  color: Colors.white,
+                                  size: 28,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              // 主标题
+                              Text(
+                                '全部打开',
+                                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                textAlign: TextAlign.center,
+                              ),
+                              // 副标题
+                              Text(
+                                '开启所有设备',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Colors.white.withValues(alpha: 0.5),
+                                      fontSize: 10,
+                                    ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          // 设备列表标题
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Row(
+              children: [
+                Text(
+                  '设备列表',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                const Spacer(),
+                Text(
+                  '${deviceState.devices.length} 个设备',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).hintColor,
+                      ),
+                ),
+              ],
+            ),
+          ),
+          // 设备列表
+          Expanded(
+            child: deviceState.devices.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.devices_outlined,
+                          size: 48,
+                          color: Theme.of(context).disabledColor,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '暂无设备',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: Theme.of(context).disabledColor,
+                              ),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    padding: EdgeInsets.zero,
+                    itemCount: deviceState.devices.length,
+                    itemBuilder: (context, index) {
+                      final device = deviceState.devices[index];
+                      return _buildDrawerDeviceItem(context, ref, device);
+                    },
+                  ),
+          ),
+        ],
+        ),
+      ),
+    );
+  }
+
+  /// 构建侧边栏设备项
+  Widget _buildDrawerDeviceItem(BuildContext context, WidgetRef ref, device) {
+    final isOnline = device.isOnline;
+    
+    return Card(
+      margin: EdgeInsets.symmetric(vertical: 4),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+        dense: true,
+        title: Text(
+          device.name,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w500,
+                fontSize: 13,
+              ),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 4),
+            Text(
+              'SN: ${device.sn}',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontSize: 10,
+                  ),
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: isOnline ? Colors.green : Colors.grey,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  isOnline ? '在线' : '离线',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontSize: 10,
+                        color: isOnline ? Colors.green : Colors.grey,
+                      ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        trailing: TextButton(
+          onPressed: () {
+            _handleDeviceConfigure(context, ref, device);
+          },
+          child: const Text(
+            '配网',
+            style: TextStyle(fontSize: 12),
+          ),
+          style: TextButton.styleFrom(
+            padding: EdgeInsets.zero,
+            minimumSize: Size.zero,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 处理快捷操作
+  void _handleQuickAction(BuildContext context, WidgetRef ref, String action) {
+    Navigator.pop(context); // 关闭侧边栏
+    
+    final deviceState = ref.read(deviceListProvider);
+    final devices = deviceState.devices;
+    
+    if (devices.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('暂无设备')),
+      );
+      return;
+    }
+
+    String message = '';
+    switch (action) {
+      case 'leave':
+        message = '已执行离家断电操作';
+        break;
+      case 'home':
+        message = '已执行回家通电操作';
+        break;
+      case 'all_on':
+        message = '已执行全部打开操作';
+        break;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
+  /// 处理设备开关
+  void _handleDeviceToggle(BuildContext context, WidgetRef ref, device, bool value) {
+    // TODO: 实现设备开关控制
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${device.name} ${value ? "已打开" : "已关闭"}'),
+        duration: const Duration(seconds: 1),
+      ),
+    );
+  }
+
+  /// 处理设备配网
+  void _handleDeviceConfigure(BuildContext context, WidgetRef ref, device) {
+    Navigator.pop(context); // 关闭侧边栏
+    
+    // TODO: 实现设备配网功能
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${device.name} 配网功能开发中'),
+        duration: const Duration(seconds: 2),
       ),
     );
   }

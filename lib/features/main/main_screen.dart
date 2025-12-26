@@ -46,9 +46,9 @@ class _MainScreenState extends State<MainScreen> {
             label: '家庭',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.settings_outlined),
-            activeIcon: Icon(Icons.settings),
-            label: '设置',
+            icon: Icon(Icons.person_outline),
+            activeIcon: Icon(Icons.person),
+            label: '我的',
           ),
         ],
       ),

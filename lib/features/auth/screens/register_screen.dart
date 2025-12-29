@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../providers/auth_provider.dart';
-import '../../../providers/device_provider.dart';
-import '../../../providers/message_provider.dart';
 import '../../../app/routes/router.dart';
 
 /// 注册页面
@@ -198,21 +196,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     // 监听注册成功，自动跳转到首页
     ref.listen<AuthState>(authProvider, (previous, next) {
       if (next.isAuthenticated && !next.isLoading && previous?.isAuthenticated != true) {
-        // 注册成功，加载设备相关信息
-        Future.wait([
-          ref.read(deviceListProvider.notifier).loadDevices(),
-          ref.read(messageProvider.notifier).loadMessages(),
-        ]).then((_) {
-          // 数据加载完成后跳转到首页
-          if (context.mounted) {
-            context.go(AppRouter.main);
-          }
-        }).catchError((error) {
-          // 即使数据加载失败，也跳转到首页
-          if (context.mounted) {
-            context.go(AppRouter.main);
-          }
-        });
+        // 注册成功，直接跳转到首页
+        if (context.mounted) {
+          context.go(AppRouter.main);
+        }
       }
     });
 

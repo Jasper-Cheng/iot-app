@@ -85,6 +85,13 @@ class MqttNotifier extends StateNotifier<MqttState> {
       );
 
       if (success) {
+        // 输出连接成功信息
+        print('[MQTT] 连接成功');
+        print('[MQTT]   Broker: ${ApiConstants.mqttBroker}:${ApiConstants.mqttPort}');
+        print('[MQTT]   ClientId: $clientId');
+        print('[MQTT]   UserId: $userId');
+        print('[MQTT]   认证: ${username != null && password != null ? "是" : "否"}');
+        
         // 自动订阅系统通知主题
         subscribe(ApiConstants.mqttSystemNotice);
       } else {
@@ -102,6 +109,9 @@ class MqttNotifier extends StateNotifier<MqttState> {
       state = state.copyWith(
         subscribedTopics: [...state.subscribedTopics, topic],
       );
+      print('[MQTT] 订阅主题: $topic');
+    } else {
+      print('[MQTT] 主题已订阅，跳过: $topic');
     }
   }
 
@@ -137,14 +147,7 @@ class MqttNotifier extends StateNotifier<MqttState> {
 
   /// 处理接收到的消息
   void _handleMessage(IoTMessage message) {
-    // 保留最近100条消息
-    final messages = [...state.recentMessages, message];
-    if (messages.length > 100) {
-      messages.removeAt(0);
-    }
-
-    state = state.copyWith(recentMessages: messages);
-
+    // 先处理消息，再更新状态（避免不必要的状态更新）
     // 可以在这里根据不同的topic做不同的处理
     if (message.topic.contains('/data')) {
       // 处理设备数据
@@ -156,6 +159,14 @@ class MqttNotifier extends StateNotifier<MqttState> {
       // 处理通知
       _handleNotice(message);
     }
+    
+    // 只在需要时才更新 recentMessages（避免每次消息都触发状态更新）
+    // 如果不需要保留消息历史，可以注释掉这部分
+    // final messages = [...state.recentMessages, message];
+    // if (messages.length > 100) {
+    //   messages.removeAt(0);
+    // }
+    // state = state.copyWith(recentMessages: messages);
   }
 
   /// 处理设备数据
@@ -190,8 +201,6 @@ class MqttNotifier extends StateNotifier<MqttState> {
         // 处理系统消息
         if (onSystemMessage != null) {
           onSystemMessage!(data);
-        } else {
-          print('MQTT: 收到系统消息: $data');
         }
       } else if (message.topic.startsWith('home/') && message.topic.endsWith('/notice')) {
         // 处理家庭消息
@@ -199,21 +208,13 @@ class MqttNotifier extends StateNotifier<MqttState> {
         final parts = message.topic.split('/');
         if (parts.length >= 2) {
           final homeId = int.tryParse(parts[1]);
-          if (homeId != null) {
-            if (onFamilyMessage != null) {
-              onFamilyMessage!(homeId, data);
-            } else {
-              print('MQTT: 收到家庭消息 (家庭ID: $homeId): $data');
-            }
-          } else {
-            print('MQTT: 无法解析家庭ID - ${message.topic}');
+          if (homeId != null && onFamilyMessage != null) {
+            onFamilyMessage!(homeId, data);
           }
         }
-      } else {
-        print('MQTT: 未知的通知类型 - ${message.topic}');
       }
     } catch (e) {
-      print('MQTT: 解析通知失败: $e');
+      print('[MQTT] 解析通知失败: $e');
     }
   }
 

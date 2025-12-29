@@ -72,7 +72,7 @@ class ApiConstants {
   static const String versionInfo = '/version-info/';
 
   // MQTT 配置
-  static const String mqttBroker = 'broker.emqx.io';
+  static const String mqttBroker = '192.168.12.119';
   static const int mqttPort = 1883;
   static const String mqttClientPrefix = 'flutter_iot_';
   

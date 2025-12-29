@@ -39,9 +39,23 @@ class MqttState {
 /// MQTT 状态管理
 class MqttNotifier extends StateNotifier<MqttState> {
   final MqttService _service = MqttService();
+  
+  // Handler 回调函数
+  void Function(Map<String, dynamic> data)? onSystemMessage;
+  void Function(int homeId, Map<String, dynamic> data)? onFamilyMessage;
 
   MqttNotifier() : super(const MqttState()) {
     _init();
+  }
+  
+  /// 设置系统消息处理器
+  void setSystemMessageHandler(void Function(Map<String, dynamic> data) handler) {
+    onSystemMessage = handler;
+  }
+  
+  /// 设置家庭消息处理器
+  void setFamilyMessageHandler(void Function(int homeId, Map<String, dynamic> data) handler) {
+    onFamilyMessage = handler;
   }
 
   void _init() {
@@ -174,7 +188,11 @@ class MqttNotifier extends StateNotifier<MqttState> {
       // 根据 topic 区分系统消息和家庭消息
       if (message.topic == ApiConstants.mqttSystemNotice) {
         // 处理系统消息
-        _handleSystemMessage(data);
+        if (onSystemMessage != null) {
+          onSystemMessage!(data);
+        } else {
+          print('MQTT: 收到系统消息: $data');
+        }
       } else if (message.topic.startsWith('home/') && message.topic.endsWith('/notice')) {
         // 处理家庭消息
         // 从 topic 中提取家庭ID: home/{homeId}/notice
@@ -182,7 +200,11 @@ class MqttNotifier extends StateNotifier<MqttState> {
         if (parts.length >= 2) {
           final homeId = int.tryParse(parts[1]);
           if (homeId != null) {
-            _handleHomeMessage(homeId, data);
+            if (onFamilyMessage != null) {
+              onFamilyMessage!(homeId, data);
+            } else {
+              print('MQTT: 收到家庭消息 (家庭ID: $homeId): $data');
+            }
           } else {
             print('MQTT: 无法解析家庭ID - ${message.topic}');
           }
@@ -193,22 +215,6 @@ class MqttNotifier extends StateNotifier<MqttState> {
     } catch (e) {
       print('MQTT: 解析通知失败: $e');
     }
-  }
-
-  /// 处理系统消息
-  void _handleSystemMessage(Map<String, dynamic> data) {
-    print('MQTT: 收到系统消息: $data');
-    // TODO: 处理系统消息
-    // 例如：更新系统消息列表、显示通知等
-    // 可以在这里调用 messageProvider 来更新系统消息
-  }
-
-  /// 处理家庭消息
-  void _handleHomeMessage(int homeId, Map<String, dynamic> data) {
-    print('MQTT: 收到家庭消息 (家庭ID: $homeId): $data');
-    // TODO: 处理家庭消息
-    // 例如：更新家庭相关数据、显示家庭通知等
-    // 可以在这里根据家庭ID处理不同的家庭消息
   }
 
   /// 断开连接

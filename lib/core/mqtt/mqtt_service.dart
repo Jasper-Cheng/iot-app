@@ -1,6 +1,7 @@
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import 'dart:async';
+import 'dart:convert';
 import '../constants/api_constants.dart';
 
 /// MQTT服务
@@ -60,8 +61,8 @@ class MqttService {
           for (final message in messages) {
             final recMess = message.payload as MqttPublishMessage;
             final topic = message.topic;
-            final payload =
-                MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
+            // 使用 UTF-8 解码确保中文正确显示
+            final payload = utf8.decode(recMess.payload.message);
             
             _messageController.add(IoTMessage(
               topic: topic,

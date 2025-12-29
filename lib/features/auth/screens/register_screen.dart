@@ -26,6 +26,25 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   bool _obscureConfirmPassword = true;
   String _selectedGender = 'other'; // 默认值为"其他"
   String? _selectedAvatar; // 选中的头像路径
+  final ScrollController _avatarScrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    // 初始化时，如果有默认选中的头像，滚动到中间
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_selectedAvatar != null) {
+        final avatars = List.generate(
+          20,
+          (index) => 'assets/avatars/avatar${index + 1}.png',
+        );
+        final index = avatars.indexOf(_selectedAvatar!);
+        if (index >= 0) {
+          _scrollToSelectedAvatar(index);
+        }
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -34,6 +53,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _emailController.dispose();
+    _avatarScrollController.dispose();
     super.dispose();
   }
 
@@ -60,6 +80,34 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     }
   }
 
+  /// 滚动到选中的头像（中间位置）
+  void _scrollToSelectedAvatar(int index) {
+    if (!_avatarScrollController.hasClients) {
+      // 如果 ScrollController 还没有附加，等待下一帧
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToSelectedAvatar(index);
+      });
+      return;
+    }
+
+    // 每个头像宽度为 60 + 8 (margin) = 68
+    const double itemWidth = 68.0;
+    // 获取 ListView 的宽度
+    final double viewportWidth = _avatarScrollController.position.viewportDimension;
+    // 计算目标位置：让选中的头像在中间
+    final double targetPosition = (index * itemWidth) - (viewportWidth / 2) + (itemWidth / 2);
+    
+    // 确保滚动位置在有效范围内
+    final double maxScroll = _avatarScrollController.position.maxScrollExtent;
+    final double clampedPosition = targetPosition.clamp(0.0, maxScroll);
+
+    _avatarScrollController.animateTo(
+      clampedPosition,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
   /// 构建头像选择器
   Widget _buildAvatarSelector() {
     final theme = Theme.of(context);
@@ -81,6 +129,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         SizedBox(
           height: 60,
           child: ListView.builder(
+            controller: _avatarScrollController,
             scrollDirection: Axis.horizontal,
             itemCount: avatars.length,
             itemBuilder: (context, index) {
@@ -92,6 +141,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   setState(() {
                     _selectedAvatar = avatarPath;
                   });
+                  // 滚动到选中的头像
+                  _scrollToSelectedAvatar(index);
                 },
                 child: Container(
                   width: 60,
@@ -166,6 +217,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     });
 
     return Scaffold(
+      appBar: AppBar(
+        toolbarHeight: 48,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.pop(),
+        ),
+        title: const Text('注册'),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -174,22 +233,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // 标题
-                Text(
-                  '创建账号',
-                  style: theme.textTheme.headlineMedium,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '填写以下信息完成注册',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.textTheme.bodySmall?.color,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-
                 // 头像选择
                 _buildAvatarSelector(),
 

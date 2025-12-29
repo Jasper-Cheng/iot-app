@@ -89,7 +89,11 @@ class HomeScreen extends ConsumerWidget {
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          await ref.read(deviceListProvider.notifier).refresh();
+          // 同时刷新设备列表和消息数据
+          await Future.wait([
+            ref.read(deviceListProvider.notifier).refresh(),
+            ref.read(messageProvider.notifier).refresh(),
+          ]);
         },
         child: deviceState.isLoading && deviceState.devices.isEmpty
             ? const Center(child: CircularProgressIndicator())

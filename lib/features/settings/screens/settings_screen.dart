@@ -729,10 +729,10 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
                         // 昵称
                         TextFormField(
                           controller: _nicknameController,
-                          style: const TextStyle(fontSize: 14),
+                          style: const TextStyle(fontSize: 13),
                           decoration: InputDecoration(
                             labelText: '昵称 *',
-                            labelStyle: const TextStyle(fontSize: 14),
+                            labelStyle: const TextStyle(fontSize: 13),
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: 12,
                               vertical: 12,
@@ -751,10 +751,10 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
                         // 邮件
                         TextFormField(
                           controller: _emailController,
-                          style: const TextStyle(fontSize: 14),
+                          style: const TextStyle(fontSize: 13),
                           decoration: InputDecoration(
                             labelText: '邮件',
-                            labelStyle: const TextStyle(fontSize: 14),
+                            labelStyle: const TextStyle(fontSize: 13),
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: 12,
                               vertical: 12,
@@ -763,25 +763,6 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
                             isDense: true,
                           ),
                           keyboardType: TextInputType.emailAddress,
-                        ),
-                        const SizedBox(height: 12),
-                        // 密码
-                        TextFormField(
-                          controller: _passwordController,
-                          style: const TextStyle(fontSize: 14),
-                          decoration: InputDecoration(
-                            labelText: '密码（至少6位，不填写则不修改）',
-                            hintText: '不填写则默认不修改',
-                            labelStyle: const TextStyle(fontSize: 14),
-                            hintStyle: const TextStyle(fontSize: 12),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 12,
-                            ),
-                            border: const OutlineInputBorder(),
-                            isDense: true,
-                          ),
-                          obscureText: true,
                         ),
                       ],
                     ),
@@ -794,13 +775,13 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
                         // 性别
                         DropdownButtonFormField<String>(
                           value: _selectedGender,
-                          style: TextStyle(fontSize: 14, color: theme.textTheme.bodyMedium?.color),
+                          style: TextStyle(fontSize: 13, color: theme.textTheme.bodyMedium?.color),
                           decoration: InputDecoration(
                             labelText: '性别 *',
-                            labelStyle: const TextStyle(fontSize: 14),
+                            labelStyle: const TextStyle(fontSize: 13),
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: 12,
-                              vertical: 12,
+                              vertical: 10,
                             ),
                             border: const OutlineInputBorder(),
                             isDense: true,
@@ -808,15 +789,15 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
                           items: [
                             DropdownMenuItem(
                               value: 'male',
-                              child: Text('男', style: TextStyle(fontSize: 14, color: theme.textTheme.bodyMedium?.color)),
+                              child: Text('男', style: TextStyle(fontSize: 13, color: theme.textTheme.bodyMedium?.color)),
                             ),
                             DropdownMenuItem(
                               value: 'female',
-                              child: Text('女', style: TextStyle(fontSize: 14, color: theme.textTheme.bodyMedium?.color)),
+                              child: Text('女', style: TextStyle(fontSize: 13, color: theme.textTheme.bodyMedium?.color)),
                             ),
                             DropdownMenuItem(
                               value: 'other',
-                              child: Text('其他', style: TextStyle(fontSize: 14, color: theme.textTheme.bodyMedium?.color)),
+                              child: Text('其他', style: TextStyle(fontSize: 13, color: theme.textTheme.bodyMedium?.color)),
                             ),
                           ],
                           onChanged: (value) {
@@ -837,10 +818,10 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
                         // 电话
                         TextFormField(
                           controller: _phoneController,
-                          style: const TextStyle(fontSize: 14),
+                          style: const TextStyle(fontSize: 13),
                           decoration: InputDecoration(
                             labelText: '电话 *',
-                            labelStyle: const TextStyle(fontSize: 14),
+                            labelStyle: const TextStyle(fontSize: 13),
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: 12,
                               vertical: 12,
@@ -856,31 +837,50 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
                             return null;
                           },
                         ),
-                        const SizedBox(height: 12),
-                        // 确认密码
-                        TextFormField(
-                          controller: _confirmPasswordController,
-                          style: const TextStyle(fontSize: 14),
-                          decoration: InputDecoration(
-                            labelText: '确认密码',
-                            hintText: '请再次输入密码',
-                            labelStyle: const TextStyle(fontSize: 14),
-                            hintStyle: const TextStyle(fontSize: 12),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 12,
-                            ),
-                            border: const OutlineInputBorder(),
-                            isDense: true,
-                          ),
-                          obscureText: true,
-                        ),
                       ],
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
+              // 密码单独一行
+              TextFormField(
+                controller: _passwordController,
+                style: const TextStyle(fontSize: 13),
+                decoration: InputDecoration(
+                  labelText: '密码（至少6位，不填写则不修改）',
+                  hintText: '不填写则默认不修改',
+                  labelStyle: const TextStyle(fontSize: 13),
+                  hintStyle: const TextStyle(fontSize: 11),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
+                  ),
+                  border: const OutlineInputBorder(),
+                  isDense: true,
+                ),
+                obscureText: true,
+              ),
+              const SizedBox(height: 12),
+              // 确认密码单独一行
+              TextFormField(
+                controller: _confirmPasswordController,
+                style: const TextStyle(fontSize: 13),
+                decoration: InputDecoration(
+                  labelText: '确认密码',
+                  hintText: '请再次输入密码',
+                  labelStyle: const TextStyle(fontSize: 13),
+                  hintStyle: const TextStyle(fontSize: 11),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
+                  ),
+                  border: const OutlineInputBorder(),
+                  isDense: true,
+                ),
+                obscureText: true,
+              ),
+              const SizedBox(height: 8),
 
               // 底部按钮
               Row(

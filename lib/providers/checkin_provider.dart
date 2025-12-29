@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models/checkin.dart';
 import '../data/repositories/checkin_repository.dart';
@@ -76,8 +77,7 @@ class CheckinNotifier extends StateNotifier<CheckinState> {
     try {
       final checkedInDates = await _repository.getCheckInCalendar(year: year, month: month);
       final stats = await _repository.getCheckInStats();
-      final pointsBalance = await _repository.getPointsBalance();
-      final pointsHistory = await _repository.getPointsHistory();
+      // 移除积分相关接口请求：pointsBalance 和 pointsHistory
 
       // 检查今天是否已签到
       final today = DateTime.now();
@@ -89,8 +89,6 @@ class CheckinNotifier extends StateNotifier<CheckinState> {
       state = state.copyWith(
         checkedInDates: checkedInDates,
         stats: stats,
-        pointsBalance: pointsBalance,
-        pointsHistory: pointsHistory,
         hasCheckedInToday: hasCheckedInToday,
         isLoading: false,
       );
@@ -167,6 +165,22 @@ class CheckinNotifier extends StateNotifier<CheckinState> {
     }
   }
 
+  /// 获取本地 IP 地址
+  Future<String?> _getLocalIpAddress() async {
+    try {
+      for (var interface in await NetworkInterface.list()) {
+        for (var addr in interface.addresses) {
+          if (addr.type == InternetAddressType.IPv4 && !addr.isLoopback) {
+            return addr.address;
+          }
+        }
+      }
+    } catch (e) {
+      // 获取 IP 地址失败
+    }
+    return null;
+  }
+
   /// 签到
   Future<CheckinRecord?> checkIn() async {
     if (state.hasCheckedInToday) {
@@ -175,7 +189,19 @@ class CheckinNotifier extends StateNotifier<CheckinState> {
     }
 
     try {
-      final record = await _repository.checkIn();
+      // 构建 extra 参数
+      final extra = <String, dynamic>{
+        'platform': Platform.isIOS ? 'iOS' : Platform.isAndroid ? 'Android' : 'Unknown',
+        'user_agent': 'FastIoT Mobile App 1.0.0',
+      };
+
+      // 尝试获取 IP 地址
+      final ipAddress = await _getLocalIpAddress();
+      if (ipAddress != null) {
+        extra['ip_address'] = ipAddress;
+      }
+
+      final record = await _repository.checkIn(extra: extra);
       
       // 重新加载数据
       await loadData();

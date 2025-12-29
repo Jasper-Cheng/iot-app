@@ -15,6 +15,15 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
   DateTime _focusedDay = DateTime.now();
 
   @override
+  void initState() {
+    super.initState();
+    // 进入页面时重新请求数据
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(checkinProvider.notifier).loadData();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final state = ref.watch(checkinProvider);
     final notifier = ref.read(checkinProvider.notifier);
@@ -249,12 +258,12 @@ class _CheckInRecordDialogState extends ConsumerState<_CheckInRecordDialog> {
                                 typeText = '补签';
                               }
 
-                              // 获取来源信息
-                              String? source;
-                              if (record.extra != null && record.extra!.containsKey('source')) {
-                                final sourceValue = record.extra!['source'];
-                                if (sourceValue != null) {
-                                  source = sourceValue.toString();
+                              // 获取来源信息（从 extra.platform 获取）
+                              String? platform;
+                              if (record.extra != null && record.extra!.containsKey('platform')) {
+                                final platformValue = record.extra!['platform'];
+                                if (platformValue != null) {
+                                  platform = platformValue.toString();
                                 }
                               }
 
@@ -263,34 +272,48 @@ class _CheckInRecordDialogState extends ConsumerState<_CheckInRecordDialog> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    // 第一行：类型（左）和积分（右）
+                                    // 第一行：类型（左）、积分（中）和来源（右）
                                     Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          typeText,
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w500,
-                                            color: Theme.of(context).textTheme.bodyLarge?.color,
-                                          ),
+                                        Row(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              typeText,
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w500,
+                                                color: Theme.of(context).textTheme.bodyLarge?.color,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: Colors.green,
+                                                borderRadius: BorderRadius.circular(6),
+                                              ),
+                                              child: Text(
+                                                '+${record.pointsEarned}',
+                                                style: const TextStyle(
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                        const SizedBox(width: 12),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: Colors.green,
-                                            borderRadius: BorderRadius.circular(6),
-                                          ),
-                                          child: Text(
-                                            '+${record.pointsEarned}',
-                                            style: const TextStyle(
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.white,
+                                        if (platform != null)
+                                          Text(
+                                            '来源: ${platform == 'web' ? 'Web' : platform == 'iOS' ? 'iOS' : platform == 'Android' ? 'Android' : platform}',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
                                             ),
                                           ),
-                                        ),
                                       ],
                                     ),
                                     const SizedBox(height: 4),
@@ -314,19 +337,6 @@ class _CheckInRecordDialogState extends ConsumerState<_CheckInRecordDialog> {
                                         ),
                                       ],
                                     ),
-                                    if (source != null) ...[
-                                      const SizedBox(height: 4),
-                                      Align(
-                                        alignment: Alignment.centerRight,
-                                        child: Text(
-                                          '来源: ${source == 'web' ? 'Web' : source == 'ios' ? 'iOS' : source == 'android' ? 'Android' : source}',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
                                   ],
                                 ),
                               );

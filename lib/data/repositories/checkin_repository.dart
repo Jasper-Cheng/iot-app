@@ -7,8 +7,13 @@ class CheckinRepository {
   final _dio = DioClient().dio;
 
   /// 签到
-  Future<CheckinRecord> checkIn() async {
-    final response = await _dio.post(ApiConstants.checkIn);
+  /// [extra] 额外信息，包含 platform、ip_address、user_agent
+  /// 这些字段直接作为请求体的顶层字段，不包装在 extra 中
+  Future<CheckinRecord> checkIn({Map<String, dynamic>? extra}) async {
+    final response = await _dio.post(
+      ApiConstants.checkIn,
+      data: extra ?? {},
+    );
     return CheckinRecord.fromJson(response.data);
   }
 

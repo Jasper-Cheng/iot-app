@@ -141,9 +141,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           // 用户信息卡片
           if (authState.account != null)
             Card(
-              margin: const EdgeInsets.all(16),
+              margin: const EdgeInsets.all(12),
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(12),
                 child: Column(
                   children: [
                     Row(
@@ -680,6 +680,10 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
                       onTap: () {
                         setState(() {
                           _selectedAvatar = avatarPath;
+                        });
+                        // 滚动到选中的头像中间
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          _scrollToSelectedAvatar();
                         });
                       },
                       child: Container(

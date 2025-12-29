@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../data/repositories/settings_repository.dart';
 
 /// 意见反馈页面
@@ -205,7 +206,9 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.pop(context);
+        if (context.canPop()) {
+          context.pop();
+        }
       }
     } catch (e) {
       if (mounted) {

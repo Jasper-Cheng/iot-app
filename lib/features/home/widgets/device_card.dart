@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../data/models/device.dart';
 import '../../../app/theme/colors.dart';
+import '../../../app/routes/router.dart';
 import '../../../providers/device_provider.dart';
-import '../screens/device_detail_screen.dart';
 
 /// 设备卡片组件
 class DeviceCard extends ConsumerWidget {
@@ -21,12 +22,7 @@ class DeviceCard extends ConsumerWidget {
     return Card(
       child: InkWell(
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => DeviceDetailScreen(device: device),
-            ),
-          );
+          context.push(AppRouter.deviceDetail, extra: device);
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(

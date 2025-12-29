@@ -51,7 +51,7 @@ class MessageRepository {
     if (type != null) {
       queryParameters['type'] = type;
     }
-    
+
     final response = await _dio.get(
       ApiConstants.systemMessages,
       queryParameters: queryParameters,

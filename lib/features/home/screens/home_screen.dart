@@ -5,6 +5,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../../providers/device_provider.dart';
 import '../../../providers/message_provider.dart';
+import '../../../app/routes/router.dart';
 import '../widgets/device_card_factory.dart';
 import '../../../core/utils/error_handler.dart';
 import '../../../core/utils/date_utils.dart';
@@ -539,11 +540,7 @@ class HomeScreen extends ConsumerWidget {
 
     // 打开扫码页面
     if (context.mounted) {
-      final result = await Navigator.of(context).push<String>(
-        MaterialPageRoute(
-          builder: (context) => const ScanPage(),
-        ),
-      );
+      final result = await context.push<String>(AppRouter.scan);
 
       // 处理扫码结果
       if (result != null && result.isNotEmpty && context.mounted) {
@@ -1561,15 +1558,12 @@ class _ScanPageState extends State<ScanPage> {
               });
             }
             
-            // 在异步操作前保存 Navigator 引用
-            final navigator = Navigator.of(context);
-            
             // 等待足够长的时间，确保 UI 完全更新且稳定
             await Future.delayed(const Duration(milliseconds: 300));
             
             // 返回
-            if (mounted && navigator.canPop()) {
-              navigator.pop();
+            if (mounted && context.canPop()) {
+              context.pop();
             }
           },
         ),
@@ -1601,16 +1595,13 @@ class _ScanPageState extends State<ScanPage> {
             });
           }
           
-          // 在异步操作前保存 Navigator 引用
-          final navigator = Navigator.of(context);
-          
           // 等待足够长的时间，确保 UI 完全更新且稳定
           // 这样即使后续的 dispose 操作触发纹理错误，用户也看不到闪烁
           await Future.delayed(const Duration(milliseconds: 300));
           
           // 直接返回，让 dispose 处理相机关闭
-          if (navigator.canPop()) {
-            navigator.pop();
+          if (mounted && context.canPop()) {
+            context.pop();
           }
         },
         child: Stack(

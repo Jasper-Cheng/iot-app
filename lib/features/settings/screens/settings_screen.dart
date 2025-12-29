@@ -4,9 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/theme_provider.dart';
 import '../../../app/routes/router.dart';
-import 'feedback_screen.dart';
-import 'about_screen.dart';
-import 'customer_service_screen.dart';
 
 /// 设置页面
 class SettingsScreen extends ConsumerWidget {
@@ -140,10 +137,7 @@ class SettingsScreen extends ConsumerWidget {
                 title: const Text('意见反馈'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const FeedbackScreen()),
-                  );
+                  context.push(AppRouter.feedback);
                 },
               ),
               ListTile(
@@ -159,10 +153,7 @@ class SettingsScreen extends ConsumerWidget {
                 title: const Text('联系客服'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const CustomerServiceScreen()),
-                  );
+                  context.push(AppRouter.customerService);
                 },
               ),
               ListTile(
@@ -170,10 +161,7 @@ class SettingsScreen extends ConsumerWidget {
                 title: const Text('关于我们'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const AboutScreen()),
-                  );
+                  context.push(AppRouter.about);
                 },
               ),
             ],

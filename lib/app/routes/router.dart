@@ -6,6 +6,12 @@ import '../../features/main/main_screen.dart';
 import '../../features/checkin/screens/checkin_screen.dart';
 import '../../features/checkin/screens/points_history_screen.dart';
 import '../../features/settings/screens/feedback_list_screen.dart';
+import '../../features/settings/screens/feedback_screen.dart';
+import '../../features/settings/screens/about_screen.dart';
+import '../../features/settings/screens/customer_service_screen.dart';
+import '../../features/home/screens/device_detail_screen.dart';
+import '../../features/home/screens/home_screen.dart';
+import '../../data/models/device.dart';
 import '../../providers/auth_provider.dart';
 
 /// 路由配置
@@ -16,6 +22,11 @@ class AppRouter {
   static const String checkin = '/checkin';
   static const String pointsHistory = '/points-history';
   static const String feedbackList = '/feedback-list';
+  static const String feedback = '/feedback';
+  static const String about = '/about';
+  static const String customerService = '/customer-service';
+  static const String deviceDetail = '/device-detail';
+  static const String scan = '/scan';
 
   /// 创建路由
   static GoRouter createRouter(Ref ref) {
@@ -75,6 +86,43 @@ class AppRouter {
         GoRoute(
           path: feedbackList,
           builder: (context, state) => const FeedbackListScreen(),
+        ),
+
+        // 意见反馈页
+        GoRoute(
+          path: feedback,
+          builder: (context, state) => const FeedbackScreen(),
+        ),
+
+        // 关于我们页
+        GoRoute(
+          path: about,
+          builder: (context, state) => const AboutScreen(),
+        ),
+
+        // 联系客服页
+        GoRoute(
+          path: customerService,
+          builder: (context, state) => const CustomerServiceScreen(),
+        ),
+
+        // 设备详情页
+        GoRoute(
+          path: deviceDetail,
+          builder: (context, state) {
+            final device = state.extra as Device?;
+            if (device == null) {
+              // 如果设备为空，返回主页
+              return const MainScreen();
+            }
+            return DeviceDetailScreen(device: device);
+          },
+        ),
+
+        // 二维码扫描页
+        GoRoute(
+          path: scan,
+          builder: (context, state) => const ScanPage(),
         ),
       ],
     );

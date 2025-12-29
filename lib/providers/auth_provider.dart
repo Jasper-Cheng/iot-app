@@ -206,6 +206,21 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// 注销账号
+  Future<void> deleteAccount() async {
+    try {
+      await _authRepository.deleteAccount();
+    } finally {
+      // 清除本地存储
+      await _storage.remove(StorageService.keyToken);
+      await _storage.remove(StorageService.keyTokenType);
+      await _storage.remove(StorageService.keyUserInfo);
+      await _storage.remove(StorageService.keyCurrentFamilyId);
+
+      state = const AuthState();
+    }
+  }
+
   /// 更新用户信息
   Future<void> updateProfile(Account account) async {
     await _storage.setString(

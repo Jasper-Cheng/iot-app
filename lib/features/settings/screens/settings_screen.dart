@@ -399,10 +399,34 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             context,
             '账户管理',
             [
-              _buildItem(
-                icon: Icons.logout_outlined,
-                text: '退出登录',
-                onTap: () => _showLogoutDialog(context, ref),
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                title: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => _showDeleteAccountDialog(context, ref),
+                        icon: const Icon(Icons.delete_outline, size: 18),
+                        label: const Text('注销账号'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => _showLogoutDialog(context, ref),
+                        icon: const Icon(Icons.logout_outlined, size: 18),
+                        label: const Text('退出登录'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -497,6 +521,49 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               }
             },
             child: const Text('确定'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteAccountDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('注销账号'),
+        content: const Text('注销账号后，所有数据将被永久删除且无法恢复。确定要注销账号吗?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                await ref.read(authProvider.notifier).deleteAccount();
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  // 注销成功后，跳转到登录页
+                  context.go(AppRouter.login);
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('注销失败: ${ErrorHandler.extractErrorMessage(e)}'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('确定注销'),
           ),
         ],
       ),

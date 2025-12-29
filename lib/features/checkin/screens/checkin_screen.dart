@@ -45,8 +45,7 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
                           notifier.loadCalendarForMonth(focusedDay.year, focusedDay.month);
                         },
                         onCheckInRecordTap: () {
-                          // 跳转到打卡记录页面（可以显示签到历史）
-                          // 这里可以创建一个新的页面或使用对话框
+                          _showCheckInRecordDialog(context, ref);
                         },
                         onRewardRulesTap: () {
                           _showRewardRulesDialog(context);
@@ -100,6 +99,180 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
             child: const Text('知道了'),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showCheckInRecordDialog(BuildContext context, WidgetRef ref) {
+    final state = ref.read(checkinProvider);
+    final history = state.history;
+    final totalDays = state.stats?.totalCheckIns ?? history.length;
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+        child: Container(
+          constraints: const BoxConstraints(maxHeight: 600),
+          padding: const EdgeInsets.symmetric(horizontal: 12,vertical: 4),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 标题栏
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 4,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primary,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        '打卡记录',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+              Text(
+                '总签到: ${totalDays}天',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                ),
+              ),
+              const Divider(height: 24),
+              // 列表
+              Expanded(
+                child: history.isEmpty
+                    ? const Center(
+                        child: Text(
+                          '暂无打卡记录',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      )
+                    : ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: history.length,
+                        itemBuilder: (context, index) {
+                          final record = history[index];
+                          final date = record.checkInTime;
+                          final dateTimeStr = '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}:${date.second.toString().padLeft(2, '0')}';
+
+                          String typeText = '正常';
+                          if (record.checkInType == 'bonus') {
+                            typeText = '奖励';
+                          } else if (record.checkInType == 'makeup') {
+                            typeText = '补签';
+                          }
+
+                          // 获取来源信息
+                          String? source;
+                          if (record.extra != null && record.extra!.containsKey('source')) {
+                            final sourceValue = record.extra!['source'];
+                            if (sourceValue != null) {
+                              source = sourceValue.toString();
+                            }
+                          }
+
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // 第一行：类型（左）和积分（右）
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      typeText,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                                      ),
+                                    ),
+                                    SizedBox(width: 12),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.green,
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        '+${record.pointsEarned}',
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                // 第二行：连续天数（左）和时间（右）
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      '连续: ${record.continuousDays}天',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                                      ),
+                                    ),
+                                    Text(
+                                      dateTimeStr,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                if (source != null) ...[
+                                  const SizedBox(height: 4),
+                                  Align(
+                                    alignment: Alignment.centerRight,
+                                    child: Text(
+                                      '来源: ${source == 'web' ? 'Web' : source == 'ios' ? 'iOS' : source == 'android' ? 'Android' : source}',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

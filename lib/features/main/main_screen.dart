@@ -17,7 +17,7 @@ class MainScreen extends ConsumerStatefulWidget {
   ConsumerState<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends ConsumerState<MainScreen> {
+class _MainScreenState extends ConsumerState<MainScreen> with WidgetsBindingObserver {
   int _currentIndex = 0;
 
   final List<Widget> _pages = const [
@@ -29,11 +29,73 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   @override
   void initState() {
     super.initState();
+    // 注册生命周期监听
+    WidgetsBinding.instance.addObserver(this);
     // 设置 MQTT 消息处理器并加载数据
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _setupMqttHandlers();
       _loadInitialData();
     });
+  }
+
+  @override
+  void dispose() {
+    // 移除生命周期监听
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    final authState = ref.read(authProvider);
+    final mqttNotifier = ref.read(mqttProvider.notifier);
+    final mqttState = ref.read(mqttProvider);
+
+    switch (state) {
+      case AppLifecycleState.resumed:
+        // App 进入前台，连接 MQTT
+        if (authState.isAuthenticated && 
+            authState.account != null && 
+            mqttState.connectionState != MqttConnectionState.connected) {
+          print('[MQTT] App 进入前台，连接 MQTT');
+          mqttNotifier.connect(
+            userId: authState.account!.id.toString(),
+          ).then((_) {
+            // 连接成功后，如果有家庭 ID，订阅家庭消息
+            final currentFamilyId = authState.account?.currentFamilyId;
+            if (currentFamilyId != null) {
+              print('[MQTT] App 恢复连接，订阅家庭消息 (Home ID: $currentFamilyId)');
+              mqttNotifier.subscribeHomeNotice(currentFamilyId);
+            }
+          }).catchError((error) {
+            print('[MQTT] 连接失败: $error');
+          });
+        }
+        break;
+      case AppLifecycleState.paused:
+      case AppLifecycleState.inactive:
+        // App 进入后台，断开 MQTT
+        if (mqttState.connectionState == MqttConnectionState.connected) {
+          print('[MQTT] App 进入后台，断开 MQTT');
+          mqttNotifier.disconnect();
+        }
+        break;
+      case AppLifecycleState.detached:
+        // App 被系统终止
+        if (mqttState.connectionState == MqttConnectionState.connected) {
+          print('[MQTT] App 被终止，断开 MQTT');
+          mqttNotifier.disconnect();
+        }
+        break;
+      case AppLifecycleState.hidden:
+        // App 被隐藏（某些平台）
+        if (mqttState.connectionState == MqttConnectionState.connected) {
+          print('[MQTT] App 被隐藏，断开 MQTT');
+          mqttNotifier.disconnect();
+        }
+        break;
+    }
   }
 
   void _loadInitialData() {

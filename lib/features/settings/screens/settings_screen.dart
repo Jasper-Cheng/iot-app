@@ -288,26 +288,60 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ListTile(
                 leading: const Icon(Icons.palette_outlined),
                 title: const Text('主题模式'),
-                trailing: SegmentedButton<ThemeMode>(
-                  segments: const [
-                    ButtonSegment(
-                      value: ThemeMode.light,
-                      icon: Icon(Icons.light_mode_outlined, size: 16),
-                    ),
-                    ButtonSegment(
-                      value: ThemeMode.dark,
-                      icon: Icon(Icons.dark_mode_outlined, size: 16),
-                    ),
-                    ButtonSegment(
-                      value: ThemeMode.system,
-                      icon: Icon(Icons.brightness_auto_outlined, size: 16),
-                    ),
-                  ],
-                  selected: {themeMode},
-                  onSelectionChanged: (Set<ThemeMode> newSelection) {
-                    ref
-                        .read(themeModeProvider.notifier)
-                        .setThemeMode(newSelection.first);
+                contentPadding: EdgeInsets.symmetric(horizontal: 16),
+                trailing: Builder(
+                  builder: (context) {
+                    final isDark = Theme.of(context).brightness == Brightness.dark;
+                    final iconColor = isDark ? Colors.white : Colors.black;
+                    
+                    return SegmentedButton<ThemeMode>(
+                      showSelectedIcon: false,
+                      style: SegmentedButton.styleFrom(
+                        side: BorderSide(
+                          width: 0.5,
+                          color: Theme.of(context).dividerColor,
+                        ),
+                        visualDensity: VisualDensity.comfortable,
+                      ),
+                      segments: [
+                        ButtonSegment<ThemeMode>(
+                          value: ThemeMode.light,
+                          icon: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: Center(
+                              child: Icon(Icons.light_mode_outlined, size: 14, color: iconColor),
+                            ),
+                          ),
+                        ),
+                        ButtonSegment<ThemeMode>(
+                          value: ThemeMode.dark,
+                          icon: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: Center(
+                              child: Icon(Icons.dark_mode_outlined, size: 14, color: iconColor),
+                            ),
+                          ),
+                        ),
+                        ButtonSegment<ThemeMode>(
+                          value: ThemeMode.system,
+                          icon: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: Center(
+                              child: Icon(Icons.brightness_auto_outlined, size: 14, color: iconColor),
+                            ),
+                          ),
+                        ),
+                      ],
+                      selected: {themeMode},
+                      onSelectionChanged: (Set<ThemeMode> newSelection) {
+                        ref
+                            .read(themeModeProvider.notifier)
+                            .setThemeMode(newSelection.first);
+                      },
+                    );
                   },
                 ),
               ),
@@ -397,7 +431,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          padding: const EdgeInsets.all(12),
           child: Text(
             title,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -418,6 +452,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }) {
     return ListTile(
       leading: Icon(icon),
+      contentPadding: EdgeInsets.symmetric(horizontal: 16),
       title: Text(text),
       trailing: const Icon(Icons.chevron_right),
       onTap: onTap,

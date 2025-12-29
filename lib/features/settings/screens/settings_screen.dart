@@ -544,6 +544,35 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             child: const Text('取消'),
           ),
           ElevatedButton(
+            onPressed: () {
+              // 关闭第一个对话框
+              Navigator.pop(context);
+              // 显示二次确认对话框
+              _showDeleteAccountConfirmDialog(context, ref);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('确定注销'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteAccountConfirmDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('再次确认'),
+        content: const Text('请再次确认，注销账号后所有数据将永久删除且无法恢复。此操作不可撤销！'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          ElevatedButton(
             onPressed: () async {
               try {
                 await ref.read(authProvider.notifier).deleteAccount();
@@ -568,7 +597,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: const Text('确定注销'),
+            child: const Text('确认注销'),
           ),
         ],
       ),

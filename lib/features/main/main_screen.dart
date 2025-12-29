@@ -34,6 +34,9 @@ class _MainScreenState extends State<MainScreen> {
             _currentIndex = index;
           });
         },
+        type: BottomNavigationBarType.fixed,
+        selectedFontSize: 12,
+        unselectedFontSize: 12,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),

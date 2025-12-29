@@ -356,7 +356,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               _buildItem(
                 icon: Icons.calendar_today_outlined,
                 text: '每日签到',
-                onTap: () => context.push(AppRouter.checkin),
+                onTap: () async {
+                  // 跳转到签到页面，等待返回后刷新积分
+                  await context.push(AppRouter.checkin);
+                  // 从签到页面返回后刷新积分
+                  _loadPointsBalance();
+                },
               ),
               _buildItem(
                 icon: Icons.history_outlined,

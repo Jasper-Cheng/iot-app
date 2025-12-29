@@ -217,6 +217,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   /// 更新用户信息（调用API）
+  /// 支持部分更新，只更新请求中提供的字段
   Future<void> updateUserProfile({
     String? nickname,
     String? phone,
@@ -224,6 +225,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     String? email,
     String? avatar,
     String? password,
+    int? currentFamilyId,
   }) async {
     state = state.copyWith(isLoading: true, error: null);
 
@@ -235,6 +237,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         email: email,
         avatar: avatar,
         password: password,
+        currentFamilyId: currentFamilyId,
       );
 
       // 更新本地存储

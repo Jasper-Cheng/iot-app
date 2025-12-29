@@ -75,6 +75,8 @@ class AuthRepository {
   }
 
   /// 更新用户信息
+  /// 支持部分更新，只更新请求中提供的字段
+  /// 密码需要使用RSA加密（先调用 getRsaPublicKey 获取公钥）
   Future<Account> updateProfile({
     String? nickname,
     String? phone,
@@ -82,6 +84,7 @@ class AuthRepository {
     String? email,
     String? avatar,
     String? password,
+    int? currentFamilyId,
   }) async {
     final data = <String, dynamic>{};
     if (nickname != null) data['nickname'] = nickname;
@@ -89,13 +92,16 @@ class AuthRepository {
     if (gender != null) data['gender'] = gender;
     if (email != null) data['email'] = email;
     if (avatar != null) data['avatar'] = avatar;
+    if (currentFamilyId != null) data['current_family_id'] = currentFamilyId;
+    
     if (password != null && password.isNotEmpty) {
-      // 如果密码不为空，需要加密
+      // 密码需要使用RSA加密（Base64编码）
       final publicKey = await getRsaPublicKey();
       data['password'] = RsaHelper.encryptWithPublicKey(password, publicKey);
     }
 
-    final response = await _dio.put(
+    // 使用 PATCH 方法进行部分更新
+    final response = await _dio.patch(
       ApiConstants.updateProfile,
       data: data,
     );

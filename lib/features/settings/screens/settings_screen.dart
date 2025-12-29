@@ -4,13 +4,126 @@ import 'package:go_router/go_router.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/theme_provider.dart';
 import '../../../app/routes/router.dart';
+import '../../../data/repositories/checkin_repository.dart';
 
 /// 设置页面
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  int? _pointsBalance;
+  bool _isLoadingPoints = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPointsBalance();
+  }
+
+  Future<void> _loadPointsBalance() async {
+    setState(() {
+      _isLoadingPoints = true;
+    });
+    try {
+      final repository = CheckinRepository();
+      final balance = await repository.getPointsBalance();
+      if (mounted) {
+        setState(() {
+          _pointsBalance = balance;
+          _isLoadingPoints = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingPoints = false;
+        });
+      }
+    }
+  }
+
+  String _getGenderText(String? gender) {
+    switch (gender) {
+      case 'male':
+        return '男';
+      case 'female':
+        return '女';
+      case 'other':
+        return '其他';
+      default:
+        return '未设置';
+    }
+  }
+
+  /// 构建头像 Widget
+  Widget _buildAvatar(String? avatarPath, String nickname, ThemeData theme) {
+    final defaultChild = Container(
+      width: 64,
+      height: 64,
+      alignment: Alignment.center,
+      child: Text(
+        nickname.isNotEmpty ? nickname[0] : 'U',
+        style: const TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+
+    // 如果头像路径为空，显示首字母
+    if (avatarPath == null || avatarPath.isEmpty) {
+      return ClipOval(
+        child: defaultChild,
+      );
+    }
+
+    // 如果是完整的 URL（http/https），使用 NetworkImage
+    if (avatarPath.startsWith('http://') || avatarPath.startsWith('https://')) {
+      return ClipOval(
+        child: Image.network(
+          avatarPath,
+          fit: BoxFit.cover,
+          width: 64,
+          height: 64,
+          errorBuilder: (context, error, stackTrace) {
+            // 网络图片加载失败，显示首字母
+            return defaultChild;
+          },
+        ),
+      );
+    }
+
+    // 如果是相对路径 /avatars/avatarX.png，转换为 assets/avatars/avatarX.png
+    if (avatarPath.startsWith('/avatars/')) {
+      final fileName = avatarPath.replaceFirst('/avatars/', '');
+      final assetPath = 'assets/avatars/$fileName';
+      
+      return ClipOval(
+        child: Image.asset(
+          assetPath,
+          fit: BoxFit.cover,
+          width: 64,
+          height: 64,
+          errorBuilder: (context, error, stackTrace) {
+            // assets 图片加载失败，显示首字母
+            return defaultChild;
+          },
+        ),
+      );
+    }
+
+    // 其他情况，显示首字母
+    return ClipOval(
+      child: defaultChild,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final themeMode = ref.watch(themeModeProvider);
     final theme = Theme.of(context);
@@ -29,41 +142,136 @@ class SettingsScreen extends ConsumerWidget {
               margin: const EdgeInsets.all(16),
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: Row(
+                child: Column(
                   children: [
-                    CircleAvatar(
-                      radius: 32,
-                      backgroundColor: theme.colorScheme.primary,
-                      child: Text(
-                        authState.account!.nickname[0],
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                    Row(
+                      children: [
+                        // 头像
+                        _buildAvatar(
+                          authState.account!.avatar,
+                          authState.account!.nickname,
+                          theme,
                         ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            authState.account!.nickname,
-                            style: theme.textTheme.titleLarge,
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // 用户名和积分
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      authState.account!.nickname,
+                                      style: theme.textTheme.titleLarge?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  // 积分
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.stars_outlined,
+                                        size: 16,
+                                        color: theme.colorScheme.primary,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      _isLoadingPoints
+                                          ? SizedBox(
+                                              width: 16,
+                                              height: 16,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                valueColor: AlwaysStoppedAnimation<Color>(
+                                                  theme.colorScheme.primary,
+                                                ),
+                                              ),
+                                            )
+                                          : Text(
+                                              _pointsBalance != null
+                                                  ? '${_pointsBalance} 积分'
+                                                  : '加载中...',
+                                              style: theme.textTheme.bodyMedium?.copyWith(
+                                                color: theme.colorScheme.primary,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              // 邮箱
+                              if (authState.account!.email != null)
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.email_outlined,
+                                      size: 16,
+                                      color: theme.hintColor,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        authState.account!.email!,
+                                        style: theme.textTheme.bodyMedium?.copyWith(
+                                          color: theme.hintColor,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              if (authState.account!.email != null)
+                                const SizedBox(height: 4),
+                              // 手机号
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.phone_outlined,
+                                    size: 16,
+                                    color: theme.hintColor,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    authState.account!.phone,
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      color: theme.hintColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              // 性别
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.person_outlined,
+                                    size: 16,
+                                    color: theme.hintColor,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    _getGenderText(authState.account!.gender),
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      color: theme.hintColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            authState.account!.phone,
-                            style: theme.textTheme.bodyMedium,
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.edit_outlined),
-                      onPressed: () {
-                        // TODO: 编辑用户信息
-                      },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.edit_outlined),
+                          onPressed: () {
+                            // TODO: 编辑用户信息
+                          },
+                        ),
+                      ],
                     ),
                   ],
                 ),

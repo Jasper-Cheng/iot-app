@@ -215,6 +215,46 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     state = state.copyWith(account: account);
   }
+
+  /// 更新用户信息（调用API）
+  Future<void> updateUserProfile({
+    String? nickname,
+    String? phone,
+    String? gender,
+    String? email,
+    String? avatar,
+    String? password,
+  }) async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      final updatedAccount = await _authRepository.updateProfile(
+        nickname: nickname,
+        phone: phone,
+        gender: gender,
+        email: email,
+        avatar: avatar,
+        password: password,
+      );
+
+      // 更新本地存储
+      await _storage.setString(
+        StorageService.keyUserInfo,
+        jsonEncode(updatedAccount.toJson()),
+      );
+
+      state = state.copyWith(
+        account: updatedAccount,
+        isLoading: false,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: ErrorHandler.extractErrorMessage(e),
+      );
+      rethrow;
+    }
+  }
 }
 
 /// 认证 Provider

@@ -5,6 +5,8 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/theme_provider.dart';
 import '../../../app/routes/router.dart';
 import '../../../data/repositories/checkin_repository.dart';
+import '../../../data/models/user.dart';
+import '../../../core/utils/error_handler.dart';
 
 /// 设置页面
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -268,7 +270,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         IconButton(
                           icon: const Icon(Icons.edit_outlined),
                           onPressed: () {
-                            // TODO: 编辑用户信息
+                            _showEditProfileDialog(context, ref);
                           },
                         ),
                       ],
@@ -422,6 +424,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  void _showEditProfileDialog(BuildContext context, WidgetRef ref) {
+    final account = ref.read(authProvider).account;
+    if (account == null) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => _EditProfileDialog(
+        account: account,
+        onUpdate: () {
+          // 更新后刷新积分
+          _loadPointsBalance();
+        },
+      ),
+    );
+  }
+
   void _showLogoutDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
@@ -446,6 +465,459 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// 编辑用户信息弹窗
+class _EditProfileDialog extends ConsumerStatefulWidget {
+  final Account account;
+  final VoidCallback onUpdate;
+
+  const _EditProfileDialog({
+    required this.account,
+    required this.onUpdate,
+  });
+
+  @override
+  ConsumerState<_EditProfileDialog> createState() => _EditProfileDialogState();
+}
+
+class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController _nicknameController;
+  late TextEditingController _emailController;
+  late TextEditingController _phoneController;
+  late TextEditingController _passwordController;
+  late TextEditingController _confirmPasswordController;
+
+  String? _selectedGender;
+  String? _selectedAvatar;
+  bool _isSubmitting = false;
+  final ScrollController _avatarScrollController = ScrollController();
+
+  // 生成头像列表（avatar1.png 到 avatar20.png）
+  final List<String> _avatars = List.generate(
+    20,
+    (index) => 'assets/avatars/avatar${index + 1}.png',
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _nicknameController = TextEditingController(text: widget.account.nickname);
+    _emailController = TextEditingController(text: widget.account.email ?? '');
+    _phoneController = TextEditingController(text: widget.account.phone);
+    _passwordController = TextEditingController();
+    _confirmPasswordController = TextEditingController();
+    _selectedGender = widget.account.gender;
+    
+    // 将头像路径转换为 assets 路径
+    if (widget.account.avatar != null && widget.account.avatar!.startsWith('/avatars/')) {
+      final fileName = widget.account.avatar!.replaceFirst('/avatars/', '');
+      _selectedAvatar = 'assets/avatars/$fileName';
+    }
+
+    // 延迟滚动到选中的头像（等待两帧确保布局完成）
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 100), () {
+        _scrollToSelectedAvatar();
+      });
+    });
+  }
+
+  void _scrollToSelectedAvatar() {
+    if (_selectedAvatar == null) return;
+    
+    final index = _avatars.indexOf(_selectedAvatar!);
+    if (index == -1) return;
+
+    if (!_avatarScrollController.hasClients) return;
+    
+    // 计算滚动位置：头像宽度(50) + 间距(6)，滚动到中间位置
+    final itemWidth = 50.0 + 6.0; // 头像宽度 + 右边距
+    final containerWidth = _avatarScrollController.position.viewportDimension;
+    final scrollPosition = (index * itemWidth) - (containerWidth / 2) + (50 / 2); // 让头像居中
+    
+    _avatarScrollController.animateTo(
+      scrollPosition.clamp(0.0, _avatarScrollController.position.maxScrollExtent),
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+  }
+
+  @override
+  void dispose() {
+    _nicknameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    _avatarScrollController.dispose();
+    super.dispose();
+  }
+
+  String _getGenderText(String? gender) {
+    switch (gender) {
+      case 'male':
+        return '男';
+      case 'female':
+        return '女';
+      case 'other':
+        return '其他';
+      default:
+        return '未设置';
+    }
+  }
+
+  Future<void> _handleUpdate() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    // 验证密码
+    if (_passwordController.text.isNotEmpty) {
+      if (_passwordController.text.length < 6) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('密码至少6位')),
+        );
+        return;
+      }
+      if (_passwordController.text != _confirmPasswordController.text) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('两次密码输入不一致')),
+        );
+        return;
+      }
+    }
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    try {
+      // 转换头像路径
+      String? avatarPath;
+      if (_selectedAvatar != null) {
+        final fileName = _selectedAvatar!.replaceFirst('assets/avatars/', '');
+        avatarPath = '/avatars/$fileName';
+      }
+
+      await ref.read(authProvider.notifier).updateUserProfile(
+            nickname: _nicknameController.text.trim(),
+            phone: _phoneController.text.trim(),
+            gender: _selectedGender ?? 'other', // 如果为 null，默认设置为 'other'
+            email: _emailController.text.trim().isEmpty
+                ? null
+                : _emailController.text.trim(),
+            avatar: avatarPath,
+            password: _passwordController.text.isEmpty
+                ? null
+                : _passwordController.text,
+          );
+
+      if (mounted) {
+        widget.onUpdate();
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('用户信息更新成功'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('更新失败: ${ErrorHandler.extractErrorMessage(e)}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 头像选择器
+              Text(
+                '选择头像',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 50,
+                child: ListView.builder(
+                  controller: _avatarScrollController,
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _avatars.length,
+                  itemBuilder: (context, index) {
+                    final avatarPath = _avatars[index];
+                    final isSelected = _selectedAvatar == avatarPath;
+
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedAvatar = avatarPath;
+                        });
+                      },
+                      child: Container(
+                        width: 50,
+                        height: 50,
+                        margin: const EdgeInsets.only(right: 6),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isSelected
+                                ? theme.colorScheme.primary
+                                : Colors.transparent,
+                            width: isSelected ? 2.5 : 0,
+                          ),
+                        ),
+                        child: ClipOval(
+                          child: Image.asset(
+                            avatarPath,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: Colors.grey[300],
+                                child: Icon(
+                                  Icons.person,
+                                  size: 24,
+                                  color: Colors.grey[600],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // 表单字段（两列布局）
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 左列
+                  Expanded(
+                    child: Column(
+                      children: [
+                        // 昵称
+                        TextFormField(
+                          controller: _nicknameController,
+                          style: const TextStyle(fontSize: 14),
+                          decoration: InputDecoration(
+                            labelText: '昵称 *',
+                            labelStyle: const TextStyle(fontSize: 14),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 12,
+                            ),
+                            border: const OutlineInputBorder(),
+                            isDense: true,
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return '请输入昵称';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        // 邮件
+                        TextFormField(
+                          controller: _emailController,
+                          style: const TextStyle(fontSize: 14),
+                          decoration: InputDecoration(
+                            labelText: '邮件',
+                            labelStyle: const TextStyle(fontSize: 14),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 12,
+                            ),
+                            border: const OutlineInputBorder(),
+                            isDense: true,
+                          ),
+                          keyboardType: TextInputType.emailAddress,
+                        ),
+                        const SizedBox(height: 12),
+                        // 密码
+                        TextFormField(
+                          controller: _passwordController,
+                          style: const TextStyle(fontSize: 14),
+                          decoration: InputDecoration(
+                            labelText: '密码（至少6位，不填写则不修改）',
+                            hintText: '不填写则默认不修改',
+                            labelStyle: const TextStyle(fontSize: 14),
+                            hintStyle: const TextStyle(fontSize: 12),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 12,
+                            ),
+                            border: const OutlineInputBorder(),
+                            isDense: true,
+                          ),
+                          obscureText: true,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // 右列
+                  Expanded(
+                    child: Column(
+                      children: [
+                        // 性别
+                        DropdownButtonFormField<String>(
+                          value: _selectedGender,
+                          style: TextStyle(fontSize: 14, color: theme.textTheme.bodyMedium?.color),
+                          decoration: InputDecoration(
+                            labelText: '性别 *',
+                            labelStyle: const TextStyle(fontSize: 14),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 12,
+                            ),
+                            border: const OutlineInputBorder(),
+                            isDense: true,
+                          ),
+                          items: [
+                            DropdownMenuItem(
+                              value: 'male',
+                              child: Text('男', style: TextStyle(fontSize: 14, color: theme.textTheme.bodyMedium?.color)),
+                            ),
+                            DropdownMenuItem(
+                              value: 'female',
+                              child: Text('女', style: TextStyle(fontSize: 14, color: theme.textTheme.bodyMedium?.color)),
+                            ),
+                            DropdownMenuItem(
+                              value: 'other',
+                              child: Text('其他', style: TextStyle(fontSize: 14, color: theme.textTheme.bodyMedium?.color)),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            if (value != null) {
+                              setState(() {
+                                _selectedGender = value;
+                              });
+                            }
+                          },
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return '请选择性别';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        // 电话
+                        TextFormField(
+                          controller: _phoneController,
+                          style: const TextStyle(fontSize: 14),
+                          decoration: InputDecoration(
+                            labelText: '电话 *',
+                            labelStyle: const TextStyle(fontSize: 14),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 12,
+                            ),
+                            border: const OutlineInputBorder(),
+                            isDense: true,
+                          ),
+                          keyboardType: TextInputType.phone,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return '请输入电话';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        // 确认密码
+                        TextFormField(
+                          controller: _confirmPasswordController,
+                          style: const TextStyle(fontSize: 14),
+                          decoration: InputDecoration(
+                            labelText: '确认密码',
+                            hintText: '请再次输入密码',
+                            labelStyle: const TextStyle(fontSize: 14),
+                            hintStyle: const TextStyle(fontSize: 12),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 12,
+                            ),
+                            border: const OutlineInputBorder(),
+                            isDense: true,
+                          ),
+                          obscureText: true,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // 底部按钮
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: _isSubmitting ? null : () => Navigator.pop(context),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    ),
+                    child: const Text('取消', style: TextStyle(fontSize: 14)),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton(
+                    onPressed: _isSubmitting ? null : _handleUpdate,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: theme.colorScheme.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    ),
+                    child: _isSubmitting
+                        ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                        : const Text('更新', style: TextStyle(fontSize: 14)),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      )
     );
   }
 }

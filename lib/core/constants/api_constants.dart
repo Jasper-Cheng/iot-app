@@ -26,6 +26,7 @@ class ApiConstants {
   static const String setPassword = '/auth/set_password';
   static const String rsaPublicKey = '/auth/rsa_public_key';
   static const String profile = '/auth/profile';
+  static const String updateProfile = '/auth/profile';
   static const String currentFamily = '/auth/current-family';
   static const String deleteAccount = '/auth/account';
 

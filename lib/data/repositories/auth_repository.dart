@@ -1,5 +1,6 @@
 import '../../core/network/dio_client.dart';
 import '../../core/constants/api_constants.dart';
+import '../../core/utils/rsa_helper.dart';
 import '../models/user.dart';
 
 /// 认证数据仓库
@@ -70,6 +71,34 @@ class AuthRepository {
   /// 获取当前用户信息
   Future<Account> getProfile() async {
     final response = await _dio.get(ApiConstants.profile);
+    return Account.fromJson(response.data);
+  }
+
+  /// 更新用户信息
+  Future<Account> updateProfile({
+    String? nickname,
+    String? phone,
+    String? gender,
+    String? email,
+    String? avatar,
+    String? password,
+  }) async {
+    final data = <String, dynamic>{};
+    if (nickname != null) data['nickname'] = nickname;
+    if (phone != null) data['phone'] = phone;
+    if (gender != null) data['gender'] = gender;
+    if (email != null) data['email'] = email;
+    if (avatar != null) data['avatar'] = avatar;
+    if (password != null && password.isNotEmpty) {
+      // 如果密码不为空，需要加密
+      final publicKey = await getRsaPublicKey();
+      data['password'] = RsaHelper.encryptWithPublicKey(password, publicKey);
+    }
+
+    final response = await _dio.put(
+      ApiConstants.updateProfile,
+      data: data,
+    );
     return Account.fromJson(response.data);
   }
 

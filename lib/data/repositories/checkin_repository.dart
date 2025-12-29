@@ -12,10 +12,20 @@ class CheckinRepository {
     return CheckinRecord.fromJson(response.data);
   }
 
-  /// 获取签到日历（本月已签到的日期）
-  Future<List<DateTime>> getCheckInCalendar() async {
-    final response = await _dio.get(ApiConstants.checkInCalendar);
-    final List<dynamic> dates = response.data['dates'];
+  /// 获取签到日历（已签到的日期）
+  /// [year] 年份，默认当前年
+  /// [month] 月份，默认当前月
+  Future<List<DateTime>> getCheckInCalendar({int? year, int? month}) async {
+    final queryParameters = <String, dynamic>{};
+    if (year != null) queryParameters['year'] = year;
+    if (month != null) queryParameters['month'] = month;
+    
+    final response = await _dio.get(
+      ApiConstants.checkInCalendar,
+      queryParameters: queryParameters.isEmpty ? null : queryParameters,
+    );
+    // API 返回格式: {"year":2025,"month":11,"check_in_dates":["2025-11-12",...]}
+    final List<dynamic> dates = response.data['check_in_dates'] ?? response.data['dates'] ?? [];
     return dates.map((e) => DateTime.parse(e as String)).toList();
   }
 

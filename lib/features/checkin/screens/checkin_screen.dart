@@ -41,6 +41,8 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
                           setState(() {
                             _focusedDay = focusedDay;
                           });
+                          // 切换月份时加载对应月份的日历数据
+                          notifier.loadCalendarForMonth(focusedDay.year, focusedDay.month);
                         },
                         onCheckInRecordTap: () {
                           // 跳转到打卡记录页面（可以显示签到历史）
@@ -87,11 +89,9 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
           children: [
             Text('• 每日签到可获得5积分'),
             SizedBox(height: 8),
-            Text('• 连续签到7天可获得额外20积分'),
+            Text('• 连续签到3-6天可获得额外10积分'),
             SizedBox(height: 8),
-            Text('• 连续签到30天可获得额外100积分'),
-            SizedBox(height: 8),
-            Text('• 积分可用于兑换礼品和优惠券'),
+            Text('• 连续签到7天以上可获得超级奖励20积分'),
           ],
         ),
         actions: [

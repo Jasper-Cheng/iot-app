@@ -57,11 +57,11 @@ class CheckinNotifier extends StateNotifier<CheckinState> {
   }
 
   /// 加载数据
-  Future<void> loadData() async {
+  Future<void> loadData({int? year, int? month}) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final checkedInDates = await _repository.getCheckInCalendar();
+      final checkedInDates = await _repository.getCheckInCalendar(year: year, month: month);
       final stats = await _repository.getCheckInStats();
       final history = await _repository.getCheckInHistory();
       final pointsBalance = await _repository.getPointsBalance();
@@ -81,6 +81,24 @@ class CheckinNotifier extends StateNotifier<CheckinState> {
         pointsBalance: pointsBalance,
         pointsHistory: pointsHistory,
         hasCheckedInToday: hasCheckedInToday,
+        isLoading: false,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: ErrorHandler.extractErrorMessage(e),
+      );
+    }
+  }
+
+  /// 加载指定月份的日历数据
+  Future<void> loadCalendarForMonth(int year, int month) async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      final checkedInDates = await _repository.getCheckInCalendar(year: year, month: month);
+      state = state.copyWith(
+        checkedInDates: checkedInDates,
         isLoading: false,
       );
     } catch (e) {

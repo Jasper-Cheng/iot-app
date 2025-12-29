@@ -60,9 +60,10 @@ class CheckinCalendarWidget extends StatelessWidget {
                         children: [
                           Text(
                             '已打卡${stats!.totalCheckIns}天',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
                             ),
                           ),
                           Text(

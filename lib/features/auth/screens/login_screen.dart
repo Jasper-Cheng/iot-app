@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 // import 'package:fluwx/fluwx.dart'; // TODO: 配置微信AppID后启用
 import '../../../providers/auth_provider.dart';
+import '../../../providers/device_provider.dart';
+import '../../../providers/message_provider.dart';
 import '../../../app/routes/router.dart';
 import '../../../core/storage/storage_service.dart';
 
@@ -180,8 +182,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     // 监听登录成功，自动跳转到首页（包括微信登录）
     ref.listen<AuthState>(authProvider, (previous, next) {
       if (next.isAuthenticated && !next.isLoading && previous?.isAuthenticated != true) {
-        // 登录成功，跳转到首页
-        context.go(AppRouter.main);
+        // 登录成功，加载设备相关信息
+        Future.wait([
+          ref.read(deviceListProvider.notifier).loadDevices(),
+          ref.read(messageProvider.notifier).loadMessages(),
+        ]).then((_) {
+          // 数据加载完成后跳转到首页
+          if (context.mounted) {
+            context.go(AppRouter.main);
+          }
+        }).catchError((error) {
+          // 即使数据加载失败，也跳转到首页
+          if (context.mounted) {
+            context.go(AppRouter.main);
+          }
+        });
       }
     });
 

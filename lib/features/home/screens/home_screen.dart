@@ -99,7 +99,15 @@ class HomeScreen extends ConsumerWidget {
         child: deviceState.isLoading && deviceState.devices.isEmpty
             ? const Center(child: CircularProgressIndicator())
             : deviceState.devices.isEmpty
-                ? _buildEmptyState(context)
+                ? SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: SizedBox(
+                      height: MediaQuery.of(context).size.height - 
+                              AppBar().preferredSize.height - 
+                              MediaQuery.of(context).padding.top,
+                      child: _buildEmptyState(context),
+                    ),
+                  )
                 : ListView.builder(
                     padding: const EdgeInsets.all(16),
                     itemCount: deviceState.devices.length,

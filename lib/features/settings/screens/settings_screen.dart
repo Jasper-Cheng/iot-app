@@ -21,6 +21,7 @@ class SettingsScreen extends ConsumerWidget {
         title: const Text('设置'),
       ),
       body: ListView(
+        key: const PageStorageKey<String>('settings_list'),
         children: [
           // 用户信息卡片
           if (authState.account != null)
@@ -108,21 +109,15 @@ class SettingsScreen extends ConsumerWidget {
             context,
             '签到与积分',
             [
-              ListTile(
-                leading: const Icon(Icons.calendar_today_outlined),
-                title: const Text('每日签到'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  context.push(AppRouter.checkin);
-                },
+              _buildItem(
+                icon: Icons.calendar_today_outlined,
+                text: '每日签到',
+                onTap: () => context.push(AppRouter.checkin),
               ),
-              ListTile(
-                leading: const Icon(Icons.history_outlined),
-                title: const Text('积分记录'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  context.push(AppRouter.pointsHistory);
-                },
+              _buildItem(
+                icon: Icons.history_outlined,
+                text: '积分记录',
+                onTap: () => context.push(AppRouter.pointsHistory),
               ),
             ],
           ),
@@ -132,37 +127,25 @@ class SettingsScreen extends ConsumerWidget {
             context,
             '帮助与反馈',
             [
-              ListTile(
-                leading: const Icon(Icons.feedback_outlined),
-                title: const Text('意见反馈'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  context.push(AppRouter.feedback);
-                },
+              _buildItem(
+                icon: Icons.feedback_outlined,
+                text: '意见反馈',
+                onTap: () => context.push(AppRouter.feedback),
               ),
-              ListTile(
-                leading: const Icon(Icons.list_outlined),
-                title: const Text('反馈列表'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  context.push(AppRouter.feedbackList);
-                },
+              _buildItem(
+                icon: Icons.list_outlined,
+                text: '反馈列表',
+                onTap: () => context.push(AppRouter.feedbackList),
               ),
-              ListTile(
-                leading: const Icon(Icons.support_agent_outlined),
-                title: const Text('联系客服'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  context.push(AppRouter.customerService);
-                },
+              _buildItem(
+                icon: Icons.support_agent_outlined,
+                text: '联系客服',
+                onTap: () => context.push(AppRouter.customerService),
               ),
-              ListTile(
-                leading: const Icon(Icons.info_outlined),
-                title: const Text('关于我们'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  context.push(AppRouter.about);
-                },
+              _buildItem(
+                icon: Icons.info_outlined,
+                text: '关于我们',
+                onTap: () => context.push(AppRouter.about),
               ),
             ],
           ),
@@ -172,12 +155,10 @@ class SettingsScreen extends ConsumerWidget {
             context,
             '账户管理',
             [
-              ListTile(
-                leading: const Icon(Icons.logout_outlined),
-                title: const Text('退出登录'),
-                onTap: () {
-                  _showLogoutDialog(context, ref);
-                },
+              _buildItem(
+                icon: Icons.logout_outlined,
+                text: '退出登录',
+                onTap: () => _showLogoutDialog(context, ref),
               ),
             ],
           ),
@@ -217,6 +198,19 @@ class SettingsScreen extends ConsumerWidget {
         ),
         ...children,
       ],
+    );
+  }
+
+  Widget _buildItem({
+    required IconData icon,
+    required String text,
+    VoidCallback? onTap,
+  }) {
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(text),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: onTap,
     );
   }
 

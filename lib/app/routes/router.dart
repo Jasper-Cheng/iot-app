@@ -52,77 +52,113 @@ class AppRouter {
         return null;
       },
       routes: [
-        // 登录页
+        // 登录页（无动画）
         GoRoute(
           path: login,
-          builder: (context, state) => const LoginScreen(),
+          pageBuilder: (context, state) => NoTransitionPage(
+            key: state.pageKey,
+            child: const LoginScreen(),
+          ),
         ),
 
-        // 注册页
+        // 注册页（无动画）
         GoRoute(
           path: register,
-          builder: (context, state) => const RegisterScreen(),
+          pageBuilder: (context, state) => NoTransitionPage(
+            key: state.pageKey,
+            child: const RegisterScreen(),
+          ),
         ),
 
-        // 主框架页（包含底部导航）
+        // 主框架页（包含底部导航）（无动画）
         GoRoute(
           path: main,
-          builder: (context, state) => const MainScreen(),
+          pageBuilder: (context, state) => NoTransitionPage(
+            key: state.pageKey,
+            child: const MainScreen(),
+          ),
         ),
 
-        // 签到与积分页
+        // 签到与积分页（无动画）
         GoRoute(
           path: checkin,
-          builder: (context, state) => const CheckinScreen(),
+          pageBuilder: (context, state) => NoTransitionPage(
+            key: state.pageKey,
+            child: const CheckinScreen(),
+          ),
         ),
 
-        // 积分记录页
+        // 积分记录页（无动画）
         GoRoute(
           path: pointsHistory,
-          builder: (context, state) => const PointsHistoryScreen(),
+          pageBuilder: (context, state) => NoTransitionPage(
+            key: state.pageKey,
+            child: const PointsHistoryScreen(),
+          ),
         ),
 
-        // 反馈列表页
+        // 反馈列表页（无动画）
         GoRoute(
           path: feedbackList,
-          builder: (context, state) => const FeedbackListScreen(),
+          pageBuilder: (context, state) => NoTransitionPage(
+            key: state.pageKey,
+            child: const FeedbackListScreen(),
+          ),
         ),
 
-        // 意见反馈页
+        // 意见反馈页（无动画）
         GoRoute(
           path: feedback,
-          builder: (context, state) => const FeedbackScreen(),
+          pageBuilder: (context, state) => NoTransitionPage(
+            key: state.pageKey,
+            child: const FeedbackScreen(),
+          ),
         ),
 
-        // 关于我们页
+        // 关于我们页（无动画）
         GoRoute(
           path: about,
-          builder: (context, state) => const AboutScreen(),
+          pageBuilder: (context, state) => NoTransitionPage(
+            key: state.pageKey,
+            child: const AboutScreen(),
+          ),
         ),
 
-        // 联系客服页
+        // 联系客服页（无动画）
         GoRoute(
           path: customerService,
-          builder: (context, state) => const CustomerServiceScreen(),
+          pageBuilder: (context, state) => NoTransitionPage(
+            key: state.pageKey,
+            child: const CustomerServiceScreen(),
+          ),
         ),
 
-        // 设备详情页
+        // 设备详情页（无动画）
         GoRoute(
           path: deviceDetail,
-          builder: (context, state) {
+          pageBuilder: (context, state) {
             final device = state.extra as Device?;
             if (device == null) {
               // 如果设备为空，返回主页
-              return const MainScreen();
+              return NoTransitionPage(
+                key: state.pageKey,
+                child: const MainScreen(),
+              );
             }
-            return DeviceDetailScreen(device: device);
+            return NoTransitionPage(
+              key: state.pageKey,
+              child: DeviceDetailScreen(device: device),
+            );
           },
         ),
 
-        // 二维码扫描页
+        // 二维码扫描页（无动画）
         GoRoute(
           path: scan,
-          builder: (context, state) => const ScanPage(),
+          pageBuilder: (context, state) => NoTransitionPage(
+            key: state.pageKey,
+            child: const ScanPage(),
+          ),
         ),
       ],
     );

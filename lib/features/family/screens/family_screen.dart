@@ -26,6 +26,14 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    
+    // 初始化时加载家庭数据
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final notifier = ref.read(familyListProvider.notifier);
+        notifier.loadFamilies();
+      }
+    });
   }
 
   @override

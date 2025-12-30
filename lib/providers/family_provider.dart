@@ -54,9 +54,7 @@ class FamilyListNotifier extends StateNotifier<FamilyListState> {
   })  : _currentUserId = currentUserId,
         _currentFamilyId = currentFamilyId,
         super(const FamilyListState()) {
-    // 在构造函数中自动加载家庭列表
-    // 当前家庭数据会在 loadFamilies 成功后自动加载
-    loadFamilies();
+    // 不在构造函数中自动加载，由 FamilyScreen 统一管理加载时机
   }
 
   /// 加载当前家庭的所有数据（家庭信息、成员信息、设备信息）

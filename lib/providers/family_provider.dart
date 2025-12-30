@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models/family.dart' as family_models;
+import '../data/models/device.dart';
 import '../data/repositories/family_repository.dart';
+import '../data/repositories/device_repository.dart';
 import '../core/utils/error_handler.dart';
 import 'auth_provider.dart';
 
@@ -9,6 +11,7 @@ class FamilyListState {
   final List<family_models.Family> families;
   final family_models.Family? currentFamily;
   final List<family_models.FamilyMember> members;
+  final List<Device> devices; // 当前家庭的设备列表
   final Map<int, String> familyUserRoles; // 每个家庭中当前用户的角色
   final bool isLoading;
   final String? error;
@@ -17,6 +20,7 @@ class FamilyListState {
     this.families = const [],
     this.currentFamily,
     this.members = const [],
+    this.devices = const [],
     this.familyUserRoles = const {},
     this.isLoading = false,
     this.error,
@@ -26,6 +30,7 @@ class FamilyListState {
     List<family_models.Family>? families,
     family_models.Family? currentFamily,
     List<family_models.FamilyMember>? members,
+    List<Device>? devices,
     Map<int, String>? familyUserRoles,
     bool? isLoading,
     String? error,
@@ -34,6 +39,7 @@ class FamilyListState {
       families: families ?? this.families,
       currentFamily: currentFamily ?? this.currentFamily,
       members: members ?? this.members,
+      devices: devices ?? this.devices,
       familyUserRoles: familyUserRoles ?? this.familyUserRoles,
       isLoading: isLoading ?? this.isLoading,
       error: error,
@@ -43,35 +49,75 @@ class FamilyListState {
 
 /// 家庭列表状态管理
 class FamilyListNotifier extends StateNotifier<FamilyListState> {
-  final FamilyRepository _repository;
+  final FamilyRepository _familyRepository;
+  final DeviceRepository _deviceRepository;
   final int? _currentUserId;
+  final int? _currentFamilyId;
 
-  FamilyListNotifier(this._repository, {int? currentUserId})
-      : _currentUserId = currentUserId,
+  FamilyListNotifier(
+    this._familyRepository,
+    this._deviceRepository, {
+    int? currentUserId,
+    int? currentFamilyId,
+  })  : _currentUserId = currentUserId,
+        _currentFamilyId = currentFamilyId,
         super(const FamilyListState()) {
     // 在构造函数中自动加载家庭列表
-    loadFamilies(currentUserId: currentUserId);
+    // 当前家庭数据会在 loadFamilies 成功后自动加载
+    loadFamilies();
+  }
+
+  /// 加载当前家庭的所有数据（家庭信息、成员信息、设备信息）
+  Future<void> loadCurrentFamilyData(int familyId) async {
+    try {
+      // 1. 从家庭列表中找到当前家庭
+      final currentFamily = state.families.firstWhere(
+        (f) => f.id == familyId,
+        orElse: () => throw StateError('Family not found in list'),
+      );
+
+      // 2. 设置当前家庭
+      state = state.copyWith(currentFamily: currentFamily);
+
+      // 3. 并发加载成员信息和设备信息
+      await Future.wait([
+        loadMembers(familyId),
+        loadDevices(familyId),
+      ]);
+    } catch (e) {
+      print('[FamilyProvider] 加载当前家庭数据失败: $e');
+      state = state.copyWith(
+        error: ErrorHandler.extractErrorMessage(e),
+      );
+    }
   }
 
   /// 加载家庭列表
-  /// [currentUserId] 当前用户 ID，如果提供则在加载成功后自动加载角色信息
-  Future<void> loadFamilies({int? currentUserId}) async {
+  Future<void> loadFamilies() async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final families = await _repository.getFamilies();
+      final families = await _familyRepository.getFamilies();
       state = state.copyWith(
         families: families,
         isLoading: false,
         familyUserRoles: {}, // 清空之前的角色信息
       );
-      
-      // 如果提供了用户 ID，在加载成功后自动加载所有家庭的角色信息
-      if (currentUserId != null && families.isNotEmpty) {
-        // 使用 Future.microtask 确保状态更新后再加载角色
-        Future.microtask(() {
-          _loadAllFamilyRolesAsync(currentUserId, families);
-        });
+
+      // 如果有当前家庭ID，在加载家庭列表后自动加载当前家庭数据
+      if (_currentFamilyId != null) {
+        try {
+          final currentFamily = families.firstWhere(
+            (f) => f.id == _currentFamilyId,
+          );
+          // 使用 Future.microtask 确保状态更新后再加载当前家庭数据
+          Future.microtask(() {
+            loadCurrentFamilyData(_currentFamilyId!);
+          });
+        } catch (e) {
+          // 当前家庭不在列表中，不加载
+          print('[FamilyProvider] 当前家庭 $_currentFamilyId 不在家庭列表中');
+        }
       }
     } catch (e) {
       state = state.copyWith(
@@ -81,38 +127,25 @@ class FamilyListNotifier extends StateNotifier<FamilyListState> {
     }
   }
 
-  /// 异步加载所有家庭的当前用户角色（不阻塞主流程）
-  Future<void> _loadAllFamilyRolesAsync(int currentUserId, List<family_models.Family> families) async {
-    if (families.isEmpty) {
-      return;
-    }
 
-    final Map<int, String> roles = {};
-    
-    // 并发加载所有家庭的成员信息
-    await Future.wait(
-      families.map((family) async {
-        try {
-          final members = await _repository.getFamilyMembers(family.id);
-            final member = members.firstWhere(
-              (m) => m.accountId == currentUserId,
-              orElse: () => throw StateError('Member not found'),
-            );
-          roles[family.id] = member.role;
-        } catch (e) {
-          // 忽略错误，继续加载其他家庭
-          print('[FamilyProvider] 加载家庭 ${family.id} 的角色失败: $e');
-        }
-      }),
-    );
 
-    // 更新状态（只有在当前状态仍然为空时才更新，避免覆盖）
-    if (state.familyUserRoles.isEmpty && roles.isNotEmpty) {
-      state = state.copyWith(familyUserRoles: roles);
-      print('[FamilyProvider] 已加载 ${roles.length} 个家庭的角色信息: $roles');
+
+  /// 加载当前家庭的设备
+  Future<void> loadDevices(int familyId) async {
+    try {
+      // 获取所有设备（目前API没有按家庭ID过滤的接口）
+      // 注意：如果后端支持按家庭ID查询，可以在这里添加查询参数
+      final allDevices = await _deviceRepository.getDevices();
+      
+      // 目前设备没有直接的 family_id 字段，所以暂时返回所有设备
+      // 如果后端支持，可以在这里过滤出属于当前家庭的设备
+      // 只加载当前家庭的设备，不加载其他家庭的设备
+      state = state.copyWith(devices: allDevices);
+    } catch (e) {
+      print('[FamilyProvider] 加载家庭 $familyId 的设备失败: $e');
+      // 设备加载失败不影响其他功能，只记录错误
     }
   }
-
 
   /// 创建家庭
   Future<void> createFamily({
@@ -121,7 +154,7 @@ class FamilyListNotifier extends StateNotifier<FamilyListState> {
     String? description,
   }) async {
     try {
-      final family = await _repository.createFamily(
+      final family = await _familyRepository.createFamily(
         name: name,
         avatar: avatar,
         description: description,
@@ -137,10 +170,18 @@ class FamilyListNotifier extends StateNotifier<FamilyListState> {
   /// 删除家庭
   Future<void> deleteFamily(int id) async {
     try {
-      await _repository.deleteFamily(id);
+      await _familyRepository.deleteFamily(id);
       state = state.copyWith(
         families: state.families.where((f) => f.id != id).toList(),
       );
+      // 如果删除的是当前家庭，清除当前家庭数据
+      if (state.currentFamily?.id == id) {
+        state = state.copyWith(
+          currentFamily: null,
+          members: [],
+          devices: [],
+        );
+      }
     } catch (e) {
       state = state.copyWith(error: ErrorHandler.extractErrorMessage(e));
     }
@@ -149,7 +190,7 @@ class FamilyListNotifier extends StateNotifier<FamilyListState> {
   /// 加入家庭
   Future<void> joinFamily(String inviteCode, {String? nickname}) async {
     try {
-      final family = await _repository.joinFamily(inviteCode, nickname: nickname);
+      final family = await _familyRepository.joinFamily(inviteCode, nickname: nickname);
       state = state.copyWith(
         families: [...state.families, family],
         error: null, // 清除之前的错误
@@ -165,34 +206,56 @@ class FamilyListNotifier extends StateNotifier<FamilyListState> {
   Future<void> selectFamily(family_models.Family? family) async {
     state = state.copyWith(currentFamily: family);
     if (family != null) {
-      await loadMembers(family.id);
+      // 加载当前家庭的所有数据
+      await loadCurrentFamilyData(family.id);
     } else {
-      state = state.copyWith(members: []);
+      state = state.copyWith(
+        members: [],
+        devices: [],
+      );
     }
   }
 
   /// 加载家庭成员
   Future<void> loadMembers(int familyId) async {
-    state = state.copyWith(isLoading: true, error: null);
-
     try {
-      final members = await _repository.getFamilyMembers(familyId);
-      state = state.copyWith(
-        members: members,
-        isLoading: false,
-      );
+      final members = await _familyRepository.getFamilyMembers(familyId);
+      state = state.copyWith(members: members);
+      
+      // 从已加载的成员列表中获取当前用户的角色
+      if (_currentUserId != null) {
+        try {
+          final member = members.firstWhere(
+            (m) => m.accountId == _currentUserId,
+          );
+          state = state.copyWith(
+            familyUserRoles: {
+              ...state.familyUserRoles,
+              familyId: member.role,
+            },
+          );
+        } catch (e) {
+          // 当前用户不在成员列表中，忽略
+          print('[FamilyProvider] 当前用户 $_currentUserId 不在家庭 $familyId 的成员列表中');
+        }
+      }
     } catch (e) {
+      print('[FamilyProvider] 加载家庭成员失败: $e');
       state = state.copyWith(
-        isLoading: false,
         error: ErrorHandler.extractErrorMessage(e),
       );
     }
   }
 
+  /// 获取家庭成员（不更新状态，用于展开显示）
+  Future<List<family_models.FamilyMember>> getFamilyMembers(int familyId) async {
+    return await _familyRepository.getFamilyMembers(familyId);
+  }
+
   /// 更新成员昵称
   Future<void> updateMemberNickname(int memberId, String nickname) async {
     try {
-      final updatedMember = await _repository.updateMemberNickname(
+      final updatedMember = await _familyRepository.updateMemberNickname(
         memberId,
         nickname,
       );
@@ -208,7 +271,7 @@ class FamilyListNotifier extends StateNotifier<FamilyListState> {
   /// 移除成员
   Future<void> removeMember(int memberId) async {
     try {
-      await _repository.removeMember(memberId);
+      await _familyRepository.removeMember(memberId);
       state = state.copyWith(
         members: state.members.where((m) => m.id != memberId).toList(),
       );
@@ -218,51 +281,28 @@ class FamilyListNotifier extends StateNotifier<FamilyListState> {
   }
 
   /// 刷新
-  /// [currentUserId] 当前用户 ID，如果提供则在加载成功后自动加载角色信息
-  Future<void> refresh({int? currentUserId}) async {
-    await loadFamilies(currentUserId: currentUserId);
+  Future<void> refresh() async {
+    await loadFamilies();
     if (state.currentFamily != null) {
-      await loadMembers(state.currentFamily!.id);
-    }
-  }
-
-  /// 加载所有家庭的当前用户角色
-  Future<void> loadAllFamilyRoles(int currentUserId) async {
-    // 如果已经有角色信息或者家庭列表为空，不重复加载
-    if (state.families.isEmpty || state.familyUserRoles.isNotEmpty) {
-      return;
-    }
-
-    final Map<int, String> roles = {};
-    
-    // 并发加载所有家庭的成员信息
-    await Future.wait(
-      state.families.map((family) async {
-        try {
-          final members = await _repository.getFamilyMembers(family.id);
-            final member = members.firstWhere(
-              (m) => m.accountId == currentUserId,
-              orElse: () => throw StateError('Member not found'),
-            );
-          roles[family.id] = member.role;
-        } catch (e) {
-          // 忽略错误，继续加载其他家庭
-        }
-      }),
-    );
-
-    // 更新状态（只有在当前状态仍然为空时才更新，避免覆盖）
-    if (state.familyUserRoles.isEmpty) {
-      state = state.copyWith(familyUserRoles: roles);
+      await loadCurrentFamilyData(state.currentFamily!.id);
+    } else if (_currentFamilyId != null) {
+      // 如果状态中没有当前家庭，但提供了当前家庭ID，尝试加载
+      await loadCurrentFamilyData(_currentFamilyId!);
     }
   }
 }
 
 /// 家庭列表 Provider
 final familyListProvider = StateNotifierProvider<FamilyListNotifier, FamilyListState>((ref) {
-  // 从 authProvider 获取当前用户 ID
+  // 从 authProvider 获取当前用户 ID 和当前家庭 ID
   final authState = ref.watch(authProvider);
   final currentUserId = authState.account?.id;
-  return FamilyListNotifier(FamilyRepository(), currentUserId: currentUserId);
+  final currentFamilyId = authState.account?.currentFamilyId;
+  return FamilyListNotifier(
+    FamilyRepository(),
+    DeviceRepository(),
+    currentUserId: currentUserId,
+    currentFamilyId: currentFamilyId,
+  );
 });
 

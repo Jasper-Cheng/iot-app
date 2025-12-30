@@ -19,19 +19,7 @@ class FamilyMemberItem extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
-        leading: CircleAvatar(
-          backgroundImage: member.account.avatar != null
-              ? NetworkImage(member.account.avatar!)
-              : null,
-          child: member.account.avatar == null
-              ? Text(
-                  member.nickname.isNotEmpty 
-                      ? member.nickname[0].toUpperCase() 
-                      : 'U',
-                  style: const TextStyle(fontSize: 20),
-                )
-              : null,
-        ),
+        leading: _buildMemberAvatar(member.account.avatar, member.nickname),
         title: Row(
           children: [
             Text(
@@ -135,6 +123,52 @@ class FamilyMemberItem extends StatelessWidget {
 
   String _formatDate(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
+  /// 构建成员头像
+  Widget _buildMemberAvatar(String? avatarPath, String nickname) {
+    final defaultChild = Text(
+      nickname.isNotEmpty 
+          ? nickname[0].toUpperCase() 
+          : 'U',
+      style: const TextStyle(fontSize: 20),
+    );
+
+    if (avatarPath == null || avatarPath.isEmpty) {
+      return CircleAvatar(
+        child: defaultChild,
+      );
+    }
+
+    // 如果是完整的 URL（http/https），使用 NetworkImage
+    if (avatarPath.startsWith('http://') || avatarPath.startsWith('https://')) {
+      return CircleAvatar(
+        backgroundImage: NetworkImage(avatarPath),
+        onBackgroundImageError: (exception, stackTrace) {
+          // 网络图片加载失败时显示首字母
+        },
+        child: defaultChild,
+      );
+    }
+
+    // 如果是相对路径 /avatars/avatarX.png，转换为 assets/avatars/avatarX.png
+    if (avatarPath.startsWith('/avatars/')) {
+      final fileName = avatarPath.replaceFirst('/avatars/', '');
+      final assetPath = 'assets/avatars/$fileName';
+      
+      return CircleAvatar(
+        backgroundImage: AssetImage(assetPath),
+        onBackgroundImageError: (exception, stackTrace) {
+          // assets 图片加载失败时显示首字母
+        },
+        child: defaultChild,
+      );
+    }
+
+    // 其他情况，显示首字母
+    return CircleAvatar(
+      child: defaultChild,
+    );
   }
 }
 

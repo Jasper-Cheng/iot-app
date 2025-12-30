@@ -153,15 +153,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  CircleAvatar(
-                    radius: 30,
-                    backgroundImage: family.avatar != null
-                        ? NetworkImage(family.avatar!)
-                        : null,
-                    child: family.avatar == null
-                        ? const Icon(Icons.home, size: 30)
-                        : null,
-                  ),
+                  _buildFamilyAvatar(context, family.avatar, 30),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
@@ -473,6 +465,81 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
     Clipboard.setData(ClipboardData(text: code));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('邀请码已复制到剪贴板')),
+    );
+  }
+
+  /// 构建家庭头像
+  Widget _buildFamilyAvatar(BuildContext context, String? avatarPath, double radius) {
+    final defaultIcon = Icon(
+      Icons.family_restroom,
+      size: radius * 1.2,
+      color: Theme.of(context).iconTheme.color,
+    );
+
+    if (avatarPath == null || avatarPath.isEmpty) {
+      return ClipOval(
+        child: Container(
+          width: radius * 2,
+          height: radius * 2,
+          color: Colors.transparent,
+          child: defaultIcon,
+        ),
+      );
+    }
+
+    // 如果是完整的 URL（http/https），使用 NetworkImage
+    if (avatarPath.startsWith('http://') || avatarPath.startsWith('https://')) {
+      return ClipOval(
+        child: Image.network(
+          avatarPath,
+          width: radius * 2,
+          height: radius * 2,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            // 网络图片加载失败时显示默认图标
+            return Container(
+              width: radius * 2,
+              height: radius * 2,
+              color: Colors.transparent,
+              child: defaultIcon,
+            );
+          },
+        ),
+      );
+    }
+
+    // 如果是相对路径 /avatars/avatarX.png，转换为 assets/avatars/avatarX.png
+    if (avatarPath.startsWith('/avatars/')) {
+      final fileName = avatarPath.replaceFirst('/avatars/', '');
+      final assetPath = 'assets/avatars/$fileName';
+      
+      return ClipOval(
+        child: Image.asset(
+          assetPath,
+          width: radius * 2,
+          height: radius * 2,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            // assets 图片加载失败时显示默认图标
+            return Container(
+              width: radius * 2,
+              height: radius * 2,
+              color: Colors.transparent,
+              child: defaultIcon,
+            );
+          },
+        ),
+      );
+    }
+
+    // 其他情况，显示默认图标
+    return ClipOval(
+      child: Container(
+        width: radius * 2,
+        height: radius * 2,
+        color: Colors.transparent,
+        child: defaultIcon,
+      ),
     );
   }
 }

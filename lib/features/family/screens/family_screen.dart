@@ -464,7 +464,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
                     color: Colors.grey[600],
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 6),
                 OutlinedButton.icon(
                   onPressed: () => _copyInviteLink(family.inviteCode),
                   icon: const Icon(Icons.link, size: 12),
@@ -473,7 +473,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
                     style: TextStyle(fontSize: 11),
                   ),
                   style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
@@ -493,11 +493,19 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
             ),
           )
         else
-          ...members.map((member) => FamilyMemberItem(
-            member: member,
-            onEdit: () => _showEditMemberDialog(context, member, notifier),
-            onRemove: () => _showRemoveMemberDialog(context, member, notifier),
-          )).toList(),
+          ...members.map((member) {
+            // 判断是否是当前用户
+            final authState = ref.read(authProvider);
+            final currentUserId = authState.account?.id;
+            final isCurrentUser = currentUserId != null && member.account.id == currentUserId;
+            
+            return FamilyMemberItem(
+              member: member,
+              isCurrentUser: isCurrentUser,
+              onEdit: () => _showEditMemberDialog(context, member, notifier),
+              onRemove: () => _showRemoveMemberDialog(context, member, notifier),
+            );
+          }).toList(),
       ],
     );
   }

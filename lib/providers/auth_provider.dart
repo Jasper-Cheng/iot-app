@@ -273,6 +273,24 @@ class AuthNotifier extends StateNotifier<AuthState> {
       rethrow;
     }
   }
+
+  /// 刷新用户信息（从服务器获取最新信息）
+  Future<void> refreshProfile() async {
+    try {
+      final account = await _authRepository.getProfile();
+      
+      // 更新本地存储
+      await _storage.setString(
+        StorageService.keyUserInfo,
+        jsonEncode(account.toJson()),
+      );
+
+      state = state.copyWith(account: account);
+    } catch (e) {
+      // 刷新失败不影响当前状态
+      print('[AuthProvider] 刷新用户信息失败: $e');
+    }
+  }
 }
 
 /// 认证 Provider

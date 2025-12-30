@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models/device.dart';
 import '../data/repositories/device_repository.dart';
 import '../core/utils/error_handler.dart';
+import 'auth_provider.dart';
 
 /// 设备列表状态
 class DeviceListState {
@@ -31,8 +32,13 @@ class DeviceListState {
 /// 设备列表状态管理
 class DeviceListNotifier extends StateNotifier<DeviceListState> {
   final DeviceRepository _repository;
+  final int? _currentFamilyId;
 
-  DeviceListNotifier(this._repository) : super(const DeviceListState()) {
+  DeviceListNotifier(
+    this._repository, {
+    int? currentFamilyId,
+  })  : _currentFamilyId = currentFamilyId,
+        super(const DeviceListState()) {
     // 不在构造函数中自动加载，由 MainScreen 统一管理加载时机
   }
 
@@ -41,7 +47,7 @@ class DeviceListNotifier extends StateNotifier<DeviceListState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final devices = await _repository.getDevices();
+      final devices = await _repository.getDevices(familyId: _currentFamilyId);
       state = state.copyWith(
         devices: devices,
         isLoading: false,
@@ -100,6 +106,12 @@ class DeviceListNotifier extends StateNotifier<DeviceListState> {
 
 /// 设备列表 Provider
 final deviceListProvider = StateNotifierProvider<DeviceListNotifier, DeviceListState>((ref) {
-  return DeviceListNotifier(DeviceRepository());
+  // 从 authProvider 获取当前家庭 ID
+  final authState = ref.watch(authProvider);
+  final currentFamilyId = authState.account?.currentFamilyId;
+  return DeviceListNotifier(
+    DeviceRepository(),
+    currentFamilyId: currentFamilyId,
+  );
 });
 

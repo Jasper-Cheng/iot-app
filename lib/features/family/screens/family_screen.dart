@@ -5,6 +5,7 @@ import '../../../providers/family_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/device_provider.dart';
 import '../../../data/models/family.dart' as family_models;
+import '../../../data/repositories/auth_repository.dart';
 import '../../../core/utils/error_handler.dart';
 import '../../../core/utils/date_utils.dart';
 import '../widgets/create_family_dialog.dart';
@@ -1366,14 +1367,45 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       family_models.Family family,
       FamilyListNotifier notifier,
       ) async {
-    await notifier.selectFamily(family);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('已切换到家庭「${family.name}」'),
-          backgroundColor: Colors.green,
-        ),
-      );
+    try {
+      // 1. 调用接口更新当前家庭
+      final authRepository = AuthRepository();
+      await authRepository.updateCurrentFamily(family.id);
+      if (!mounted) return;
+      
+      // 2. 刷新用户信息（更新 authProvider 中的 currentFamilyId）
+      await ref.read(authProvider.notifier).refreshProfile();
+      if (!mounted) return;
+      
+      // 3. 重新获取 notifier（因为 familyListProvider 会重新创建，使用最新的 currentFamilyId）
+      final newNotifier = ref.read(familyListProvider.notifier);
+      
+      // 4. 重新加载家庭列表（会使用最新的 currentFamilyId）
+      await newNotifier.loadFamilies();
+      if (!mounted) return;
+      
+      // 5. 重新获取设备列表 notifier 并刷新设备列表（确保使用最新的 currentFamilyId）
+      final deviceNotifier = ref.read(deviceListProvider.notifier);
+      await deviceNotifier.refresh();
+      if (!mounted) return;
+      
+      if (mounted && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('已切换到家庭「${family.name}」'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('切换失败: ${ErrorHandler.extractErrorMessage(e)}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -1382,14 +1414,45 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       BuildContext context,
       FamilyListNotifier notifier,
       ) async {
-    await notifier.selectFamily(null);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('已切回个人设备管理'),
-          backgroundColor: Colors.green,
-        ),
-      );
+    try {
+      // 1. 调用接口切换到个人模式
+      final authRepository = AuthRepository();
+      await authRepository.updateCurrentFamily(null);
+      if (!mounted) return;
+      
+      // 2. 刷新用户信息（更新 authProvider 中的 currentFamilyId 为 null）
+      await ref.read(authProvider.notifier).refreshProfile();
+      if (!mounted) return;
+      
+      // 3. 重新获取 notifier（因为 familyListProvider 会重新创建，使用最新的 currentFamilyId）
+      final newNotifier = ref.read(familyListProvider.notifier);
+      
+      // 4. 重新加载家庭列表（会使用最新的 currentFamilyId，应该是 null）
+      await newNotifier.loadFamilies();
+      if (!mounted) return;
+      
+      // 5. 重新获取设备列表 notifier 并刷新设备列表（确保使用最新的 currentFamilyId）
+      final deviceNotifier = ref.read(deviceListProvider.notifier);
+      await deviceNotifier.refresh();
+      if (!mounted) return;
+      
+      if (mounted && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('已切回个人设备管理'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('切换失败: ${ErrorHandler.extractErrorMessage(e)}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 

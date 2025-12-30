@@ -7,8 +7,17 @@ class DeviceRepository {
   final _dio = DioClient().dio;
 
   /// 获取设备列表
-  Future<List<Device>> getDevices() async {
-    final response = await _dio.get(ApiConstants.devices);
+  /// [familyId] 家庭ID，如果不为 null 则作为查询参数传递
+  Future<List<Device>> getDevices({int? familyId}) async {
+    final queryParameters = <String, dynamic>{};
+    if (familyId != null) {
+      queryParameters['family_id'] = familyId;
+    }
+    
+    final response = await _dio.get(
+      ApiConstants.devices,
+      queryParameters: queryParameters.isNotEmpty ? queryParameters : null,
+    );
     final List<dynamic> data = response.data;
     return data.map((e) => Device.fromJson(e)).toList();
   }

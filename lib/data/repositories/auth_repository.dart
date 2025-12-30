@@ -114,6 +114,20 @@ class AuthRepository {
     return response.data;
   }
 
+  /// 更新当前家庭
+  /// [familyId] 家庭ID，如果为 null 则切换到个人模式
+  Future<void> updateCurrentFamily(int? familyId) async {
+    final queryParameters = <String, dynamic>{};
+    if (familyId != null) {
+      queryParameters['family_id'] = familyId;
+    }
+    
+    await _dio.patch(
+      ApiConstants.currentFamily,
+      queryParameters: queryParameters,
+    );
+  }
+
   /// 删除当前账户
   Future<void> deleteAccount() async {
     await _dio.delete(ApiConstants.deleteAccount);

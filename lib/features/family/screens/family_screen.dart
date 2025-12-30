@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../providers/family_provider.dart';
-import '../../../data/models/family.dart';
+import '../../../providers/auth_provider.dart';
+import '../../../data/models/family.dart' as family_models;
 import '../../../core/utils/error_handler.dart';
 import '../widgets/create_family_dialog.dart';
 import '../widgets/join_family_dialog.dart';
@@ -83,15 +84,12 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
           ],
         ),
       ),
-      body: RefreshIndicator(
-        onRefresh: () => notifier.refresh(),
-        child: TabBarView(
-          controller: _tabController,
-          children: [
-            _buildFamiliesTab(state, notifier),
-            _buildMembersTab(state, notifier),
-          ],
-        ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildFamiliesTab(state, notifier),
+          _buildMembersTab(state, notifier),
+        ],
       ),
     );
   }
@@ -137,135 +135,28 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: state.families.length,
-      itemBuilder: (context, index) {
-        final family = state.families[index];
-        final isSelected = state.currentFamily?.id == family.id;
+    return RefreshIndicator(
+      onRefresh: () => notifier.refresh(),
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: state.families.length,
+        itemBuilder: (context, index) {
+          final family = state.families[index];
+          final isSelected = state.currentFamily?.id == family.id;
+          // 获取当前用户在家庭中的角色（只有当前家庭的成员信息已加载）
+          final currentUserRole = isSelected
+              ? _getCurrentUserRoleInFamily(family.id, state.members)
+              : null;
 
-        return Card(
-          elevation: isSelected ? 4 : 1,
-          margin: const EdgeInsets.only(bottom: 12),
-          child: InkWell(
-            onTap: () => notifier.selectFamily(family),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  _buildFamilyAvatar(context, family.avatar, 30),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              family.name,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            if (isSelected) ...[
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).primaryColor,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Text(
-                                  '当前',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                        if (family.description != null) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            family.description!,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.vpn_key,
-                              size: 16,
-                              color: Colors.grey[600],
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '邀请码: ${family.inviteCode}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            InkWell(
-                              onTap: () => _copyInviteCode(family.inviteCode),
-                              child: Icon(
-                                Icons.copy,
-                                size: 16,
-                                color: Theme.of(context).primaryColor,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  PopupMenuButton<String>(
-                    onSelected: (value) async {
-                      if (value == 'delete') {
-                        final confirm = await _showDeleteConfirmDialog(
-                          context,
-                          family.name,
-                        );
-                        if (confirm == true && mounted) {
-                          notifier.deleteFamily(family.id);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('已删除家庭')),
-                          );
-                        }
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      const PopupMenuItem(
-                        value: 'delete',
-                        child: Row(
-                          children: [
-                            Icon(Icons.delete, color: Colors.red),
-                            SizedBox(width: 8),
-                            Text('删除家庭', style: TextStyle(color: Colors.red)),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
+          return _buildFamilyItem(
+            context,
+            family,
+            isSelected,
+            currentUserRole,
+            notifier,
+          );
+        },
+      ),
     );
   }
 
@@ -385,7 +276,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
   /// 显示编辑成员对话框
   Future<void> _showEditMemberDialog(
     BuildContext context,
-    FamilyMember member,
+    family_models.FamilyMember member,
     FamilyListNotifier notifier,
   ) async {
     final controller = TextEditingController(text: member.nickname);
@@ -428,7 +319,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
   /// 显示移除成员对话框
   Future<void> _showRemoveMemberDialog(
     BuildContext context,
-    FamilyMember member,
+    family_models.FamilyMember member,
     FamilyListNotifier notifier,
   ) async {
     final confirm = await showDialog<bool>(
@@ -466,6 +357,360 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('邀请码已复制到剪贴板')),
     );
+  }
+
+  /// 获取当前用户在家庭中的角色
+  String? _getCurrentUserRoleInFamily(int familyId, List<family_models.FamilyMember> members) {
+    final authState = ref.read(authProvider);
+    final currentUserId = authState.account?.id;
+    if (currentUserId == null) return null;
+
+    // 只查找当前家庭的成员（如果已加载）
+    try {
+      final member = members.firstWhere(
+        (m) => m.account.id == currentUserId,
+      );
+      return member.role;
+    } catch (e) {
+      // 成员列表未加载或找不到当前用户
+      return null;
+    }
+  }
+
+  /// 构建家庭项
+  Widget _buildFamilyItem(
+    BuildContext context,
+    family_models.Family family,
+    bool isSelected,
+    String? currentUserRole,
+    FamilyListNotifier notifier,
+  ) {
+    final isCreator = currentUserRole == 'creator' || currentUserRole == 'owner';
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Card(
+      elevation: isSelected ? 4 : 1,
+      margin: const EdgeInsets.only(bottom: 12),
+      color: isSelected
+          ? colorScheme.primaryContainer.withValues(alpha: 0.3)
+          : null,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: isSelected
+            ? BorderSide(
+                color: colorScheme.primary,
+                width: 2,
+              )
+            : BorderSide.none,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                _buildFamilyAvatar(context, family.avatar, 30),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 角色标识
+                      if (currentUserRole != null) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isCreator
+                                ? Colors.amber.withValues(alpha: 0.2)
+                                : Colors.blue.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: isCreator
+                                  ? Colors.amber
+                                  : Colors.blue,
+                              width: 1,
+                            ),
+                          ),
+                          child: Text(
+                            isCreator ? '创建者' : '成员',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: isCreator ? Colors.amber[900] : Colors.blue[900],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                      // 名称 label
+                      Row(
+                        children: [
+                          Text(
+                            '名称: ',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Text(
+                            family.name,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: isSelected
+                                  ? colorScheme.primary
+                                  : null,
+                            ),
+                          ),
+                          if (isSelected) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: colorScheme.primary,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                '当前',
+                                style: TextStyle(
+                                  color: colorScheme.onPrimary,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      // 描述 label
+                      if (family.description != null) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '描述: ',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                family.description!,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[700],
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      const SizedBox(height: 8),
+                      // 邀请码
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.vpn_key,
+                            size: 16,
+                            color: Colors.grey[600],
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '邀请码: ${family.inviteCode}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          InkWell(
+                            onTap: () => _copyInviteCode(family.inviteCode),
+                            child: Icon(
+                              Icons.copy,
+                              size: 16,
+                              color: colorScheme.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // 操作按钮
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                // 切换为此家庭
+                if (!isSelected)
+                  TextButton.icon(
+                    onPressed: () => _handleSwitchFamily(context, family, notifier),
+                    icon: const Icon(Icons.swap_horiz, size: 18),
+                    label: const Text('切换为此家庭'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: colorScheme.primary,
+                    ),
+                  ),
+                // 退出家庭
+                TextButton.icon(
+                  onPressed: () => _handleLeaveFamily(context, family, notifier),
+                  icon: const Icon(Icons.exit_to_app, size: 18),
+                  label: const Text('退出家庭'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.orange,
+                  ),
+                ),
+                // 删除家庭（仅创建者）
+                if (isCreator)
+                  TextButton.icon(
+                    onPressed: () => _handleDeleteFamily(context, family, notifier),
+                    icon: const Icon(Icons.delete, size: 18),
+                    label: const Text('删除家庭'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.red,
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 切换家庭
+  Future<void> _handleSwitchFamily(
+    BuildContext context,
+    family_models.Family family,
+    FamilyListNotifier notifier,
+  ) async {
+    await notifier.selectFamily(family);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('已切换到家庭「${family.name}」'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  }
+
+  /// 退出家庭
+  Future<void> _handleLeaveFamily(
+    BuildContext context,
+    family_models.Family family,
+    FamilyListNotifier notifier,
+  ) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('退出家庭'),
+        content: Text('确定要退出家庭「${family.name}」吗？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.orange),
+            child: const Text('退出'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && mounted) {
+      try {
+        // 先加载家庭成员以获取当前用户的 memberId
+        await notifier.loadMembers(family.id);
+        final members = notifier.state.members;
+        final authState = ref.read(authProvider);
+        final currentUserId = authState.account?.id;
+        
+        if (currentUserId == null) {
+          throw Exception('无法获取当前用户信息');
+        }
+
+        // 查找当前用户的成员信息
+        final currentMember = members.firstWhere(
+          (m) => m.account.id == currentUserId,
+        );
+
+        // 移除自己（退出家庭）
+        await notifier.removeMember(currentMember.id);
+        
+        // 如果退出的是当前家庭，清除当前家庭选择
+        if (notifier.state.currentFamily?.id == family.id) {
+          await notifier.selectFamily(null);
+        }
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('已退出家庭'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('退出家庭失败: ${ErrorHandler.extractErrorMessage(e)}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  /// 删除家庭
+  Future<void> _handleDeleteFamily(
+    BuildContext context,
+    family_models.Family family,
+    FamilyListNotifier notifier,
+  ) async {
+    final confirm = await _showDeleteConfirmDialog(context, family.name);
+    if (confirm == true && mounted) {
+      try {
+        await notifier.deleteFamily(family.id);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('已删除家庭'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('删除家庭失败: ${ErrorHandler.extractErrorMessage(e)}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
   }
 
   /// 构建家庭头像

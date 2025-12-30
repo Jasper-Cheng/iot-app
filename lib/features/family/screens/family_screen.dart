@@ -52,6 +52,30 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 48,
+        leading: InkWell(
+          onTap: () => _showSelectFamilyDialog(context, state, notifier),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.home,
+                  size: 20,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '切换家庭',
+                  style: TextStyle(
+                    fontSize: 15
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        leadingWidth: 120,
         title: const Text('家庭管理'),
         actions: [
           PopupMenuButton<String>(
@@ -115,36 +139,47 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
 
     // 如果没有当前家庭，显示空状态
     if (state.currentFamily == null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.family_restroom,
-              size: 80,
-              color: Colors.grey[400],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              '还没有设置当前家庭',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
+      return RefreshIndicator(
+        onRefresh: () async {
+          await notifier.refresh();
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height - 200,
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.family_restroom,
+                    size: 80,
+                    color: Colors.grey[400],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    '还没有设置当前家庭',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    onPressed: () => _showCreateFamilyDialog(context),
+                    icon: const Icon(Icons.add),
+                    label: const Text('创建家庭'),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: () => _showSelectFamilyDialog(context, state, notifier),
+                    icon: const Icon(Icons.home),
+                    label: const Text('选择家庭'),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () => _showCreateFamilyDialog(context),
-              icon: const Icon(Icons.add),
-              label: const Text('创建家庭'),
-            ),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: () => _showJoinFamilyDialog(context),
-              icon: const Icon(Icons.input),
-              label: const Text('加入家庭'),
-            ),
-          ],
+          ),
         ),
       );
     }
@@ -157,7 +192,8 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
         await notifier.refresh();
       },
       child: SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
         child: _buildCurrentFamilyView(
           context,
           state.currentFamily!,
@@ -186,12 +222,13 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       children: [
         // 家庭信息卡片
         Card(
+          margin: EdgeInsets.zero,
           elevation: 4,
             child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+                children: [
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -212,7 +249,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
                                 fontWeight: FontWeight.bold,
                                   color: Colors.grey[700],
                                 ),
-                              ),
+                                ),
                               Expanded(
                                 child: Text(
                                   family.name,
@@ -245,7 +282,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
                             style: TextStyle(
                               fontSize: 14,
                                       color: Colors.grey[700],
-                                    ),
+                            ),
                                   ),
                             ),
                               ],
@@ -259,7 +296,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
                             crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
                               // 邀请码
-                              Row(
+                        Row(
                                 mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
@@ -282,9 +319,9 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
                                 Icons.copy,
                                       size: 14,
                                       color: colorScheme.primary,
-                                    ),
-                                  ),
-                                ],
+                              ),
+                            ),
+                          ],
                               ),
                               // 创建时间
                               Row(
@@ -302,46 +339,92 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
                                       fontSize: 12,
                                       color: Colors.grey[600],
                               ),
-                            ),
-                          ],
                         ),
                       ],
                     ),
-                        ],
-                      ),
+                      ],
                     ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                // 操作按钮
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    // 删除家庭（仅创建者）
-                    if (isCreator)
-                      TextButton.icon(
-                        onPressed: () => _handleDeleteFamily(context, family, notifier),
-                        icon: const Icon(Icons.delete, size: 18),
-                        label: const Text('删除家庭'),
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.red,
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // 操作按钮
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      // 删除家庭（仅创建者）
+                      if (isCreator)
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () => _handleDeleteFamily(context, family, notifier),
+                            icon: const Icon(Icons.delete, size: 18),
+                            label: const Text('删除家庭'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.red,
+                              side: const BorderSide(color: Colors.red),
+                            ),
+                          ),
+                        ),
+                      // 切回个人设备管理
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _handleSwitchToPersonal(context, notifier),
+                          icon: const Icon(Icons.person, size: 18),
+                          label: const Text('切回个人设备管理'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: colorScheme.primary,
+                            side: BorderSide(color: colorScheme.primary),
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ],
               ),
-            ),
           ),
+        ),
         const SizedBox(height: 16),
         // 家庭成员列表
-        Text(
-          '家庭成员 (${members.length})',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey[800],
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              '家庭成员',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[800],
+              ),
+            ),
+            Row(
+              children: [
+                Text(
+                  '${members.length}人',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                OutlinedButton.icon(
+                  onPressed: () => _copyInviteLink(family.inviteCode),
+                  icon: const Icon(Icons.link, size: 14),
+                  label: const Text(
+                    '邀请成员',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
         const SizedBox(height: 12),
         if (members.isEmpty)
@@ -433,8 +516,8 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
           return Padding(
             padding: const EdgeInsets.only(bottom: 16),
             child: DeviceCardFactory.createCard(device),
-          );
-        },
+        );
+      },
       ),
     );
   }
@@ -476,6 +559,67 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       final notifier = ref.read(familyListProvider.notifier);
       await notifier.loadFamilies();
     }
+  }
+
+  /// 显示选择家庭对话框
+  Future<void> _showSelectFamilyDialog(
+    BuildContext context,
+    FamilyListState state,
+    FamilyListNotifier notifier,
+  ) async {
+    if (state.families.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('您还没有加入任何家庭'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+      return;
+    }
+
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('选择家庭'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: state.families.length,
+            itemBuilder: (context, index) {
+              final family = state.families[index];
+              final currentUserRole = state.familyUserRoles[family.id];
+              final isCreator = currentUserRole == 'creator' || currentUserRole == 'owner';
+              
+              return ListTile(
+                leading: _buildFamilyAvatar(context, family.avatar, 40),
+                title: Text(family.name),
+                subtitle: Text(
+                  isCreator ? '创建者' : '成员',
+                  style: TextStyle(
+                    color: isCreator ? Colors.amber[700] : Colors.blue[700],
+                    fontSize: 12,
+                  ),
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.pop(context);
+                  _handleSwitchFamily(context, family, notifier);
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+        ],
+      ),
+    );
   }
 
   /// 显示删除确认对话框
@@ -588,6 +732,82 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       const SnackBar(
         content: Text('邀请码已复制到剪贴板'),
         backgroundColor: Colors.green,
+      ),
+    );
+  }
+
+  /// 复制邀请链接
+  void _copyInviteLink(String inviteCode) {
+    // 构建邀请链接，使用深度链接格式
+    final inviteLink = 'iotapp://join?invite_code=$inviteCode';
+    Clipboard.setData(ClipboardData(text: inviteLink));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('邀请链接已复制到剪贴板'),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
+  /// 显示邀请成员对话框
+  Future<void> _showInviteMemberDialog(
+    BuildContext context,
+    family_models.Family family,
+  ) async {
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('邀请成员'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('邀请码：'),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey[300]!),
+                    ),
+                    child: Text(
+                      family.inviteCode,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 2,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: () {
+                    _copyInviteCode(family.inviteCode);
+                    Navigator.pop(context);
+                  },
+                  icon: const Icon(Icons.copy),
+                  tooltip: '复制',
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              '将邀请码分享给其他用户，他们可以通过邀请码加入家庭。',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('关闭'),
+          ),
+        ],
       ),
     );
   }
@@ -834,13 +1054,44 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
                         children: [
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            child: Text(
-                              '家庭成员 (${members.length})',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey[700],
-                              ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Text(
+                                  '家庭成员',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey[700],
+                                  ),
+                                ),
+                                Row(
+                                  children: [
+                                    Text(
+                                      '${members.length}人',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    OutlinedButton.icon(
+                                      onPressed: () => _copyInviteLink(family.inviteCode),
+                                      icon: const Icon(Icons.link, size: 12),
+                                      label: const Text(
+                                        '邀请成员',
+                                        style: TextStyle(fontSize: 11),
+                                      ),
+                                      style: OutlinedButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                        minimumSize: Size.zero,
+                                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ),
                           ...members.map((member) => Padding(
@@ -975,6 +1226,22 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('已切换到家庭「${family.name}」'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  }
+
+  /// 切回个人设备管理
+  Future<void> _handleSwitchToPersonal(
+    BuildContext context,
+    FamilyListNotifier notifier,
+  ) async {
+    await notifier.selectFamily(null);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('已切回个人设备管理'),
           backgroundColor: Colors.green,
         ),
       );

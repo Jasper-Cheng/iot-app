@@ -50,8 +50,20 @@ class FamilyRepository {
   }
 
   /// 获取家庭成员
-  Future<List<FamilyMember>> getFamilyMembers(int familyId) async {
-    final response = await _dio.get(ApiConstants.familyMembers(familyId));
+  /// [skip] 跳过数量，用于分页，必须 >= 0
+  /// [limit] 限制数量，范围：1-200
+  Future<List<FamilyMember>> getFamilyMembers(
+    int familyId, {
+    int skip = 0,
+    int limit = 100,
+  }) async {
+    final response = await _dio.get(
+      ApiConstants.familyMembers(familyId),
+      queryParameters: {
+        'skip': skip,
+        'limit': limit,
+      },
+    );
     final List<dynamic> data = response.data;
     return data.map((e) => FamilyMember.fromJson(e)).toList();
   }

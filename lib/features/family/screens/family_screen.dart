@@ -489,7 +489,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
     family_models.FamilyMember member,
     FamilyListNotifier notifier,
   ) async {
-    final controller = TextEditingController(text: member.nickname);
+    final controller = TextEditingController(text: member.nickname ?? '');
 
     final result = await showDialog<String>(
       context: context,
@@ -536,7 +536,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('移除成员'),
-        content: Text('确定要移除成员「${member.nickname}」吗？'),
+        content: Text('确定要移除成员「${member.nickname ?? '未设置昵称'}」吗？'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -793,8 +793,8 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
                           CircleAvatar(
                             radius: 16,
                             child: Text(
-                              member.nickname.isNotEmpty
-                                  ? member.nickname[0].toUpperCase()
+                              (member.nickname ?? '').isNotEmpty
+                                  ? (member.nickname ?? '')[0].toUpperCase()
                                   : 'U',
                               style: const TextStyle(fontSize: 14),
                             ),
@@ -807,7 +807,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
                                 Row(
                                   children: [
                                     Text(
-                                      member.nickname,
+                                      member.nickname ?? '未设置昵称',
                                       style: const TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w500,
@@ -853,7 +853,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
                                   ],
                                 ),
                                 Text(
-                                  '账号ID: ${member.accountId}',
+                                  '手机号: ${member.account.phone}',
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: Colors.grey[600],
@@ -969,7 +969,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
 
         // 查找当前用户的成员信息
         final currentMember = members.firstWhere(
-          (m) => m.accountId == currentUserId,
+          (m) => m.account.id == currentUserId,
         );
 
         // 移除自己（退出家庭）

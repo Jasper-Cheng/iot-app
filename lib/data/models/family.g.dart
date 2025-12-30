@@ -30,13 +30,16 @@ Map<String, dynamic> _$FamilyToJson(Family instance) => <String, dynamic>{
 
 FamilyMember _$FamilyMemberFromJson(Map<String, dynamic> json) => FamilyMember(
       id: (json['id'] as num).toInt(),
-      nickname: json['nickname'] as String,
+      nickname: json['nickname'] as String?,
       role: json['role'] as String,
       familyId: (json['family_id'] as num).toInt(),
-      accountId: (json['account_id'] as num).toInt(),
+      account: Account.fromJson(json['account'] as Map<String, dynamic>),
       joinedAt: json['joined_at'] == null
           ? null
           : DateTime.parse(json['joined_at'] as String),
+      createdAt: json['created_at'] == null
+          ? null
+          : DateTime.parse(json['created_at'] as String),
     );
 
 Map<String, dynamic> _$FamilyMemberToJson(FamilyMember instance) =>
@@ -45,8 +48,9 @@ Map<String, dynamic> _$FamilyMemberToJson(FamilyMember instance) =>
       'nickname': instance.nickname,
       'role': instance.role,
       'family_id': instance.familyId,
-      'account_id': instance.accountId,
+      'account': instance.account.toJson(),
       'joined_at': instance.joinedAt?.toIso8601String(),
+      'created_at': instance.createdAt?.toIso8601String(),
     };
 
 CreateFamilyRequest _$CreateFamilyRequestFromJson(Map<String, dynamic> json) =>

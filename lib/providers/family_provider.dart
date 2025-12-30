@@ -208,7 +208,7 @@ class FamilyListNotifier extends StateNotifier<FamilyListState> {
       if (_currentUserId != null) {
         try {
           final member = members.firstWhere(
-            (m) => m.accountId == _currentUserId,
+            (m) => m.account.id == _currentUserId,
           );
           state = state.copyWith(
             familyUserRoles: {

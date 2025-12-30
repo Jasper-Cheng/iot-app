@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/models/family.dart';
+import '../../../data/models/user.dart';
 
 /// 家庭成员列表项
 class FamilyMemberItem extends StatelessWidget {
@@ -16,14 +17,17 @@ class FamilyMemberItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 只使用家庭昵称，没有则为空
+    final displayName = member.nickname ?? '';
+    
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
-        leading: _buildMemberAvatar(null, member.nickname),
+        leading: _buildMemberAvatar(member.account.avatar, displayName),
         title: Row(
           children: [
             Text(
-              member.nickname,
+              displayName.isEmpty ? '未设置昵称' : displayName,
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
               ),
@@ -73,7 +77,14 @@ class FamilyMemberItem extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 4),
-            Text('账号ID: ${member.accountId}'),
+            Text('手机号: ${member.account.phone}'),
+            if (member.account.email != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                '邮箱: ${member.account.email}',
+                style: const TextStyle(fontSize: 12),
+              ),
+            ],
             const SizedBox(height: 4),
             Text(
               '加入时间: ${member.joinedAt != null ? _formatDate(member.joinedAt!) : '未知'}',

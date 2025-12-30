@@ -64,25 +64,28 @@ class Family extends Equatable {
 @JsonSerializable()
 class FamilyMember extends Equatable {
   final int id; // family_member_id
-  final String nickname; // 在家庭中的昵称
+  final String? nickname; // 在家庭中的昵称（可能为 null）
   final String role; // creator/member/admin/owner
   
   @JsonKey(name: 'family_id')
   final int familyId; // 家庭ID
   
-  @JsonKey(name: 'account_id')
-  final int accountId; // 账户ID
+  final Account account; // 完整的账户信息
   
   @JsonKey(name: 'joined_at')
   final DateTime? joinedAt; // 加入时间
+  
+  @JsonKey(name: 'created_at')
+  final DateTime? createdAt; // 记录创建时间
 
   const FamilyMember({
     required this.id,
-    required this.nickname,
+    this.nickname,
     required this.role,
     required this.familyId,
-    required this.accountId,
+    required this.account,
     this.joinedAt,
+    this.createdAt,
   });
 
   factory FamilyMember.fromJson(Map<String, dynamic> json) =>
@@ -98,21 +101,23 @@ class FamilyMember extends Equatable {
     String? nickname,
     String? role,
     int? familyId,
-    int? accountId,
+    Account? account,
     DateTime? joinedAt,
+    DateTime? createdAt,
   }) {
     return FamilyMember(
       id: id ?? this.id,
       nickname: nickname ?? this.nickname,
       role: role ?? this.role,
       familyId: familyId ?? this.familyId,
-      accountId: accountId ?? this.accountId,
+      account: account ?? this.account,
       joinedAt: joinedAt ?? this.joinedAt,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 
   @override
-  List<Object?> get props => [id, nickname, role, familyId, accountId, joinedAt];
+  List<Object?> get props => [id, nickname, role, familyId, account, joinedAt, createdAt];
 }
 
 /// 创建家庭请求

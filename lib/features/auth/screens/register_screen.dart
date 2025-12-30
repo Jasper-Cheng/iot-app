@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../app/routes/router.dart';
+import '../../../core/widgets/avatar_selector.dart';
 
 /// 注册页面
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -23,25 +24,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   String _selectedGender = 'other'; // 默认值为"其他"
-  String? _selectedAvatar; // 选中的头像路径
-  final ScrollController _avatarScrollController = ScrollController();
+  String? _selectedAvatar; // 选中的头像路径（assets路径）
 
   @override
   void initState() {
     super.initState();
-    // 初始化时，如果有默认选中的头像，滚动到中间
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_selectedAvatar != null) {
-        final avatars = List.generate(
-          20,
-          (index) => 'assets/avatars/avatar${index + 1}.png',
-        );
-        final index = avatars.indexOf(_selectedAvatar!);
-        if (index >= 0) {
-          _scrollToSelectedAvatar(index);
-        }
-      }
-    });
+    // 默认选择第一个头像
+    _selectedAvatar = 'assets/avatars/avatar1.png';
   }
 
   @override
@@ -51,7 +40,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _emailController.dispose();
-    _avatarScrollController.dispose();
     super.dispose();
   }
 
@@ -61,7 +49,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       String? avatarPath;
       if (_selectedAvatar != null) {
         // 从 assets/avatars/avatar1.png 提取 avatar1.png
-        final fileName = _selectedAvatar!.split('/').last;
+        final fileName = _selectedAvatar!.replaceFirst('assets/avatars/', '');
         avatarPath = '/avatars/$fileName';
       }
 
@@ -76,116 +64,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             avatar: avatarPath,
           );
     }
-  }
-
-  /// 滚动到选中的头像（中间位置）
-  void _scrollToSelectedAvatar(int index) {
-    if (!_avatarScrollController.hasClients) {
-      // 如果 ScrollController 还没有附加，等待下一帧
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _scrollToSelectedAvatar(index);
-      });
-      return;
-    }
-
-    // 每个头像宽度为 60 + 8 (margin) = 68
-    const double itemWidth = 68.0;
-    // 获取 ListView 的宽度
-    final double viewportWidth = _avatarScrollController.position.viewportDimension;
-    // 计算目标位置：让选中的头像在中间
-    final double targetPosition = (index * itemWidth) - (viewportWidth / 2) + (itemWidth / 2);
-    
-    // 确保滚动位置在有效范围内
-    final double maxScroll = _avatarScrollController.position.maxScrollExtent;
-    final double clampedPosition = targetPosition.clamp(0.0, maxScroll);
-
-    _avatarScrollController.animateTo(
-      clampedPosition,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
-  }
-
-  /// 构建头像选择器
-  Widget _buildAvatarSelector() {
-    final theme = Theme.of(context);
-    
-    // 生成头像列表（avatar1.png 到 avatar20.png）
-    final List<String> avatars = List.generate(
-      20,
-      (index) => 'assets/avatars/avatar${index + 1}.png',
-    );
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '选择头像',
-          style: theme.textTheme.titleMedium,
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 60,
-          child: ListView.builder(
-            controller: _avatarScrollController,
-            scrollDirection: Axis.horizontal,
-            itemCount: avatars.length,
-            itemBuilder: (context, index) {
-              final avatarPath = avatars[index];
-              final isSelected = _selectedAvatar == avatarPath;
-
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _selectedAvatar = avatarPath;
-                  });
-                  // 滚动到选中的头像
-                  _scrollToSelectedAvatar(index);
-                },
-                child: Container(
-                  width: 60,
-                  height: 60,
-                  margin: const EdgeInsets.only(right: 8),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isSelected
-                          ? theme.colorScheme.primary
-                          : Colors.transparent,
-                      width: isSelected ? 3 : 0,
-                    ),
-                    boxShadow: isSelected
-                        ? [
-                            BoxShadow(
-                              color: theme.colorScheme.primary.withValues(alpha: 0.3),
-                              blurRadius: 8,
-                              spreadRadius: 2,
-                            ),
-                          ]
-                        : null,
-                  ),
-                  child: ClipOval(
-                    child: Image.asset(
-                      avatarPath,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: Colors.grey[300],
-                          child: Icon(
-                            Icons.person,
-                            color: Colors.grey[600],
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
   }
 
   @override
@@ -221,7 +99,19 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // 头像选择
-                _buildAvatarSelector(),
+                AvatarSelector(
+                  title: '选择头像',
+                  avatarCount: 20,
+                  avatarSize: 60,
+                  listHeight: 60,
+                  spacing: 8,
+                  initialAvatar: _selectedAvatar,
+                  onAvatarSelected: (avatarPath) {
+                    setState(() {
+                      _selectedAvatar = avatarPath;
+                    });
+                  },
+                ),
 
                 const SizedBox(height: 12),
 

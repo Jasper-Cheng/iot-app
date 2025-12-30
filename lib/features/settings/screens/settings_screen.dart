@@ -7,6 +7,7 @@ import '../../../app/routes/router.dart';
 import '../../../data/repositories/checkin_repository.dart';
 import '../../../data/models/user.dart';
 import '../../../core/utils/error_handler.dart';
+import '../../../core/widgets/avatar_selector.dart';
 
 /// 设置页面
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -630,13 +631,6 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
   String? _selectedGender;
   String? _selectedAvatar;
   bool _isSubmitting = false;
-  final ScrollController _avatarScrollController = ScrollController();
-
-  // 生成头像列表（avatar1.png 到 avatar20.png）
-  final List<String> _avatars = List.generate(
-    20,
-    (index) => 'assets/avatars/avatar${index + 1}.png',
-  );
 
   @override
   void initState() {
@@ -648,38 +642,16 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
     _confirmPasswordController = TextEditingController();
     _selectedGender = widget.account.gender;
     
-    // 将头像路径转换为 assets 路径
+    // 将头像路径转换为 assets 路径（用于AvatarSelector）
     if (widget.account.avatar != null && widget.account.avatar!.startsWith('/avatars/')) {
       final fileName = widget.account.avatar!.replaceFirst('/avatars/', '');
       _selectedAvatar = 'assets/avatars/$fileName';
+    } else if (widget.account.avatar != null && widget.account.avatar!.startsWith('assets/')) {
+      _selectedAvatar = widget.account.avatar;
+    } else {
+      // 默认选择第一个头像
+      _selectedAvatar = 'assets/avatars/avatar1.png';
     }
-
-    // 延迟滚动到选中的头像（等待两帧确保布局完成）
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future.delayed(const Duration(milliseconds: 100), () {
-        _scrollToSelectedAvatar();
-      });
-    });
-  }
-
-  void _scrollToSelectedAvatar() {
-    if (_selectedAvatar == null) return;
-    
-    final index = _avatars.indexOf(_selectedAvatar!);
-    if (index == -1) return;
-
-    if (!_avatarScrollController.hasClients) return;
-    
-    // 计算滚动位置：头像宽度(50) + 间距(6)，滚动到中间位置
-    final itemWidth = 50.0 + 6.0; // 头像宽度 + 右边距
-    final containerWidth = _avatarScrollController.position.viewportDimension;
-    final scrollPosition = (index * itemWidth) - (containerWidth / 2) + (50 / 2); // 让头像居中
-    
-    _avatarScrollController.animateTo(
-      scrollPosition.clamp(0.0, _avatarScrollController.position.maxScrollExtent),
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-    );
   }
 
   @override
@@ -689,7 +661,6 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
     _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    _avatarScrollController.dispose();
     super.dispose();
   }
 
@@ -795,66 +766,18 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 头像选择器
-              Text(
-                '选择头像',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                height: 50,
-                child: ListView.builder(
-                  controller: _avatarScrollController,
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _avatars.length,
-                  itemBuilder: (context, index) {
-                    final avatarPath = _avatars[index];
-                    final isSelected = _selectedAvatar == avatarPath;
-
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _selectedAvatar = avatarPath;
-                        });
-                        // 滚动到选中的头像中间
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          _scrollToSelectedAvatar();
-                        });
-                      },
-                      child: Container(
-                        width: 50,
-                        height: 50,
-                        margin: const EdgeInsets.only(right: 6),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: isSelected
-                                ? theme.colorScheme.primary
-                                : Colors.transparent,
-                            width: isSelected ? 2.5 : 0,
-                          ),
-                        ),
-                        child: ClipOval(
-                          child: Image.asset(
-                            avatarPath,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                color: Colors.grey[300],
-                                child: Icon(
-                                  Icons.person,
-                                  size: 24,
-                                  color: Colors.grey[600],
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
+              AvatarSelector(
+                title: '选择头像',
+                avatarCount: 20,
+                avatarSize: 50,
+                listHeight: 50,
+                spacing: 6,
+                initialAvatar: widget.account.avatar,
+                onAvatarSelected: (avatarPath) {
+                  setState(() {
+                    _selectedAvatar = avatarPath;
+                  });
+                },
               ),
               const SizedBox(height: 16),
 

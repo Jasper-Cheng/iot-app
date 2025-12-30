@@ -110,10 +110,8 @@ class FamilyListNotifier extends StateNotifier<FamilyListState> {
           final currentFamily = families.firstWhere(
             (f) => f.id == _currentFamilyId,
           );
-          // 使用 Future.microtask 确保状态更新后再加载当前家庭数据
-          Future.microtask(() {
-            loadCurrentFamilyData(_currentFamilyId!);
-          });
+          // 直接加载当前家庭数据，确保顺序执行
+          await loadCurrentFamilyData(_currentFamilyId!);
         } catch (e) {
           // 当前家庭不在列表中，不加载
           print('[FamilyProvider] 当前家庭 $_currentFamilyId 不在家庭列表中');
@@ -264,13 +262,9 @@ class FamilyListNotifier extends StateNotifier<FamilyListState> {
 
   /// 刷新
   Future<void> refresh() async {
+    // loadFamilies() 已经会加载当前家庭数据（如果有 currentFamilyId）
+    // 所以这里只需要调用 loadFamilies() 即可，避免重复加载
     await loadFamilies();
-    if (state.currentFamily != null) {
-      await loadCurrentFamilyData(state.currentFamily!.id);
-    } else if (_currentFamilyId != null) {
-      // 如果状态中没有当前家庭，但提供了当前家庭ID，尝试加载
-      await loadCurrentFamilyData(_currentFamilyId!);
-    }
   }
 }
 

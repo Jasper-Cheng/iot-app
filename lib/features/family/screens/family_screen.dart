@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../providers/family_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/device_provider.dart';
+import '../../../providers/message_provider.dart';
 import '../../../data/models/family.dart' as family_models;
 import '../../../data/repositories/auth_repository.dart';
 import '../../../core/utils/error_handler.dart';
@@ -1389,6 +1390,11 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       await deviceNotifier.refresh();
       if (!mounted) return;
       
+      // 6. 重新获取消息列表 notifier 并刷新消息列表（确保使用最新的 currentFamilyId）
+      final messageNotifier = ref.read(messageProvider.notifier);
+      await messageNotifier.refresh();
+      if (!mounted) return;
+      
       if (mounted && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1434,6 +1440,11 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       // 5. 重新获取设备列表 notifier 并刷新设备列表（确保使用最新的 currentFamilyId）
       final deviceNotifier = ref.read(deviceListProvider.notifier);
       await deviceNotifier.refresh();
+      if (!mounted) return;
+      
+      // 6. 重新获取消息列表 notifier 并刷新消息列表（确保使用最新的 currentFamilyId）
+      final messageNotifier = ref.read(messageProvider.notifier);
+      await messageNotifier.refresh();
       if (!mounted) return;
       
       if (mounted && context.mounted) {

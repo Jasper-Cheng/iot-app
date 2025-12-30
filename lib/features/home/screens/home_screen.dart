@@ -92,10 +92,12 @@ class HomeScreen extends ConsumerWidget {
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          // 同时刷新设备列表和消息数据
+          // 同时刷新设备列表、设备消息和系统消息
+          final messageNotifier = ref.read(messageProvider.notifier);
           await Future.wait([
             ref.read(deviceListProvider.notifier).refresh(),
-            ref.read(messageProvider.notifier).refresh(),
+            messageNotifier.loadDeviceMessages(status: 'new'), // 刷新未读设备消息
+            messageNotifier.loadSystemMessages(), // 刷新系统消息
           ]);
         },
         child: deviceState.isLoading && deviceState.devices.isEmpty

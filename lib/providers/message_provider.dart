@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models/message.dart';
 import '../data/repositories/message_repository.dart';
 import '../core/utils/error_handler.dart';
+import 'auth_provider.dart';
 
 /// 消息状态
 class MessageState {
@@ -38,8 +39,13 @@ class MessageState {
 /// 消息状态管理
 class MessageNotifier extends StateNotifier<MessageState> {
   final MessageRepository _repository;
+  final int? _currentFamilyId;
 
-  MessageNotifier(this._repository) : super(const MessageState()) {
+  MessageNotifier(
+    this._repository, {
+    int? currentFamilyId,
+  })  : _currentFamilyId = currentFamilyId,
+        super(const MessageState()) {
     // 不在构造函数中自动加载，由 MainScreen 统一管理加载时机
   }
 
@@ -49,7 +55,10 @@ class MessageNotifier extends StateNotifier<MessageState> {
 
     try {
       // 只加载未读的设备消息
-      final deviceMessages = await _repository.getDeviceMessages(status: 'new');
+      final deviceMessages = await _repository.getDeviceMessages(
+        familyId: _currentFamilyId,
+        status: 'new',
+      );
       final systemMessages = await _repository.getSystemMessages();
 
       state = state.copyWith(
@@ -68,7 +77,10 @@ class MessageNotifier extends StateNotifier<MessageState> {
   /// 加载已读设备消息（用于消息日志）
   Future<List<DeviceMessage>> loadReadDeviceMessages() async {
     try {
-      final messages = await _repository.getDeviceMessages(status: 'read');
+      final messages = await _repository.getDeviceMessages(
+        familyId: _currentFamilyId,
+        status: 'read',
+      );
       return messages;
     } catch (e) {
       return [];
@@ -77,15 +89,20 @@ class MessageNotifier extends StateNotifier<MessageState> {
 
   /// 加载设备消息
   Future<void> loadDeviceMessages({
-    String? level,
+    List<String>? level,
     String? status,
+    int skip = 0,
+    int limit = 20,
   }) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
       final messages = await _repository.getDeviceMessages(
+        familyId: _currentFamilyId,
         level: level,
         status: status,
+        skip: skip,
+        limit: limit,
       );
       state = state.copyWith(
         deviceMessages: messages,
@@ -120,7 +137,7 @@ class MessageNotifier extends StateNotifier<MessageState> {
   /// 标记设备消息为已读
   Future<void> markDeviceMessageAsRead(int id) async {
     try {
-      await _repository.markMessageAsRead(id);
+      await _repository.markMessageAsRead(id, familyId: _currentFamilyId);
       
       // 从未读列表中移除该消息
       final updatedMessages = state.deviceMessages.where((msg) => msg.id != id).toList();
@@ -136,7 +153,7 @@ class MessageNotifier extends StateNotifier<MessageState> {
   /// 标记所有设备消息为已读
   Future<void> markAllDeviceMessagesAsRead() async {
     try {
-      await _repository.markAllAsRead();
+      await _repository.markAllAsRead(familyId: _currentFamilyId);
       
       // 清空未读消息列表
       state = state.copyWith(
@@ -155,7 +172,13 @@ class MessageNotifier extends StateNotifier<MessageState> {
 
 /// 消息 Provider
 final messageProvider = StateNotifierProvider<MessageNotifier, MessageState>((ref) {
-  return MessageNotifier(MessageRepository());
+  // 从 authProvider 获取当前家庭 ID
+  final authState = ref.watch(authProvider);
+  final currentFamilyId = authState.account?.currentFamilyId;
+  return MessageNotifier(
+    MessageRepository(),
+    currentFamilyId: currentFamilyId,
+  );
 });
 
 /// 未读设备消息数量 Provider

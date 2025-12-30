@@ -7,33 +7,71 @@ class MessageRepository {
   final _dio = DioClient().dio;
 
   /// 获取设备消息列表
+  /// [familyId] 家庭ID，如果不为 null 则作为查询参数传递
+  /// [level] 消息级别数组，支持多个值：low, normal, error, fatal
+  /// [status] 消息状态：new（未读）、read（已读）
+  /// [skip] 跳过数量，用于分页
+  /// [limit] 限制数量，范围：1-500
   Future<List<DeviceMessage>> getDeviceMessages({
-    String? level,
+    int? familyId,
+    List<String>? level,
     String? status,
-    int page = 1,
-    int pageSize = 20,
+    int skip = 0,
+    int limit = 20,
   }) async {
+    final queryParameters = <String, dynamic>{
+      'skip': skip,
+      'limit': limit,
+    };
+    
+    if (familyId != null) {
+      queryParameters['family_id'] = familyId;
+    }
+    
+    if (level != null && level.isNotEmpty) {
+      // 支持多个 level 值，Dio 会自动将 List 转换为多个查询参数
+      queryParameters['level'] = level;
+    }
+    
+    if (status != null) {
+      queryParameters['status'] = status;
+    }
+    
     final response = await _dio.get(
       ApiConstants.deviceMessages,
-      queryParameters: {
-        'level': level,
-        'status': status,
-        'page': page,
-        'page_size': pageSize,
-      },
+      queryParameters: queryParameters,
     );
     final List<dynamic> data = response.data;
     return data.map((e) => DeviceMessage.fromJson(e)).toList();
   }
 
   /// 标记消息为已读
-  Future<void> markMessageAsRead(int id) async {
-    await _dio.patch(ApiConstants.markMessageRead(id));
+  /// [id] 消息ID
+  /// [familyId] 家庭ID，如果不为 null 则作为查询参数传递
+  Future<void> markMessageAsRead(int id, {int? familyId}) async {
+    final queryParameters = <String, dynamic>{};
+    if (familyId != null) {
+      queryParameters['family_id'] = familyId;
+    }
+    
+    await _dio.patch(
+      ApiConstants.markMessageRead(id),
+      queryParameters: queryParameters.isNotEmpty ? queryParameters : null,
+    );
   }
 
   /// 标记所有消息为已读
-  Future<void> markAllAsRead() async {
-    await _dio.patch(ApiConstants.markAllRead);
+  /// [familyId] 家庭ID，如果不为 null 则作为查询参数传递
+  Future<void> markAllAsRead({int? familyId}) async {
+    final queryParameters = <String, dynamic>{};
+    if (familyId != null) {
+      queryParameters['family_id'] = familyId;
+    }
+    
+    await _dio.patch(
+      ApiConstants.markAllRead,
+      queryParameters: queryParameters.isNotEmpty ? queryParameters : null,
+    );
   }
 
   /// 获取系统消息列表

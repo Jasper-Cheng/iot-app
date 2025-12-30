@@ -631,8 +631,11 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       FamilyListState state,
       FamilyListNotifier notifier,
       ) async {
-    if (state.families.isEmpty) {
-      if (mounted) {
+    // 重新获取最新的state，确保显示的是最新的家庭列表
+    final currentState = ref.read(familyListProvider);
+    
+    if (currentState.families.isEmpty) {
+      if (mounted && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('您还没有加入任何家庭'),
@@ -665,8 +668,8 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              ...state.families.map((family) {
-                final isCurrentFamily = state.currentFamily?.id == family.id;
+              ...currentState.families.map((family) {
+                final isCurrentFamily = currentState.currentFamily?.id == family.id;
                 return Container(
                   margin: const EdgeInsets.only(bottom: 6),
                   decoration: BoxDecoration(
@@ -679,7 +682,9 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
                   child: InkWell(
                     onTap: () {
                       Navigator.pop(context);
-                      _handleSwitchFamily(context, family, notifier);
+                      // 重新获取notifier，避免使用已销毁的notifier
+                      final updatedNotifier = ref.read(familyListProvider.notifier);
+                      _handleSwitchFamily(context, family, updatedNotifier);
                     },
                     borderRadius: BorderRadius.circular(8),
                     child: Padding(
@@ -758,7 +763,9 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
               OutlinedButton.icon(
                 onPressed: () {
                   Navigator.pop(context);
-                  _handleSwitchToPersonal(context, notifier);
+                  // 重新获取notifier，避免使用已销毁的notifier
+                  final updatedNotifier = ref.read(familyListProvider.notifier);
+                  _handleSwitchToPersonal(context, updatedNotifier);
                 },
                 icon: const Icon(Icons.home, size: 18),
                 label: const Text(
@@ -1502,9 +1509,14 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
 
     if (confirm == true && mounted) {
       try {
+        // 重新获取notifier，避免使用已销毁的notifier
+        final currentNotifier = ref.read(familyListProvider.notifier);
+
         // 先加载家庭成员以获取当前用户的 memberId
-        await notifier.loadMembers(family.id);
-        final members = notifier.state.members;
+        await currentNotifier.loadMembers(family.id);
+        if (!mounted) return;
+        
+        final members = currentNotifier.state.members;
         final authState = ref.read(authProvider);
         final currentUserId = authState.account?.id;
 
@@ -1518,14 +1530,31 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
         );
 
         // 移除自己（退出家庭）
-        await notifier.removeMember(currentMember.id);
+        await currentNotifier.removeMember(currentMember.id);
+        if (!mounted) return;
 
-        // 如果退出的是当前家庭，清除当前家庭选择
-        if (notifier.state.currentFamily?.id == family.id) {
-          await notifier.selectFamily(null);
-        }
+        // 退出家庭后，无论是否是当前家庭，都切回个人设备管理
+        // 1. 调用接口更新当前家庭为null（切换到个人模式）
+        final authRepository = AuthRepository();
+        await authRepository.updateCurrentFamily(null);
+        if (!mounted) return;
+        
+        // 2. 刷新用户信息（更新 authProvider 中的 currentFamilyId）
+        await ref.read(authProvider.notifier).refreshProfile();
+        if (!mounted) return;
+        
+        // 3. 重新获取notifier并重新加载家庭列表
+        final updatedNotifier = ref.read(familyListProvider.notifier);
+        await updatedNotifier.loadFamilies();
+        if (!mounted) return;
+        
+        // 4. 刷新设备和消息数据
+        await Future.wait([
+          ref.read(deviceListProvider.notifier).refresh(),
+          ref.read(messageProvider.notifier).refresh(),
+        ]);
 
-        if (mounted) {
+        if (mounted && context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('已退出家庭'),
@@ -1534,7 +1563,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
           );
         }
       } catch (e) {
-        if (mounted) {
+        if (mounted && context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('退出家庭失败: ${ErrorHandler.extractErrorMessage(e)}'),
@@ -1555,8 +1584,35 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
     final confirm = await _showDeleteConfirmDialog(context, family.name);
     if (confirm == true && mounted) {
       try {
-        await notifier.deleteFamily(family.id);
-        if (mounted) {
+        // 重新获取notifier，避免使用已销毁的notifier
+        final currentNotifier = ref.read(familyListProvider.notifier);
+
+        // 删除家庭
+        await currentNotifier.deleteFamily(family.id);
+        if (!mounted) return;
+
+        // 删除家庭后，无论是否是当前家庭，都切回个人设备管理
+        // 1. 调用接口更新当前家庭为null（切换到个人模式）
+        final authRepository = AuthRepository();
+        await authRepository.updateCurrentFamily(null);
+        if (!mounted) return;
+        
+        // 2. 刷新用户信息（更新 authProvider 中的 currentFamilyId）
+        await ref.read(authProvider.notifier).refreshProfile();
+        if (!mounted) return;
+        
+        // 3. 重新获取notifier并重新加载家庭列表
+        final updatedNotifier = ref.read(familyListProvider.notifier);
+        await updatedNotifier.loadFamilies();
+        if (!mounted) return;
+        
+        // 4. 刷新设备和消息数据
+        await Future.wait([
+          ref.read(deviceListProvider.notifier).refresh(),
+          ref.read(messageProvider.notifier).refresh(),
+        ]);
+
+        if (mounted && context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('已删除家庭'),
@@ -1565,7 +1621,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
           );
         }
       } catch (e) {
-        if (mounted) {
+        if (mounted && context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('删除家庭失败: ${ErrorHandler.extractErrorMessage(e)}'),

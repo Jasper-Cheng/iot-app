@@ -74,10 +74,10 @@ class _CreateFamilyDialogState extends State<CreateFamilyDialog> {
                 // 家庭头像选择
                 AvatarSelector(
                   title: '家庭头像',
-                  avatarCount: 15,
+                  avatarCount: 20,
                   avatarSize: 48,
-                  listHeight: 60,
-                  spacing: 12,
+                  listHeight: 48,
+                  spacing: 6,
                   onAvatarSelected: (avatarPath) {
                     // 将assets路径转换为服务器路径
                     final fileName = avatarPath.replaceFirst('assets/avatars/', '');

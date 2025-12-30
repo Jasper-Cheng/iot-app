@@ -40,7 +40,7 @@ class MessageNotifier extends StateNotifier<MessageState> {
   final MessageRepository _repository;
 
   MessageNotifier(this._repository) : super(const MessageState()) {
-    loadMessages();
+    // 不在构造函数中自动加载，由 MainScreen 统一管理加载时机
   }
 
   /// 加载消息（初始只加载未读设备消息）

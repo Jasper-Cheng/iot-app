@@ -33,7 +33,7 @@ class DeviceListNotifier extends StateNotifier<DeviceListState> {
   final DeviceRepository _repository;
 
   DeviceListNotifier(this._repository) : super(const DeviceListState()) {
-    loadDevices();
+    // 不在构造函数中自动加载，由 MainScreen 统一管理加载时机
   }
 
   /// 加载设备列表

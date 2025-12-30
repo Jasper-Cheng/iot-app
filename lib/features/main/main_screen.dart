@@ -19,6 +19,7 @@ class MainScreen extends ConsumerStatefulWidget {
 
 class _MainScreenState extends ConsumerState<MainScreen> with WidgetsBindingObserver {
   int _currentIndex = 0;
+  bool _hasLoadedData = false; // 标记是否已经加载过数据
 
   final List<Widget> _pages = const [
     HomeScreen(),
@@ -101,14 +102,16 @@ class _MainScreenState extends ConsumerState<MainScreen> with WidgetsBindingObse
   void _loadInitialData() {
     final authState = ref.read(authProvider);
     
-    // 如果已登录，加载设备相关信息和连接 MQTT
-    if (authState.isAuthenticated && authState.account != null) {
-      // 加载设备相关信息
+    // 如果已登录，加载数据并连接 MQTT
+    if (authState.isAuthenticated && authState.account != null && !_hasLoadedData) {
+      print('[MainScreen] 初始化时检测到已登录，加载数据');
+      _hasLoadedData = true;
+      // 加载设备列表和消息
       Future.wait([
         ref.read(deviceListProvider.notifier).loadDevices(),
         ref.read(messageProvider.notifier).loadMessages(),
       ]).catchError((error) {
-        print('[MainScreen] 加载设备信息失败: $error');
+        print('[MainScreen] 加载数据失败: $error');
       });
       
       // 连接 MQTT
@@ -144,6 +147,34 @@ class _MainScreenState extends ConsumerState<MainScreen> with WidgetsBindingObse
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+    
+    // 监听认证状态变化，登录成功后加载数据
+    ref.listen<AuthState>(authProvider, (previous, next) {
+      // 如果退出登录，重置加载标志
+      if (previous?.isAuthenticated == true && !next.isAuthenticated) {
+        _hasLoadedData = false;
+        print('[MainScreen] 用户退出登录，重置加载标志');
+        return;
+      }
+      
+      // 从未登录变为已登录时，加载数据
+      // 检查：当前已登录 && 不在加载中 && 之前未登录 && 有账户信息 && 尚未加载过数据
+      if (next.isAuthenticated && 
+          !next.isLoading && 
+          (previous == null || !previous.isAuthenticated) &&
+          next.account != null &&
+          !_hasLoadedData) {
+        print('[MainScreen] 检测到登录状态变化：从未登录变为已登录，加载数据');
+        _hasLoadedData = true;
+        // 加载设备列表和消息
+        Future.wait([
+          ref.read(deviceListProvider.notifier).loadDevices(),
+          ref.read(messageProvider.notifier).loadMessages(),
+        ]).catchError((error) {
+          print('[MainScreen] 加载数据失败: $error');
+        });
+      }
+    });
     
     // 监听 MQTT 连接状态变化（必须在 build 方法中使用 ref.listen）
     ref.listen<MqttState>(mqttProvider, (previous, next) {

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../providers/family_provider.dart';
 import '../../../data/models/family.dart';
+import '../../../core/utils/error_handler.dart';
 import '../widgets/create_family_dialog.dart';
 import '../widgets/join_family_dialog.dart';
 import '../widgets/family_member_item.dart';
@@ -352,22 +353,15 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
 
   /// 显示加入家庭对话框
   Future<void> _showJoinFamilyDialog(BuildContext context) async {
-    final result = await showDialog<Map<String, String>>(
+    final result = await showDialog<bool>(
       context: context,
       builder: (context) => const JoinFamilyDialog(),
     );
 
-    if (result != null && mounted) {
+    // 如果返回 true，说明加入成功，刷新家庭列表
+    if (result == true && mounted) {
       final notifier = ref.read(familyListProvider.notifier);
-      await notifier.joinFamily(
-        result['inviteCode']!,
-        nickname: result['nickname'],
-      );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('加入家庭成功')),
-        );
-      }
+      await notifier.loadFamilies();
     }
   }
 

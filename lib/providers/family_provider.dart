@@ -100,9 +100,12 @@ class FamilyListNotifier extends StateNotifier<FamilyListState> {
       final family = await _repository.joinFamily(inviteCode, nickname: nickname);
       state = state.copyWith(
         families: [...state.families, family],
+        error: null, // 清除之前的错误
       );
     } catch (e) {
-      state = state.copyWith(error: ErrorHandler.extractErrorMessage(e));
+      final errorMessage = ErrorHandler.extractErrorMessage(e);
+      state = state.copyWith(error: errorMessage);
+      rethrow; // 重新抛出异常，让调用者知道失败了
     }
   }
 

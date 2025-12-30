@@ -155,12 +155,19 @@ class _CreateFamilyDialogState extends State<CreateFamilyDialog> {
                     ElevatedButton(
                       onPressed: () {
                         if (_formKey.currentState!.validate()) {
-                          Navigator.pop(context, {
-                            'name': _nameController.text,
-                            'avatar': _selectedAvatar,
-                            'description': _descriptionController.text.isEmpty
-                                ? null
-                                : _descriptionController.text,
+                          // 延迟关闭对话框，避免 Navigator 并发问题
+                          Future.microtask(() {
+                            if (mounted) {
+                              final result = <String, String>{
+                                'name': _nameController.text,
+                                'avatar': _selectedAvatar ?? '/avatars/avatar1.png',
+                              };
+                              // 只有当描述不为空时才添加
+                              if (_descriptionController.text.isNotEmpty) {
+                                result['description'] = _descriptionController.text;
+                              }
+                              Navigator.pop(context, result);
+                            }
                           });
                         }
                       },

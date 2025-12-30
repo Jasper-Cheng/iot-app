@@ -341,7 +341,10 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('家庭创建成功')),
+          const SnackBar(
+            content: Text('家庭创建成功'),
+            backgroundColor: Colors.green,
+          ),
         );
       }
     }

@@ -19,7 +19,7 @@ class FamilyMemberItem extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
-        leading: _buildMemberAvatar(member.account.avatar, member.nickname),
+        leading: _buildMemberAvatar(null, member.nickname),
         title: Row(
           children: [
             Text(
@@ -73,7 +73,7 @@ class FamilyMemberItem extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 4),
-            Text('账号: ${member.account.phone}'),
+            Text('账号ID: ${member.accountId}'),
             const SizedBox(height: 4),
             Text(
               '加入时间: ${member.joinedAt != null ? _formatDate(member.joinedAt!) : '未知'}',

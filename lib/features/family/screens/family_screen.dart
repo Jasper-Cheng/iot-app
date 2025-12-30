@@ -136,17 +136,20 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
     }
 
     return RefreshIndicator(
-      onRefresh: () => notifier.refresh(),
+      onRefresh: () {
+        final authState = ref.read(authProvider);
+        final currentUserId = authState.account?.id;
+        return notifier.refresh(currentUserId: currentUserId);
+      },
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: state.families.length,
         itemBuilder: (context, index) {
           final family = state.families[index];
           final isSelected = state.currentFamily?.id == family.id;
-          // 获取当前用户在家庭中的角色（只有当前家庭的成员信息已加载）
-          final currentUserRole = isSelected
-              ? _getCurrentUserRoleInFamily(family.id, state.members)
-              : null;
+          // 获取当前用户在家庭中的角色
+          final currentUserRole = state.familyUserRoles[family.id] ??
+              (isSelected ? _getCurrentUserRoleInFamily(family.id, state.members) : null);
 
           return _buildFamilyItem(
             context,
@@ -244,7 +247,9 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
     // 如果返回 true，说明加入成功，刷新家庭列表
     if (result == true && mounted) {
       final notifier = ref.read(familyListProvider.notifier);
-      await notifier.loadFamilies();
+      final authState = ref.read(authProvider);
+      final currentUserId = authState.account?.id;
+      await notifier.loadFamilies(currentUserId: currentUserId);
     }
   }
 
@@ -368,7 +373,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
     // 只查找当前家庭的成员（如果已加载）
     try {
       final member = members.firstWhere(
-        (m) => m.account.id == currentUserId,
+        (m) => m.accountId == currentUserId,
       );
       return member.role;
     } catch (e) {
@@ -447,17 +452,9 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
                         ),
                         const SizedBox(height: 8),
                       ],
-                      // 名称 label
+                      // 名称
                       Row(
                         children: [
-                          Text(
-                            '名称: ',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
                           Text(
                             family.name,
                             style: TextStyle(
@@ -491,32 +488,17 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
                           ],
                         ],
                       ),
-                      // 描述 label
+                      // 描述
                       if (family.description != null) ...[
                         const SizedBox(height: 8),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '描述: ',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            Expanded(
-                              child: Text(
-                                family.description!,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[700],
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
+                        Text(
+                          family.description!,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[700],
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                       const SizedBox(height: 8),
@@ -650,7 +632,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
 
         // 查找当前用户的成员信息
         final currentMember = members.firstWhere(
-          (m) => m.account.id == currentUserId,
+          (m) => m.accountId == currentUserId,
         );
 
         // 移除自己（退出家庭）

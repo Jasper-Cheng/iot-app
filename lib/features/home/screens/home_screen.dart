@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import '../../../providers/device_provider.dart';
 import '../../../providers/message_provider.dart';
 import '../widgets/device_card_factory.dart';

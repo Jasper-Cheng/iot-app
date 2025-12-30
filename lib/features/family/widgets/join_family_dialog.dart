@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/family_provider.dart';
 import '../../../core/utils/error_handler.dart';
+import '../../../core/widgets/qr_scanner.dart';
 
 /// 加入家庭对话框
 class JoinFamilyDialog extends ConsumerStatefulWidget {
@@ -75,10 +76,34 @@ class _JoinFamilyDialogState extends ConsumerState<JoinFamilyDialog> {
     }
   }
 
+  void _handleScanQRCode() {
+    QRScanner.scan(context, onResult: (result) {
+      if (result.isNotEmpty && mounted) {
+        // 将扫描结果填充到邀请码输入框
+        setState(() {
+          _inviteCodeController.text = result.toUpperCase();
+          _errorMessage = null; // 清除之前的错误信息
+        });
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('加入家庭'),
+      title: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text('加入家庭'),
+          IconButton(
+            icon: const Icon(Icons.qr_code_scanner, size: 20),
+            onPressed: _isSubmitting ? null : _handleScanQRCode,
+            tooltip: '扫一扫',
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+        ],
+      ),
       content: Form(
         key: _formKey,
         child: SingleChildScrollView(

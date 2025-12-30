@@ -11,6 +11,7 @@ import '../../features/settings/screens/about_screen.dart';
 import '../../features/settings/screens/customer_service_screen.dart';
 import '../../features/home/screens/device_detail_screen.dart';
 import '../../features/home/screens/home_screen.dart';
+import '../../core/widgets/qr_scanner.dart';
 import '../../data/models/device.dart';
 import '../../providers/auth_provider.dart';
 
@@ -157,7 +158,7 @@ class AppRouter {
           path: scan,
           pageBuilder: (context, state) => NoTransitionPage(
             key: state.pageKey,
-            child: const ScanPage(),
+            child: const QRScannerPage(),
           ),
         ),
       ],

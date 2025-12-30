@@ -336,6 +336,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       final notifier = ref.read(familyListProvider.notifier);
       await notifier.createFamily(
         name: result['name']!,
+        avatar: result['avatar'],
         description: result['description'],
       );
       if (mounted) {

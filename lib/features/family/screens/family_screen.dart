@@ -76,7 +76,21 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
           ),
         ),
         leadingWidth: 120,
-        title: const Text('家庭管理'),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('家庭管理'),
+            const SizedBox(width: 8),
+            Text(
+              '(${state.families.length}/6)',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
         actions: [
           PopupMenuButton<String>(
             icon: const Icon(Icons.add),

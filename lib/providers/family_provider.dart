@@ -171,11 +171,10 @@ class FamilyListNotifier extends StateNotifier<FamilyListState> {
   /// 加入家庭
   Future<void> joinFamily(String inviteCode, {String? nickname}) async {
     try {
-      final family = await _familyRepository.joinFamily(inviteCode, nickname: nickname);
-      state = state.copyWith(
-        families: [...state.families, family],
-        error: null, // 清除之前的错误
-      );
+      // 调用API加入家庭，返回family_id
+      await _familyRepository.joinFamily(inviteCode, nickname: nickname);
+      // 重新加载家庭列表，获取最新的家庭信息（包括新加入的家庭）
+      await loadFamilies();
     } catch (e) {
       final errorMessage = ErrorHandler.extractErrorMessage(e);
       state = state.copyWith(error: errorMessage);

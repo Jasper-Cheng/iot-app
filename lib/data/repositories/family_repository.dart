@@ -37,16 +37,29 @@ class FamilyRepository {
   }
 
   /// 加入家庭（通过邀请码）
-  Future<Family> joinFamily(String inviteCode, {String? nickname}) async {
-    final request = JoinFamilyRequest(
-      inviteCode: inviteCode,
-      nickname: nickname,
-    );
+  /// 返回加入的家庭ID，不返回完整的Family对象，避免重复请求
+  Future<int> joinFamily(String inviteCode, {String? nickname}) async {
+    // invite_code 作为查询参数，nickname 作为请求体（如果提供）
+    final Map<String, dynamic>? requestData;
+    if (nickname != null && nickname.isNotEmpty) {
+      requestData = {'nickname': nickname};
+    } else {
+      requestData = null;
+    }
+    
     final response = await _dio.post(
       ApiConstants.joinFamily,
-      data: request.toJson(),
+      queryParameters: {
+        'invite_code': inviteCode,
+      },
+      data: requestData,
     );
-    return Family.fromJson(response.data);
+    
+    // API返回的是FamilyMember，提取family_id
+    final responseData = response.data as Map<String, dynamic>;
+    final familyId = responseData['family_id'] as int;
+    
+    return familyId;
   }
 
   /// 获取家庭成员

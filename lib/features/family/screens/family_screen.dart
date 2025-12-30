@@ -618,11 +618,9 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       builder: (context) => const JoinFamilyDialog(),
     );
 
-    // 如果返回 true，说明加入成功，刷新家庭列表
-    if (result == true && mounted) {
-      final notifier = ref.read(familyListProvider.notifier);
-      await notifier.loadFamilies();
-    }
+    // 如果返回 true，说明加入成功
+    // 注意：joinFamily 方法内部已经调用了 loadFamilies()，这里不需要再次调用
+    // 避免重复请求
   }
 
   /// 显示选择家庭对话框
@@ -1488,11 +1486,45 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       family_models.Family family,
       FamilyListNotifier notifier,
       ) async {
+    // 先加载家庭成员以检查当前用户是否是创建者
+    final currentNotifier = ref.read(familyListProvider.notifier);
+    await currentNotifier.loadMembers(family.id);
+    if (!mounted) return;
+    
+    final members = currentNotifier.state.members;
+    final authState = ref.read(authProvider);
+    final currentUserId = authState.account?.id;
+
+    if (currentUserId == null) {
+      if (mounted && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('无法获取当前用户信息'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    // 查找当前用户的成员信息
+    final currentMember = members.firstWhere(
+          (m) => m.account.id == currentUserId,
+    );
+    
+    // 检查是否是创建者
+    final isCreator = currentMember.role == 'creator' || currentMember.role == 'owner';
+
+    // 根据是否是创建者显示不同的提示
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('退出家庭'),
-        content: Text('确定要退出家庭「${family.name}」吗？'),
+        title: Text(isCreator ? '退出家庭（将删除家庭）' : '退出家庭'),
+        content: Text(
+          isCreator 
+            ? '您是家庭「${family.name}」的创建者，退出家庭将删除该家庭，此操作无法撤销。确定要退出吗？'
+            : '确定要退出家庭「${family.name}」吗？'
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -1509,25 +1541,6 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
 
     if (confirm == true && mounted) {
       try {
-        // 重新获取notifier，避免使用已销毁的notifier
-        final currentNotifier = ref.read(familyListProvider.notifier);
-
-        // 先加载家庭成员以获取当前用户的 memberId
-        await currentNotifier.loadMembers(family.id);
-        if (!mounted) return;
-        
-        final members = currentNotifier.state.members;
-        final authState = ref.read(authProvider);
-        final currentUserId = authState.account?.id;
-
-        if (currentUserId == null) {
-          throw Exception('无法获取当前用户信息');
-        }
-
-        // 查找当前用户的成员信息
-        final currentMember = members.firstWhere(
-              (m) => m.account.id == currentUserId,
-        );
 
         // 移除自己（退出家庭）
         await currentNotifier.removeMember(currentMember.id);
@@ -1556,8 +1569,8 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
 
         if (mounted && context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('已退出家庭'),
+            SnackBar(
+              content: Text(isCreator ? '已删除家庭' : '已退出家庭'),
               backgroundColor: Colors.green,
             ),
           );

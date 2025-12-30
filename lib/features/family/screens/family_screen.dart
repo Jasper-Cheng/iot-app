@@ -3,11 +3,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../providers/family_provider.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../providers/device_provider.dart';
 import '../../../data/models/family.dart' as family_models;
 import '../../../core/utils/error_handler.dart';
 import '../widgets/create_family_dialog.dart';
 import '../widgets/join_family_dialog.dart';
 import '../widgets/family_member_item.dart';
+import '../../home/widgets/device_card_factory.dart';
 
 class FamilyScreen extends ConsumerStatefulWidget {
   const FamilyScreen({super.key});
@@ -90,7 +92,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
           dividerColor: Theme.of(context).dividerColor.withValues(alpha: 0.2),
           tabs: const [
             Tab(text: '我的家庭'),
-            Tab(text: '家庭成员'),
+            Tab(text: '家庭设备'),
           ],
         ),
       ),
@@ -98,7 +100,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
         controller: _tabController,
         children: [
           _buildFamiliesTab(state, notifier),
-          _buildMembersTab(state, notifier),
+          _buildDevicesTab(),
         ],
       ),
     );
@@ -185,13 +187,6 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
         // 家庭信息卡片
         Card(
           elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(
-              color: colorScheme.primary,
-              width: 2,
-            ),
-          ),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -348,15 +343,19 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
     );
   }
 
-  /// 家庭成员标签页
-  Widget _buildMembersTab(FamilyListState state, FamilyListNotifier notifier) {
-    if (state.currentFamily == null) {
+  /// 家庭设备标签页
+  Widget _buildDevicesTab() {
+    final deviceState = ref.watch(deviceListProvider);
+    final familyState = ref.watch(familyListProvider);
+
+    // 如果没有当前家庭，显示空状态
+    if (familyState.currentFamily == null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.people_outline,
+              Icons.devices_outlined,
               size: 80,
               color: Colors.grey[400],
             ),
@@ -373,27 +372,50 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       );
     }
 
-    if (state.isLoading && state.members.isEmpty) {
+    // 如果正在加载，显示加载指示器
+    if (deviceState.isLoading && deviceState.devices.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (state.members.isEmpty) {
-      return const Center(
-        child: Text('暂无成员'),
+    // 如果没有设备，显示空状态
+    if (deviceState.devices.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.devices_outlined,
+              size: 80,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '暂无设备',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: state.members.length,
-      itemBuilder: (context, index) {
-        final member = state.members[index];
-        return FamilyMemberItem(
-          member: member,
-          onEdit: () => _showEditMemberDialog(context, member, notifier),
-          onRemove: () => _showRemoveMemberDialog(context, member, notifier),
-        );
+    return RefreshIndicator(
+      onRefresh: () async {
+        await ref.read(deviceListProvider.notifier).refresh();
       },
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: deviceState.devices.length,
+        itemBuilder: (context, index) {
+          final device = deviceState.devices[index];
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: DeviceCardFactory.createCard(device),
+          );
+        },
+      ),
     );
   }
 

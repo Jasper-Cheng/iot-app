@@ -244,6 +244,7 @@ class FamilyListNotifier extends StateNotifier<FamilyListState> {
       state = state.copyWith(members: members);
     } catch (e) {
       state = state.copyWith(error: ErrorHandler.extractErrorMessage(e));
+      rethrow; // 重新抛出异常，让调用者知道失败了
     }
   }
 

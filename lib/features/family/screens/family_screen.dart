@@ -502,7 +502,8 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
             return FamilyMemberItem(
               member: member,
               isCurrentUser: isCurrentUser,
-              onEdit: () => _showEditMemberDialog(context, member, notifier),
+              // 只允许当前用户编辑自己的昵称
+              onEdit: isCurrentUser ? () => _showEditMemberDialog(context, member, notifier) : null,
               onRemove: () => _showRemoveMemberDialog(context, member, notifier),
             );
           }).toList(),
@@ -818,7 +819,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
     final result = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('编辑昵称'),
+        title: const Text('编辑我在家庭中的昵称'),
         content: TextField(
           controller: controller,
           decoration: const InputDecoration(
@@ -841,11 +842,25 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
     );
 
     if (result != null && result.isNotEmpty && mounted) {
-      await notifier.updateMemberNickname(member.id, result);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('昵称更新成功')),
-        );
+      try {
+        await notifier.updateMemberNickname(member.id, result);
+        if (mounted && context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('昵称更新成功'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted && context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('昵称更新失败: ${ErrorHandler.extractErrorMessage(e)}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     }
   }

@@ -116,12 +116,12 @@ class HomeScreen extends ConsumerWidget {
                     ),
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.symmetric(horizontal: 12,vertical: 8),
                     itemCount: deviceState.devices.length,
                     itemBuilder: (context, index) {
                       final device = deviceState.devices[index];
                       return Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.only(bottom: 6),
                         // 使用工厂方法根据SN动态创建对应的设备卡片
                         child: DeviceCardFactory.createCard(device),
                       );

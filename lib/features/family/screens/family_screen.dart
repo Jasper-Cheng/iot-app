@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import '../../../providers/family_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/device_provider.dart';
@@ -328,12 +329,21 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
                                       color: Colors.grey[600],
                                     ),
                                   ),
-                                  const SizedBox(width: 4),
+                                  const SizedBox(width: 6),
                                   InkWell(
                                     onTap: () => _copyInviteCode(family.inviteCode),
                                     child: Icon(
                                       Icons.copy,
                                       size: 14,
+                                      color: colorScheme.primary,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  InkWell(
+                                    onTap: () => _showQRCodeDialog(context, family.inviteCode),
+                                    child: Icon(
+                                      Icons.qr_code,
+                                      size: 16,
                                       color: colorScheme.primary,
                                     ),
                                   ),
@@ -924,6 +934,71 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
     );
   }
 
+  /// 显示二维码对话框
+  void _showQRCodeDialog(BuildContext context, String inviteCode) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('邀请码二维码'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey[300]!),
+              ),
+              child: QrImageView(
+                data: inviteCode,
+                version: QrVersions.auto,
+                size: 200.0,
+                backgroundColor: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '邀请码: $inviteCode',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 2,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              '扫描二维码即可获取邀请码',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('关闭'),
+          ),
+          TextButton(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: inviteCode));
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('邀请码已复制到剪贴板'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            },
+            child: const Text('复制邀请码'),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// 显示邀请成员对话框
   Future<void> _showInviteMemberDialog(
       BuildContext context,
@@ -967,6 +1042,14 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
                   },
                   icon: const Icon(Icons.copy),
                   tooltip: '复制',
+                ),
+                IconButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _showQRCodeDialog(context, family.inviteCode);
+                  },
+                  icon: const Icon(Icons.qr_code),
+                  tooltip: '二维码',
                 ),
               ],
             ),
@@ -1139,6 +1222,15 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
                                 onTap: () => _copyInviteCode(family.inviteCode),
                                 child: Icon(
                                   Icons.copy,
+                                  size: 14,
+                                  color: colorScheme.primary,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              InkWell(
+                                onTap: () => _showQRCodeDialog(context, family.inviteCode),
+                                child: Icon(
+                                  Icons.qr_code,
                                   size: 14,
                                   color: colorScheme.primary,
                                 ),

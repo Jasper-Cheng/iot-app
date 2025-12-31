@@ -531,6 +531,8 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
   Widget _buildDevicesTab() {
     final deviceState = ref.watch(deviceListProvider);
     final familyState = ref.watch(familyListProvider);
+    final authState = ref.watch(authProvider);
+    final currentUserId = authState.account?.id;
 
     // 如果没有当前家庭，显示空状态
     if (familyState.currentFamily == null) {
@@ -640,6 +642,10 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
                         }
                       }
                       
+                      // 判断设备是否属于当前用户
+                      final isCurrentUserDevice = device.accountId != null && 
+                          device.accountId == currentUserId;
+                      
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 4),
                         child: FamilyDeviceCard(
@@ -647,6 +653,10 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
                           onDelete: () => _showRemoveDeviceFromFamilyDialog(context, device),
                           onUpdateName: (newName) => _updateDeviceName(context, device, newName),
                           getAccountName: getAccountName,
+                          isCurrentUser: isCurrentUserDevice,
+                          onUnbind: isCurrentUserDevice 
+                              ? () => _showUnbindDeviceDialog(context, device)
+                              : null,
                         ),
                       );
                     },
@@ -1064,6 +1074,76 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('移除失败: ${ErrorHandler.extractErrorMessage(e)}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  /// 显示解绑设备对话框
+  Future<void> _showUnbindDeviceDialog(BuildContext context, Device device) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('解绑设备'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('确定要解绑设备「${device.name}」吗？解绑后设备将从您的账户中移除。'),
+            const SizedBox(height: 12),
+            const Text(
+              '解绑后，您将无法控制此设备，需要重新绑定才能使用。',
+              style: TextStyle(
+                color: Colors.red,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('确定'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && mounted) {
+      try {
+        // 解绑设备
+        await ref.read(deviceListProvider.notifier).unbindDevice(device.sn);
+        
+        // 刷新设备列表和设备消息
+        await Future.wait([
+          ref.read(deviceListProvider.notifier).refresh(),
+          ref.read(messageProvider.notifier).loadDeviceMessages(status: 'new'),
+        ]);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('设备已解绑'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('解绑失败: ${ErrorHandler.extractErrorMessage(e)}'),
               backgroundColor: Colors.red,
             ),
           );

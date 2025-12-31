@@ -8,6 +8,8 @@ class FamilyDeviceCard extends StatefulWidget {
   final VoidCallback? onDelete;
   final Function(String)? onUpdateName;
   final String? Function(int? accountId)? getAccountName;
+  final VoidCallback? onUnbind;
+  final bool isCurrentUser;
 
   const FamilyDeviceCard({
     super.key,
@@ -15,6 +17,8 @@ class FamilyDeviceCard extends StatefulWidget {
     this.onDelete,
     this.onUpdateName,
     this.getAccountName,
+    this.onUnbind,
+    this.isCurrentUser = false,
   });
 
   @override
@@ -50,33 +54,8 @@ class _FamilyDeviceCardState extends State<FamilyDeviceCard> {
                   // 第一行：名称和编辑图标
                   _buildNameRow(context, widget.device.name),
                   const SizedBox(height: 4),
-                  // 第二行：序列号和移除图标
-                  Row(
-                    children: [
-                      // 序列号
-                      Expanded(
-                        child: _buildDetailRow(context, '序列号', widget.device.sn),
-                      ),
-                      // 移除图标
-                      if (widget.onDelete != null)
-                        InkWell(
-                          onTap: widget.onDelete,
-                          borderRadius: BorderRadius.circular(6),
-                          child: Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.red, width: 1),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: const Icon(
-                              Icons.remove_circle_outline,
-                              size: 14,
-                              color: Colors.red,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
+                  // 第二行：序列号
+                  _buildDetailRow(context, '序列号', widget.device.sn),
                   const SizedBox(height: 4),
                   // 第三行：来自和状态
                   Row(
@@ -95,6 +74,45 @@ class _FamilyDeviceCardState extends State<FamilyDeviceCard> {
                       ),
                     ],
                   ),
+                  // 第四行：解绑按钮和移除按钮
+                  if (widget.onDelete != null || (widget.isCurrentUser && widget.onUnbind != null)) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        // 解绑按钮
+                        if (widget.isCurrentUser && widget.onUnbind != null)
+                          OutlinedButton.icon(
+                            onPressed: widget.onUnbind,
+                            icon: const Icon(Icons.link_off, size: 16,color: Colors.red),
+                            label: const Text('解绑该设备', style: TextStyle(fontSize: 12)),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              side: const BorderSide(color: Colors.red),
+                              foregroundColor: Colors.red,
+                            ),
+                          ),
+                        // 移除按钮
+                        if (widget.onDelete != null) ...[
+                          if (widget.isCurrentUser && widget.onUnbind != null) const SizedBox(width: 8),
+                          OutlinedButton.icon(
+                            onPressed: widget.onDelete,
+                            icon: const Icon(Icons.remove_circle_outline, size: 16,color: Colors.orange),
+                            label: const Text('从家庭移除', style: TextStyle(fontSize: 12)),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              side: const BorderSide(color: Colors.orange),
+                              foregroundColor: Colors.orange,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),

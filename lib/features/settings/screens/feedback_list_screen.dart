@@ -159,54 +159,73 @@ class _FeedbackListScreenState extends ConsumerState<FeedbackListScreen> {
       body: RefreshIndicator(
         onRefresh: _loadFeedbackList,
         child: _isLoading && _feedbackList.isEmpty
-            ? const Center(child: CircularProgressIndicator())
+            ? SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: SizedBox(
+                  height: MediaQuery.of(context).size.height - 200,
+                  child: const Center(child: CircularProgressIndicator()),
+                ),
+              )
             : _error != null && _feedbackList.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          size: 64,
-                          color: Theme.of(context).disabledColor,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          _error!,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Theme.of(context).disabledColor,
-                              ),
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _loadFeedbackList,
-                          child: const Text('重试'),
-                        ),
-                      ],
-                    ),
-                  )
-                : _feedbackList.isEmpty
-                    ? Center(
+                ? SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: SizedBox(
+                      height: MediaQuery.of(context).size.height - 200,
+                      child: Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(
-                              Icons.feedback_outlined,
+                              Icons.error_outline,
                               size: 64,
                               color: Theme.of(context).disabledColor,
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              '暂无反馈记录',
+                              _error!,
                               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                     color: Theme.of(context).disabledColor,
                                   ),
                             ),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: _loadFeedbackList,
+                              child: const Text('重试'),
+                            ),
                           ],
+                        ),
+                      ),
+                    ),
+                  )
+                : _feedbackList.isEmpty
+                    ? SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: SizedBox(
+                          height: MediaQuery.of(context).size.height - 200,
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.feedback_outlined,
+                                  size: 64,
+                                  color: Theme.of(context).disabledColor,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  '暂无反馈记录',
+                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                        color: Theme.of(context).disabledColor,
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       )
                     : ListView.builder(
                         controller: _scrollController,
+                        physics: const AlwaysScrollableScrollPhysics(),
                         padding: const EdgeInsets.all(16),
                         itemCount: _feedbackList.length + (_hasMore ? 1 : 0),
                         itemBuilder: (context, index) {
@@ -254,11 +273,34 @@ class _FeedbackListScreenState extends ConsumerState<FeedbackListScreen> {
                               ),
                               subtitle: Padding(
                                 padding: const EdgeInsets.only(top: 8),
-                                child: Text(
-                                  AppDateUtils.formatDateTime(item.createdAt),
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                        color: Theme.of(context).disabledColor,
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      AppDateUtils.formatDateTime(item.createdAt),
+                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                            color: Theme.of(context).disabledColor,
+                                          ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
                                       ),
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        item.source.isNotEmpty ? item.source : '未知',
+                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                              color: Theme.of(context).colorScheme.primary,
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                               expandedAlignment: Alignment.center,

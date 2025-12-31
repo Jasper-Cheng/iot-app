@@ -625,12 +625,28 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
                     itemCount: deviceState.devices.length,
                     itemBuilder: (context, index) {
                       final device = deviceState.devices[index];
+                      // 通过家庭成员列表查找账户名
+                      String? getAccountName(int? accountId) {
+                        if (accountId == null) return null;
+                        try {
+                          final member = familyState.members.firstWhere(
+                            (m) => m.account.id == accountId,
+                          );
+                          // 优先显示家庭昵称，如果没有则显示账户昵称
+                          return member.nickname ?? member.account.nickname;
+                        } catch (e) {
+                          // 如果找不到成员，返回 null
+                          return null;
+                        }
+                      }
+                      
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 4),
                         child: FamilyDeviceCard(
                           device: device,
                           onDelete: () => _showRemoveDeviceFromFamilyDialog(context, device),
                           onUpdateName: (newName) => _updateDeviceName(context, device, newName),
+                          getAccountName: getAccountName,
                         ),
                       );
                     },

@@ -7,12 +7,14 @@ class FamilyDeviceCard extends StatefulWidget {
   final Device device;
   final VoidCallback? onDelete;
   final Function(String)? onUpdateName;
+  final String? Function(int? accountId)? getAccountName;
 
   const FamilyDeviceCard({
     super.key,
     required this.device,
     this.onDelete,
     this.onUpdateName,
+    this.getAccountName,
   });
 
   @override
@@ -84,9 +86,7 @@ class _FamilyDeviceCardState extends State<FamilyDeviceCard> {
                         child: _buildDetailRow(
                           context,
                           '来自',
-                          widget.device.accountId != null
-                              ? '用户${widget.device.accountId}'
-                              : '未知',
+                          _getAccountDisplayName(),
                         ),
                       ),
                       // 状态
@@ -231,6 +231,21 @@ class _FamilyDeviceCardState extends State<FamilyDeviceCard> {
       default:
         return '未知';
     }
+  }
+
+  /// 获取账户显示名称
+  String _getAccountDisplayName() {
+    if (widget.device.accountId == null) {
+      return '未知';
+    }
+    
+    if (widget.getAccountName != null) {
+      final accountName = widget.getAccountName!(widget.device.accountId);
+      return accountName ?? '未知';
+    }
+    
+    // 如果没有提供查找函数，回退到显示 accountId
+    return '用户${widget.device.accountId}';
   }
 
   /// 显示编辑设备名称对话框

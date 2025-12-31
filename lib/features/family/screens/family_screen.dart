@@ -561,65 +561,80 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       return const Center(child: CircularProgressIndicator());
     }
 
-    // 如果没有设备，显示空状态
-    if (deviceState.devices.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.devices_outlined,
-              size: 80,
-              color: Colors.grey[400],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              '暂无设备',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
     return RefreshIndicator(
       onRefresh: () async {
         await ref.read(deviceListProvider.notifier).refresh();
       },
       child: Column(
         children: [
-          // 添加设备按钮
+          // 添加设备按钮（靠右）
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: OutlinedButton.icon(
-              onPressed: () => _showAddDeviceToFamilyDialog(context),
-              icon: const Icon(Icons.add),
-              label: const Text('添加设备到家庭'),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              ),
+            padding: const EdgeInsets.symmetric(horizontal: 12,vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Text(
+                  '${deviceState.devices.length}台',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                OutlinedButton.icon(
+                  onPressed: () => _showAddDeviceToFamilyDialog(context),
+                  icon: const Icon(Icons.add, size: 16),
+                  label: const Text(
+                    '添加设备到家庭',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+              ],
             ),
           ),
           // 设备列表
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: deviceState.devices.length,
-              itemBuilder: (context, index) {
-                final device = deviceState.devices[index];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: FamilyDeviceCard(
-                    device: device,
-                    onDelete: () => _showRemoveDeviceFromFamilyDialog(context, device),
-                    onUpdateName: (newName) => _updateDeviceName(context, device, newName),
+            child: deviceState.devices.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.devices_outlined,
+                          size: 80,
+                          color: Colors.grey[400],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          '暂无设备',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: deviceState.devices.length,
+                    itemBuilder: (context, index) {
+                      final device = deviceState.devices[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: FamilyDeviceCard(
+                          device: device,
+                          onDelete: () => _showRemoveDeviceFromFamilyDialog(context, device),
+                          onUpdateName: (newName) => _updateDeviceName(context, device, newName),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
           ),
         ],
       ),
@@ -1073,83 +1088,177 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       return;
     }
 
-    if (personalDevices.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('您还没有已绑定的设备'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-      }
-      return;
-    }
-
     // 获取家庭中的设备ID列表
     final familyDevicesState = ref.read(deviceListProvider);
     final familyDeviceIds = familyDevicesState.devices.map((d) => d.id).toSet();
+
+    // 排序：未添加的设备优先显示
+    final sortedDevices = List<Device>.from(personalDevices);
+    sortedDevices.sort((a, b) {
+      final aInFamily = familyDeviceIds.contains(a.id);
+      final bInFamily = familyDeviceIds.contains(b.id);
+      // 未添加的设备（false）排在前面，已添加的设备（true）排在后面
+      if (aInFamily == bInFamily) return 0;
+      return aInFamily ? 1 : -1;
+    });
+
+    // 使用StatefulBuilder来管理多选状态
+    final selectedDeviceIds = <int>{};
     
-    // 过滤出不在家庭中的设备
-    final availableDevices = personalDevices.where((d) => 
-      !familyDeviceIds.contains(d.id)
-    ).toList();
-
-    if (availableDevices.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('所有设备都已添加到家庭中'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-      }
-      return;
-    }
-
-    final selectedDevice = await showDialog<Device>(
+    final result = await showDialog<List<Device>>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('选择设备'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: availableDevices.length,
-            itemBuilder: (context, index) {
-              final device = availableDevices[index];
-              return ListTile(
-                leading: Text(
-                  device.deviceIcon,
-                  style: const TextStyle(fontSize: 24),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('添加设备到家庭'),
+                IconButton(
+                  icon: const Icon(Icons.close, size: 24),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  onPressed: () => Navigator.pop(context),
                 ),
-                title: Text(device.name),
-                subtitle: Text('${device.deviceName} - ${device.sn}'),
-                onTap: () => Navigator.pop(context, device),
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
-          ),
-        ],
+              ],
+            ),
+            titlePadding: EdgeInsets.symmetric(vertical: 16,horizontal: 12),
+            insetPadding: EdgeInsets.symmetric(horizontal: 24,vertical: 24),
+            contentPadding: const EdgeInsets.only(left: 12,right: 12,bottom: 12),
+            actionsPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            content: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 450),
+              child: SizedBox(
+                width: double.maxFinite,
+                child: sortedDevices.isEmpty
+                    ? const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(20),
+                          child: Text(
+                            '没有可添加的设备',
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ),
+                      )
+                    : ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: sortedDevices.length,
+                        itemBuilder: (context, index) {
+                        final device = sortedDevices[index];
+                        final isInFamily = familyDeviceIds.contains(device.id);
+                        final isSelected = selectedDeviceIds.contains(device.id);
+                        
+                        return Opacity(
+                          opacity: isInFamily ? 0.5 : 1.0,
+                          child: Card(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            child: InkWell(
+                              onTap: isInFamily ? null : () {
+                                setState(() {
+                                  if (isSelected) {
+                                    selectedDeviceIds.remove(device.id);
+                                  } else {
+                                    selectedDeviceIds.add(device.id);
+                                  }
+                                });
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                  // 左侧：图标
+                                  Text(
+                                    device.deviceIcon,
+                                    style: const TextStyle(fontSize: 24),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  // 中间：设备信息
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        // 名称（不显示label）
+                                        Text(
+                                          device.name,
+                                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                                fontWeight: FontWeight.w500,
+                                                fontSize: 12,
+                                              ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        // 序列号（不显示label）
+                                        Text(
+                                          device.sn,
+                                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                fontSize: 11,
+                                                color: Colors.grey[600],
+                                              ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                    // 右侧：复选框
+                                    Checkbox(
+                                      value: isSelected,
+                                      onChanged: isInFamily ? null : (value) {
+                                        setState(() {
+                                          if (value == true) {
+                                            selectedDeviceIds.add(device.id);
+                                          } else {
+                                            selectedDeviceIds.remove(device.id);
+                                          }
+                                        });
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('取消'),
+              ),
+              ElevatedButton(
+                onPressed: selectedDeviceIds.isEmpty
+                    ? null
+                    : () {
+                        final selectedDevices = sortedDevices
+                            .where((d) => selectedDeviceIds.contains(d.id))
+                            .toList();
+                        Navigator.pop(context, selectedDevices);
+                      },
+                child: const Text('确定'),
+              ),
+            ],
+          );
+        },
       ),
     );
 
-    if (selectedDevice != null && mounted) {
+    if (result != null && result.isNotEmpty && mounted) {
       try {
         final notifier = ref.read(familyListProvider.notifier);
-        await notifier.addDeviceToFamily(currentFamily.id, selectedDevice.id);
+        
+        // 批量添加设备
+        for (final device in result) {
+          await notifier.addDeviceToFamily(currentFamily.id, device.id);
+        }
         
         // 刷新设备列表
         await ref.read(deviceListProvider.notifier).refresh();
         
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('设备已添加到家庭'),
+            SnackBar(
+              content: Text('已添加 ${result.length} 个设备到家庭'),
               backgroundColor: Colors.green,
             ),
           );
@@ -1164,6 +1273,66 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
           );
         }
       }
+    }
+  }
+
+  /// 构建对话框详情行
+  Widget _buildDialogDetailRow(BuildContext context, String label, String value) {
+    return Row(
+      children: [
+        Text(
+          '$label:',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Colors.grey[600],
+                fontSize: 11,
+              ),
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            value,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 12,
+                ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 获取设备状态颜色
+  Color _getDeviceStatusColor(String status) {
+    switch (status) {
+      case 'online':
+        return Colors.blue;
+      case 'offline':
+        return Colors.grey;
+      case 'fatal':
+        return Colors.red;
+      case 'bound':
+        return Colors.blue;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  /// 获取设备状态文本
+  String _getDeviceStatusText(String status) {
+    switch (status) {
+      case 'online':
+        return '在线';
+      case 'offline':
+        return '离线';
+      case 'fatal':
+        return '故障';
+      case 'bound':
+        return '已绑定';
+      case 'unbound':
+        return '未绑定';
+      default:
+        return '未知';
     }
   }
 

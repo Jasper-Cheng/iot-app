@@ -514,7 +514,10 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
               isCurrentUser: isCurrentUser,
               // 只允许当前用户编辑自己的昵称
               onEdit: isCurrentUser ? () => _showEditMemberDialog(context, member, notifier) : null,
-              onRemove: () => _showRemoveMemberDialog(context, member, notifier),
+              // 只有创建者可以移除其他成员（不能移除自己）
+              onRemove: isCreator && !isCurrentUser
+                  ? () => _showRemoveMemberDialog(context, member, notifier)
+                  : null,
             );
           }).toList(),
       ],
@@ -904,7 +907,10 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       await notifier.removeMember(member.id);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('成员已移除')),
+          const SnackBar(
+            content: Text('成员已移除'),
+            backgroundColor: Colors.green,
+          ),
         );
       }
     }

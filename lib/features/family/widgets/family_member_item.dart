@@ -92,7 +92,7 @@ class FamilyMemberItem extends StatelessWidget {
                           ],
                         ),
                       ),
-                      // "我"标识显示在最右边
+                      // "我"标识显示在中间
                       if (isCurrentUser)
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -112,6 +112,18 @@ class FamilyMemberItem extends StatelessWidget {
                             ),
                           ),
                         ),
+                      // 移除按钮显示在最右边（创建者可以移除其他成员）
+                      if (onRemove != null && !isCurrentUser) ...[
+                        const SizedBox(width: 8),
+                        InkWell(
+                          onTap: onRemove,
+                          child: Icon(
+                            Icons.remove_circle_outline,
+                            size: 20,
+                            color: Colors.red,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 8),

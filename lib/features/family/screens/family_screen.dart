@@ -1029,8 +1029,11 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
         final notifier = ref.read(familyListProvider.notifier);
         await notifier.removeDeviceFromFamily(currentFamily.id, device.id);
         
-        // 刷新设备列表
-        await ref.read(deviceListProvider.notifier).refresh();
+        // 刷新设备列表和设备消息
+        await Future.wait([
+          ref.read(deviceListProvider.notifier).refresh(),
+          ref.read(messageProvider.notifier).loadDeviceMessages(status: 'new'),
+        ]);
         
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -1252,8 +1255,11 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
           await notifier.addDeviceToFamily(currentFamily.id, device.id);
         }
         
-        // 刷新设备列表
-        await ref.read(deviceListProvider.notifier).refresh();
+        // 刷新设备列表和设备消息
+        await Future.wait([
+          ref.read(deviceListProvider.notifier).refresh(),
+          ref.read(messageProvider.notifier).loadDeviceMessages(status: 'new'),
+        ]);
         
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

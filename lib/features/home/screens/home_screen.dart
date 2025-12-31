@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../providers/device_provider.dart';
 import '../../../providers/message_provider.dart';
+import '../../../providers/auth_provider.dart';
 import '../widgets/device_card_factory.dart';
 import '../../../core/widgets/qr_scanner.dart';
 import '../../../core/utils/error_handler.dart';
@@ -16,13 +17,15 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final deviceState = ref.watch(deviceListProvider);
     final messageState = ref.watch(messageProvider);
+    final authState = ref.watch(authProvider);
     final unreadCount = messageState.unreadDeviceCount;
+    final isFamilyMode = authState.account?.currentFamilyId != null;
 
     return Scaffold(
       drawer: _buildDrawer(context, ref),
       appBar: AppBar(
         toolbarHeight: 48,
-        title: const Text('我的设备'),
+        title: Text(isFamilyMode ? '家庭设备' : '我的设备'),
         actions: [
           // 通知图标
           IconButton(
@@ -156,6 +159,8 @@ class HomeScreen extends ConsumerWidget {
   /// 构建侧边栏
   Widget _buildDrawer(BuildContext context, WidgetRef ref) {
     final deviceState = ref.watch(deviceListProvider);
+    final authState = ref.watch(authProvider);
+    final isFamilyMode = authState.account?.currentFamilyId != null;
     
     return Drawer(
       width: 280,
@@ -350,7 +355,7 @@ class HomeScreen extends ConsumerWidget {
             child: Row(
               children: [
                 Text(
-                  '设备列表',
+                  isFamilyMode ? '家庭设备列表' : '我的设备列表',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -407,69 +412,123 @@ class HomeScreen extends ConsumerWidget {
     final isOnline = device.isOnline;
     final modelCode = DeviceMapping.getModelCodeBySN(device.sn);
     final deviceIcon = DeviceMapping.getDeviceIconByModel(modelCode);
+    final authState = ref.watch(authProvider);
+    final currentUserId = authState.account?.id;
+    final isCurrentUserDevice = device.accountId != null && device.accountId == currentUserId;
     
     return Card(
       margin: EdgeInsets.symmetric(vertical: 4),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12,vertical: 4),
         dense: true,
         leading: Text(
           deviceIcon,
-          style: const TextStyle(fontSize: 24),
+          style: const TextStyle(fontSize: 26),
         ),
-        title: Text(
-          device.name,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+        title: Row(
+          children: [
+            Text(
+              device.name,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w500,
                 fontSize: 13,
               ),
+            ),
+            const SizedBox(width: 6),
+            InkWell(
+              onTap: () {
+                _showEditDeviceNameDialog(context, ref, device);
+              },
+              borderRadius: BorderRadius.circular(4),
+              child: Icon(
+                Icons.edit_outlined,
+                size: 15,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(width: 4),
+            Expanded(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: isOnline ? Colors.green : Colors.grey,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    isOnline ? '在线' : '离线',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontSize: 10,
+                      color: isOnline ? Colors.green : Colors.grey,
+                    ),
+                  ),
+                ],
+              )
+            )
+          ],
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 4),
-            Text(
-              'SN: ${device.sn}',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontSize: 10,
-                  ),
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                'SN: ${device.sn}',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontSize: 10,
+                    ),
+              ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 8),
+            // 解绑和配网按钮
             Row(
               children: [
-                Container(
-                  width: 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: isOnline ? Colors.green : Colors.grey,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  isOnline ? '在线' : '离线',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontSize: 10,
-                        color: isOnline ? Colors.green : Colors.grey,
+                if (isCurrentUserDevice)
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        _showUnbindDeviceDialog(context, ref, device);
+                      },
+                      icon: const Icon(Icons.link_off, size: 14,color: Colors.red),
+                      label: const Text(
+                        '解绑',
+                        style: TextStyle(fontSize: 12, color: Colors.red),
                       ),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        side: const BorderSide(color: Colors.red),
+                        foregroundColor: Colors.red,
+                      ),
+                    ),
+                  ),
+                if (isCurrentUserDevice) const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      _handleDeviceConfigure(context, ref, device);
+                    },
+                    icon: const Icon(Icons.settings, size: 14,color: Colors.blue,),
+                    label: const Text(
+                      '配网',
+                      style: TextStyle(fontSize: 12,color: Colors.blue),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
                 ),
               ],
             ),
           ],
-        ),
-        trailing: TextButton(
-          onPressed: () {
-            _handleDeviceConfigure(context, ref, device);
-          },
-          style: TextButton.styleFrom(
-            padding: EdgeInsets.zero,
-            minimumSize: Size.zero,
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          ),
-          child: const Text(
-            '配网',
-            style: TextStyle(fontSize: 13),
-          ),
         ),
       ),
     );
@@ -519,6 +578,139 @@ class HomeScreen extends ConsumerWidget {
         duration: const Duration(seconds: 1),
       ),
     );
+  }
+
+  /// 显示解绑设备对话框
+  Future<void> _showUnbindDeviceDialog(BuildContext context, WidgetRef ref, device) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('解绑设备'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('确定要解绑设备「${device.name}」吗？解绑后设备将从您的账户中移除。'),
+            const SizedBox(height: 12),
+            const Text(
+              '解绑后，您将无法控制此设备，需要重新绑定才能使用。',
+              style: TextStyle(
+                color: Colors.red,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('确定'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        // 解绑设备
+        await ref.read(deviceListProvider.notifier).unbindDevice(device.sn);
+        
+        // 刷新设备列表和设备消息
+        await Future.wait([
+          ref.read(deviceListProvider.notifier).refresh(),
+          ref.read(messageProvider.notifier).loadDeviceMessages(status: 'new'),
+        ]);
+        
+        if (context.mounted) {
+          Navigator.pop(context); // 关闭侧边栏
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('设备已解绑'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('解绑失败: ${ErrorHandler.extractErrorMessage(e)}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  /// 显示编辑设备名称对话框
+  Future<void> _showEditDeviceNameDialog(BuildContext context, WidgetRef ref, device) async {
+    final nameController = TextEditingController(text: device.name);
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('编辑设备名称'),
+        content: TextField(
+          controller: nameController,
+          decoration: const InputDecoration(
+            labelText: '设备名称',
+            hintText: '请输入设备名称',
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final newName = nameController.text.trim();
+              if (newName.isNotEmpty && newName != device.name) {
+                Navigator.pop(context, true);
+              } else {
+                Navigator.pop(context, false);
+              }
+            },
+            child: const Text('确定'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true) {
+      try {
+        final newName = nameController.text.trim();
+        await ref.read(deviceListProvider.notifier).updateDeviceName(device.id, newName);
+        
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('设备名称已更新'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('更新失败: ${ErrorHandler.extractErrorMessage(e)}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
   }
 
   /// 处理设备配网

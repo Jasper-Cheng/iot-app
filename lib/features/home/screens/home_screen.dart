@@ -590,6 +590,10 @@ class HomeScreen extends ConsumerWidget {
                             ? null
                             : nameController.text,
                       );
+                  
+                  // 刷新设备消息
+                  await ref.read(messageProvider.notifier).loadDeviceMessages(status: 'new');
+                  
                   if (context.mounted) {
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(

@@ -63,10 +63,10 @@ class DeviceListNotifier extends StateNotifier<DeviceListState> {
   /// 绑定设备
   Future<void> bindDevice(String sn, {String? name}) async {
     try {
-      final device = await _repository.bindDevice(sn, name: name);
-      state = state.copyWith(
-        devices: [...state.devices, device],
-      );
+      await _repository.bindDevice(sn, name: name);
+      // 如果当前在家庭模式下，重新加载设备列表（只显示家庭中的设备）
+      // 如果不在家庭模式下，重新加载设备列表（显示个人设备）
+      await loadDevices();
     } catch (e) {
       state = state.copyWith(error: ErrorHandler.extractErrorMessage(e));
       rethrow; // 重新抛出异常，让UI层能够捕获

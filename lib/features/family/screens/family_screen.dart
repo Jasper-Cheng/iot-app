@@ -7,12 +7,15 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/device_provider.dart';
 import '../../../providers/message_provider.dart';
 import '../../../data/models/family.dart' as family_models;
+import '../../../data/models/device.dart';
 import '../../../data/repositories/auth_repository.dart';
+import '../../../data/repositories/device_repository.dart';
 import '../../../core/utils/error_handler.dart';
 import '../../../core/utils/date_utils.dart';
 import '../widgets/create_family_dialog.dart';
 import '../widgets/join_family_dialog.dart';
 import '../widgets/family_member_item.dart';
+import '../widgets/family_device_card.dart';
 import '../../home/widgets/device_card_factory.dart';
 
 class FamilyScreen extends ConsumerStatefulWidget {
@@ -586,16 +589,39 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       onRefresh: () async {
         await ref.read(deviceListProvider.notifier).refresh();
       },
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: deviceState.devices.length,
-        itemBuilder: (context, index) {
-          final device = deviceState.devices[index];
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: DeviceCardFactory.createCard(device),
-          );
-        },
+      child: Column(
+        children: [
+          // 添加设备按钮
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: OutlinedButton.icon(
+              onPressed: () => _showAddDeviceToFamilyDialog(context),
+              icon: const Icon(Icons.add),
+              label: const Text('添加设备到家庭'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+            ),
+          ),
+          // 设备列表
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: deviceState.devices.length,
+              itemBuilder: (context, index) {
+                final device = deviceState.devices[index];
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: FamilyDeviceCard(
+                    device: device,
+                    onDelete: () => _showRemoveDeviceFromFamilyDialog(context, device),
+                    onUpdateName: (newName) => _updateDeviceName(context, device, newName),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -912,6 +938,231 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
             backgroundColor: Colors.green,
           ),
         );
+      }
+    }
+  }
+
+  /// 更新设备名称
+  Future<void> _updateDeviceName(
+    BuildContext context,
+    Device device,
+    String newName,
+  ) async {
+    try {
+      await ref.read(deviceListProvider.notifier).updateDeviceName(device.id, newName);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('设备名称已更新'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('更新失败: ${ErrorHandler.extractErrorMessage(e)}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// 显示从家庭移除设备对话框
+  Future<void> _showRemoveDeviceFromFamilyDialog(
+    BuildContext context,
+    Device device,
+  ) async {
+    final familyState = ref.read(familyListProvider);
+    final currentFamily = familyState.currentFamily;
+    
+    if (currentFamily == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('请先选择一个家庭'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('从家庭移除设备'),
+        content: Text('确定要从家庭「${currentFamily.name}」中移除设备「${device.name}」吗？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('移除'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && mounted) {
+      try {
+        final notifier = ref.read(familyListProvider.notifier);
+        await notifier.removeDeviceFromFamily(currentFamily.id, device.id);
+        
+        // 刷新设备列表
+        await ref.read(deviceListProvider.notifier).refresh();
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('设备已从家庭中移除'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('移除失败: ${ErrorHandler.extractErrorMessage(e)}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  /// 显示添加设备到家庭对话框
+  Future<void> _showAddDeviceToFamilyDialog(BuildContext context) async {
+    final familyState = ref.read(familyListProvider);
+    final currentFamily = familyState.currentFamily;
+    
+    if (currentFamily == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('请先选择一个家庭'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    // 获取当前用户的所有个人设备（不传 familyId 获取个人设备）
+    final deviceRepository = DeviceRepository();
+    List<Device> personalDevices;
+    try {
+      personalDevices = await deviceRepository.getDevices(familyId: null);
+      personalDevices = personalDevices.where((d) => d.isBound).toList();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('获取设备列表失败: ${ErrorHandler.extractErrorMessage(e)}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    if (personalDevices.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('您还没有已绑定的设备'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+      return;
+    }
+
+    // 获取家庭中的设备ID列表
+    final familyDevicesState = ref.read(deviceListProvider);
+    final familyDeviceIds = familyDevicesState.devices.map((d) => d.id).toSet();
+    
+    // 过滤出不在家庭中的设备
+    final availableDevices = personalDevices.where((d) => 
+      !familyDeviceIds.contains(d.id)
+    ).toList();
+
+    if (availableDevices.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('所有设备都已添加到家庭中'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+      return;
+    }
+
+    final selectedDevice = await showDialog<Device>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('选择设备'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: availableDevices.length,
+            itemBuilder: (context, index) {
+              final device = availableDevices[index];
+              return ListTile(
+                leading: Text(
+                  device.deviceIcon,
+                  style: const TextStyle(fontSize: 24),
+                ),
+                title: Text(device.name),
+                subtitle: Text('${device.deviceName} - ${device.sn}'),
+                onTap: () => Navigator.pop(context, device),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+        ],
+      ),
+    );
+
+    if (selectedDevice != null && mounted) {
+      try {
+        final notifier = ref.read(familyListProvider.notifier);
+        await notifier.addDeviceToFamily(currentFamily.id, selectedDevice.id);
+        
+        // 刷新设备列表
+        await ref.read(deviceListProvider.notifier).refresh();
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('设备已添加到家庭'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('添加失败: ${ErrorHandler.extractErrorMessage(e)}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     }
   }

@@ -260,6 +260,26 @@ class FamilyListNotifier extends StateNotifier<FamilyListState> {
     }
   }
 
+  /// 添加设备到家庭
+  Future<void> addDeviceToFamily(int familyId, int deviceId) async {
+    try {
+      await _familyRepository.addDeviceToFamily(familyId, deviceId);
+    } catch (e) {
+      state = state.copyWith(error: ErrorHandler.extractErrorMessage(e));
+      rethrow;
+    }
+  }
+
+  /// 从家庭移除设备
+  Future<void> removeDeviceFromFamily(int familyId, int deviceId) async {
+    try {
+      await _familyRepository.removeDeviceFromFamily(familyId, deviceId);
+    } catch (e) {
+      state = state.copyWith(error: ErrorHandler.extractErrorMessage(e));
+      rethrow;
+    }
+  }
+
   /// 刷新
   Future<void> refresh() async {
     // loadFamilies() 已经会加载当前家庭数据（如果有 currentFamilyId）

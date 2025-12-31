@@ -413,10 +413,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: () => _showDeleteAccountDialog(context, ref),
-                        icon: const Icon(Icons.delete_outline, size: 18),
-                        label: const Text('注销账号'),
+                        icon: const Icon(Icons.delete_outline, size: 18,color: Colors.red),
+                        label: const Text('注销账号', style: TextStyle(color: Colors.red)),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 12),
+                          foregroundColor: Colors.red,
+                          side: const BorderSide(color: Colors.red),
                         ),
                       ),
                     ),
@@ -438,15 +440,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
 
           const SizedBox(height: 16),
-
-          // 版本信息
-          Center(
-            child: Text(
-              'v1.0.0',
-              style: theme.textTheme.bodySmall,
-            ),
-          ),
-          const SizedBox(height: 32),
         ],
       ),
     );

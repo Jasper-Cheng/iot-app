@@ -62,14 +62,23 @@ class _EnvironmentMonitorCardState extends State<EnvironmentMonitorCard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 设备名称
-        Text(
-          widget.device.name,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: isDark ? AppColors.darkText : AppColors.lightText,
-          ),
+        // 设备名称（带图标）
+        Row(
+          children: [
+            Text(
+              widget.device.deviceIcon,
+              style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              widget.device.name,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: isDark ? AppColors.darkText : AppColors.lightText,
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 4),
         // 连接状态

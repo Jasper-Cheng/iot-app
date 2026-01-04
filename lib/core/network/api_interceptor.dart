@@ -10,13 +10,41 @@ class ApiInterceptor extends Interceptor {
   // 静态路由实例引用
   static GoRouter? _router;
   
+  // 静态 Dio 实例引用（用于取消请求）
+  static Dio? _dio;
+  
+  // 是否已经跳转到登录页（防止重复跳转）
+  static bool _isRedirectingToLogin = false;
+  
   /// 设置路由实例（在应用启动时调用）
   static void setRouter(GoRouter router) {
     _router = router;
   }
+  
+  /// 设置 Dio 实例（用于取消请求）
+  static void setDio(Dio dio) {
+    _dio = dio;
+  }
+  
+  /// 重置跳转标志（在登录成功后调用）
+  static void resetRedirectFlag() {
+    _isRedirectingToLogin = false;
+  }
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
+    // 如果正在跳转到登录页，取消所有后续请求
+    if (_isRedirectingToLogin) {
+      handler.reject(
+        DioException(
+          requestOptions: options,
+          type: DioExceptionType.cancel,
+          message: '认证失败，已跳转到登录页',
+        ),
+      );
+      return;
+    }
+    
     // 添加 Token
     final token = _storage.getString(StorageService.keyToken);
     final tokenType = _storage.getString(StorageService.keyTokenType) ?? 'Bearer';
@@ -80,18 +108,6 @@ class ApiInterceptor extends Interceptor {
               }
             }
             
-            // 如果是401错误，清除Token并跳转到登录页
-            if (statusCode == 401) {
-              _storage.remove(StorageService.keyToken);
-              _storage.remove(StorageService.keyTokenType);
-              _storage.remove(StorageService.keyUserInfo);
-              
-              // 使用 GoRouter 跳转到登录页
-              if (_router != null) {
-                _router!.go(AppRouter.login);
-              }
-            }
-            
             // 如果找到了自定义错误消息，直接跳出
             if (hasCustomMessage) {
               break;
@@ -108,15 +124,8 @@ class ApiInterceptor extends Interceptor {
             break;
           case 401:
             errorMessage = '未授权,请重新登录';
-            // 清除 Token
-            _storage.remove(StorageService.keyToken);
-            _storage.remove(StorageService.keyTokenType);
-            _storage.remove(StorageService.keyUserInfo);
-            
-            // 使用 GoRouter 跳转到登录页
-            if (_router != null) {
-              _router!.go(AppRouter.login);
-            }
+            // 处理401错误：清除Token、取消请求、跳转登录
+            _handle401Error();
             break;
           case 403:
             errorMessage = '禁止访问';
@@ -159,6 +168,33 @@ class ApiInterceptor extends Interceptor {
     );
 
     super.onError(err, handler);
+  }
+  
+  /// 处理401认证失败错误
+  void _handle401Error() {
+    // 防止重复处理
+    if (_isRedirectingToLogin) {
+      return;
+    }
+    
+    _isRedirectingToLogin = true;
+    
+    // 清除本地存储的认证信息
+    _storage.remove(StorageService.keyToken);
+    _storage.remove(StorageService.keyTokenType);
+    _storage.remove(StorageService.keyUserInfo);
+    _storage.remove(StorageService.keyCurrentFamilyId);
+    
+    // 取消所有待处理的请求
+    // 注意：不关闭 Dio 实例，只取消当前请求队列
+    // 关闭 Dio 会导致后续无法使用，所以这里只标记状态
+    
+    // 延迟跳转，确保状态已清除
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (_router != null) {
+        _router!.go(AppRouter.login);
+      }
+    });
   }
 }
 

@@ -4,6 +4,7 @@ import '../core/storage/storage_service.dart';
 import '../data/repositories/auth_repository.dart';
 import '../core/utils/error_handler.dart';
 import '../core/utils/rsa_helper.dart';
+import '../core/network/api_interceptor.dart';
 import 'dart:convert';
 
 /// 认证状态
@@ -99,6 +100,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
         token: loginResponse.accessToken,
         isLoading: false,
       );
+      
+      // 重置拦截器的跳转标志
+      ApiInterceptor.resetRedirectFlag();
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -149,6 +153,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
         token: loginResponse.accessToken,
         isLoading: false,
       );
+      
+      // 重置拦截器的跳转标志
+      ApiInterceptor.resetRedirectFlag();
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -179,6 +186,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
         token: loginResponse.accessToken,
         isLoading: false,
       );
+      
+      // 重置拦截器的跳转标志
+      ApiInterceptor.resetRedirectFlag();
     } catch (e) {
       state = state.copyWith(
         isLoading: false,

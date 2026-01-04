@@ -27,7 +27,11 @@ class DioClient {
     );
 
     // 添加拦截器
-    _dio.interceptors.add(ApiInterceptor());
+    final apiInterceptor = ApiInterceptor();
+    _dio.interceptors.add(apiInterceptor);
+    
+    // 设置 Dio 实例到拦截器（用于取消请求）
+    ApiInterceptor.setDio(_dio);
     
     // 添加日志拦截器（仅开发环境）
     _dio.interceptors.add(

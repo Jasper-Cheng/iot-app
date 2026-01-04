@@ -87,6 +87,13 @@ dependencies:
   
   # 微信登录
   fluwx: ^4.0.0
+  
+  # 蓝牙
+  flutter_blue_plus: ^1.34.0
+  
+  # WiFi
+  wifi_iot: ^0.3.19
+  network_info_plus: ^5.0.2
 
 dev_dependencies:
   flutter_test:

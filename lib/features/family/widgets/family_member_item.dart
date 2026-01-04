@@ -59,15 +59,15 @@ class FamilyMemberItem extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Row(
-                          children: [
-                            Text(
+          children: [
+            Text(
                               displayName,
                               style: TextStyle(
                                 fontSize: 14,
-                                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.bold,
                                 color: Theme.of(context).textTheme.titleLarge?.color,
-                              ),
-                            ),
+              ),
+            ),
                             if (onEdit != null) ...[
                               const SizedBox(width: 6),
                               InkWell(
@@ -76,42 +76,42 @@ class FamilyMemberItem extends StatelessWidget {
                                   Icons.edit,
                                   size: 14,
                                   color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
-                                ),
+                ),
                               ),
                             ],
                             if (isCreator) ...[
                               const SizedBox(width: 6),
                               Text(
                                 '（创建者）',
-                                style: TextStyle(
+                  style: TextStyle(
                                   fontSize: 12,
                                   color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
-                                ),
+                  ),
                               ),
                             ],
                           ],
-                        ),
-                      ),
+                ),
+              ),
                       // "我"标识显示在中间
                       if (isCurrentUser)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 6,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
                             color: Theme.of(context).colorScheme.primary,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Text(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
                             '我',
-                            style: TextStyle(
+                  style: TextStyle(
                               fontSize: 11,
                               color: Colors.black,
                               fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
+                  ),
+                ),
+              ),
                       // 移除按钮显示在最右边（创建者可以移除其他成员）
                       if (onRemove != null && !isCurrentUser) ...[
                         const SizedBox(width: 8),
@@ -123,16 +123,16 @@ class FamilyMemberItem extends StatelessWidget {
                             color: Colors.red,
                           ),
                         ),
-                      ],
-                    ],
-                  ),
+            ],
+          ],
+        ),
                   const SizedBox(height: 8),
                   // 账户昵称
                   _buildInfoRow(context, '账户昵称', account.nickname),
                   const SizedBox(height: 4),
                   // 性别和手机号一行显示
                   Row(
-                    children: [
+          children: [
                       _buildInfoRow(context, '性别', getGenderText()),
                       const SizedBox(width: 12),
                       _buildInfoRow(context, '手机', account.phone),
@@ -140,24 +140,24 @@ class FamilyMemberItem extends StatelessWidget {
                   ),
                   // 邮箱（如果有）
                   if (account.email != null && account.email!.isNotEmpty) ...[
-                    const SizedBox(height: 4),
+            const SizedBox(height: 4),
                     _buildInfoRow(context, '邮箱', account.email!),
                   ],
                   // 加入时间
                   if (member.joinedAt != null) ...[
-                    const SizedBox(height: 4),
+            const SizedBox(height: 4),
                     _buildInfoRow(
                       context,
                       '加入时间',
                       AppDateUtils.formatDateTime(member.joinedAt!, format: 'yyyy-MM-dd HH:mm'),
                     ),
                   ],
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+                      ],
+                    ),
+                        ),
+                      ],
+                    ),
+                  ),
     );
   }
 
@@ -199,7 +199,7 @@ class FamilyMemberItem extends StatelessWidget {
 
     // 如果有头像路径，尝试加载图片，失败时显示背景和首字母
     Widget avatarWidget;
-    
+
     // 如果是完整的 URL（http/https），使用 NetworkImage
     if (avatarPath.startsWith('http://') || avatarPath.startsWith('https://')) {
       avatarWidget = ClipOval(

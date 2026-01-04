@@ -60,6 +60,16 @@
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>需要访问本地网络以连接智能设备</string>
 	
+	<!-- 蓝牙权限（用于蓝牙设备连接和配置） -->
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>需要访问蓝牙以连接和配置智能设备</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>需要访问蓝牙以连接和配置智能设备</string>
+	
+	<!-- 位置权限（用于WiFi和蓝牙扫描） -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>需要访问位置信息以扫描WiFi和蓝牙设备</string>
+	
 	<!-- Bonjour服务（用于设备发现） -->
 	<key>NSBonjourServices</key>
 	<array>

@@ -3,16 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
 import '../../features/main/main_screen.dart';
-import '../../features/checkin/screens/checkin_screen.dart';
-import '../../features/checkin/screens/points_history_screen.dart';
+import '../../features/settings/screens/checkin_screen.dart';
 import '../../features/settings/screens/feedback_list_screen.dart';
 import '../../features/settings/screens/feedback_screen.dart';
 import '../../features/settings/screens/about_screen.dart';
 import '../../features/settings/screens/customer_service_screen.dart';
 import '../../features/home/screens/device_detail_screen.dart';
-import '../../features/home/screens/home_screen.dart';
 import '../../core/widgets/qr_scanner.dart';
 import '../../data/models/device.dart';
+import '../../features/settings/screens/points_history_screen.dart';
 import '../../providers/auth_provider.dart';
 
 /// 路由配置

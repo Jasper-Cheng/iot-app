@@ -13,13 +13,13 @@ class DeviceConfigDialog extends StatefulWidget {
   /// 设备名称（可选，MAC不存在时使用）
   final String? deviceName;
   
-  /// WiFi配置特征值UUID（四位字符串，如 "ffe1"）
+  /// WiFi配置特征值UUID（四位字符串，如 "FF04"）
   final String wifiCharacteristicUuid;
   
-  /// MQTT配置特征值UUID（四位字符串，如 "ffe2"）
+  /// MQTT配置特征值UUID（四位字符串，如 "FF05"）
   final String mqttCharacteristicUuid;
   
-  /// 服务UUID（可选，四位字符串，如 "ffe0"）
+  /// 服务UUID（可选，四位字符串，如 "00FF"）
   final String? serviceUuid;
   
   /// MQTT服务器地址
@@ -32,9 +32,9 @@ class DeviceConfigDialog extends StatefulWidget {
     super.key,
     this.deviceMac,
     this.deviceName,
-    required this.wifiCharacteristicUuid,
-    required this.mqttCharacteristicUuid,
-    this.serviceUuid,
+    this.wifiCharacteristicUuid = 'FF04',
+    this.mqttCharacteristicUuid = 'FF05',
+    this.serviceUuid = '00FF',
     this.mqttBroker = '192.168.12.119',
     this.mqttPort = 1883,
   });
@@ -47,9 +47,9 @@ class DeviceConfigDialog extends StatefulWidget {
     BuildContext context, {
     String? deviceMac,
     String? deviceName,
-    required String wifiCharacteristicUuid,
-    required String mqttCharacteristicUuid,
-    String? serviceUuid,
+    String wifiCharacteristicUuid = 'FF04',
+    String mqttCharacteristicUuid = 'FF05',
+    String? serviceUuid = '00FF',
     String mqttBroker = '192.168.12.119',
     int mqttPort = 1883,
   }) {
@@ -242,13 +242,6 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
       return;
     }
 
-    if (_passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('请输入WiFi密码')),
-      );
-      return;
-    }
-
     setState(() {
       _currentStep = ConfigStep.configuring;
       _statusMessage = '正在配置WiFi...';
@@ -258,10 +251,15 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
 
     try {
       // 写入WiFi配置（JSON格式）
-      final wifiConfig = {
+      // 支持开放网络：如果密码为空，只传ssid
+      final wifiConfig = <String, dynamic>{
         'ssid': _selectedWifi!.ssid,
-        'password': _passwordController.text,
       };
+      // 如果有密码，则添加password字段
+      final password = _passwordController.text.trim();
+      if (password.isNotEmpty) {
+        wifiConfig['password'] = password;
+      }
       final wifiConfigJson = jsonEncode(wifiConfig);
       final wifiBytes = Uint8List.fromList(wifiConfigJson.codeUnits);
 
@@ -533,7 +531,7 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
                         child: TextField(
                           controller: _passwordController,
                           decoration: InputDecoration(
-                            hintText: '请输入WiFi密码',
+                            hintText: '请输入WiFi密码（开放网络可留空）',
                             border: const OutlineInputBorder(),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                             isDense: true,
@@ -551,7 +549,7 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
                               constraints: const BoxConstraints(),
                             ),
                           ),
-                          style: const TextStyle(fontSize: 14),
+                          style: const TextStyle(fontSize: 12),
                           obscureText: _obscurePassword,
                           enabled: !_isLoading,
                           onChanged: (value) {
@@ -612,9 +610,8 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
     }
 
     if (_currentStep == ConfigStep.selectingWifi) {
-      // 检查是否选中WiFi且已输入密码
-      final canStartConfig = _selectedWifi != null && 
-                            _passwordController.text.trim().isNotEmpty;
+      // 检查是否选中WiFi（支持开放网络，不需要密码）
+      final canStartConfig = _selectedWifi != null;
       
       return [
         TextButton(

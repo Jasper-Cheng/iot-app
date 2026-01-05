@@ -67,6 +67,7 @@ class BluetoothHelper {
     Duration duration = const Duration(seconds: 10),
     List<String>? serviceUuids,
   }) async {
+    StreamSubscription? scanSubscription;
     try {
       // 检查蓝牙状态
       if (!await isBluetoothAvailable()) {
@@ -86,6 +87,8 @@ class BluetoothHelper {
         guidList = serviceUuids.map((uuid) => _convertShortUuidToGuid(uuid)).toList();
       }
 
+      print('[Bluetooth] 开始扫描，查找设备: Name=$deviceName, MAC=$deviceMac');
+
       // 开始扫描
       if (guidList.isEmpty) {
         await FlutterBluePlus.startScan(timeout: duration);
@@ -96,28 +99,47 @@ class BluetoothHelper {
         );
       }
 
-      print('[Bluetooth] 开始扫描，查找设备: Name=$deviceName, MAC=$deviceMac');
+      // 使用 Completer 来处理超时
+      final completer = Completer<BluetoothDevice?>();
+      BluetoothDevice? foundDevice;
 
       // 监听扫描结果
-      await for (final results in FlutterBluePlus.scanResults) {
+      scanSubscription = FlutterBluePlus.scanResults.listen((results) {
         for (var result in results) {
           final scanDeviceMac = result.device.remoteId.str;
           final scanDeviceName = result.device.platformName;
           if (scanDeviceMac == deviceMac || scanDeviceName == deviceName) {
             print('[Bluetooth] 找到匹配的设备: Name=$scanDeviceName, MAC=$scanDeviceMac');
-            await FlutterBluePlus.stopScan();
-            return result.device;
+            foundDevice = result.device;
+            if (!completer.isCompleted) {
+              completer.complete(result.device);
+            }
+            return;
           }
         }
-      }
-      print('[Bluetooth] 扫描完成，未找到匹配的设备');
-      return null;
-    } catch (e) {
-      print('[Bluetooth] 扫描设备失败: $e');
-      rethrow;
-    } finally {
+      });
+
+      // 设置超时
+      Timer(duration, () {
+        if (!completer.isCompleted) {
+          print('[Bluetooth] 扫描超时，未找到匹配的设备');
+          completer.complete(null);
+        }
+      });
+
+      // 等待结果或超时
+      foundDevice = await completer.future;
+      
       // 停止扫描
       await FlutterBluePlus.stopScan();
+      scanSubscription?.cancel();
+      
+      return foundDevice;
+    } catch (e) {
+      print('[Bluetooth] 扫描设备失败: $e');
+      await FlutterBluePlus.stopScan();
+      scanSubscription?.cancel();
+      rethrow;
     }
   }
 

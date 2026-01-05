@@ -80,6 +80,7 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
   List<WifiInfo> _wifiList = [];
   WifiInfo? _selectedWifi;
   final TextEditingController _passwordController = TextEditingController();
+  bool _obscurePassword = true; // 密码是否隐藏
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -193,6 +194,10 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
         _statusMessage = '正在获取WiFi列表...';
         _isLoading = true;
         _errorMessage = null;
+        // 清除选中的WiFi和密码
+        _selectedWifi = null;
+        _passwordController.clear();
+        _obscurePassword = true; // 重置密码可见性
       });
 
       await _loadWifiList();
@@ -219,9 +224,11 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
       if (_selectedWifi?.ssid == wifi.ssid) {
         _selectedWifi = null;
         _passwordController.clear();
+        _obscurePassword = true; // 重置密码可见性
       } else {
         _selectedWifi = wifi;
         _passwordController.clear();
+        _obscurePassword = true; // 重置密码可见性
       }
     });
   }
@@ -320,94 +327,84 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
 
   @override
   Widget build(BuildContext context) {
-    // 只有在选择WiFi、成功或错误状态时，才允许直接返回
-    final canPopDirectly = !_isLoading && 
-        (_currentStep == ConfigStep.selectingWifi || 
-         _currentStep == ConfigStep.success || 
-         _errorMessage != null);
-    
-    final screenSize = MediaQuery.of(context).size;
-    final dialogWidth = screenSize.width * 0.9;
-    final dialogHeight = screenSize.height * 0.7;
-    
-    return PopScope(
-      canPop: canPopDirectly,
-      onPopInvokedWithResult: (didPop, result) async {
-        if (didPop) return;
-        
-        // 如果canPop为false，说明正在扫描/连接中，需要执行取消操作
-        // _cancelConfig 会自己关闭弹窗
-        if (!canPopDirectly) {
-          await _cancelConfig();
-        }
-      },
+    return MediaQuery.removeViewInsets(
+      removeBottom: true,
+      context: context,
       child: Dialog(
-        child: SizedBox(
-          width: dialogWidth,
-          height: dialogHeight,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 80),
+        child: GestureDetector(
+          onTap: () {
+            // 点击空白区域时收起键盘
+            FocusScope.of(context).unfocus();
+          },
+          behavior: HitTestBehavior.translucent,
           child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 标题栏
-              Container(
-                padding: EdgeInsets.only(left: 16,right: 16,top: 8),
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
-                      width: 1,
-                    ),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    const Text(
-                      '设备配网',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.of(context).pop(),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ],
+          children: [
+          // 标题栏
+          Container(
+            padding: EdgeInsets.only(left: 16,right: 16,top: 8),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
+                  width: 1,
                 ),
               ),
-              // 内容区域
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(12),
-                  child: SizedBox(
-                    width: double.maxFinite,
+            ),
+            child: Row(
+              children: [
+                const Text(
+                  '设备配网',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.of(context).pop(),
+                  padding: EdgeInsets.zero,
+                  alignment: Alignment.centerRight,
+                ),
+              ],
+            ),
+          ),
+          // 内容区域
+          Expanded(
+            child: _currentStep == ConfigStep.selectingWifi && _errorMessage == null
+                ? Padding(
+                    padding: const EdgeInsets.all(12),
                     child: _buildContent(),
-                  ),
-                ),
-              ),
-              // 操作按钮
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12,vertical: 8),
-                decoration: BoxDecoration(
-                  border: Border(
-                    top: BorderSide(
-                      color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
-                      width: 1,
+                  )
+                : SingleChildScrollView(
+                    padding: const EdgeInsets.all(12),
+                    child: SizedBox(
+                      width: double.maxFinite,
+                      child: _buildContent(),
                     ),
                   ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: _buildActions(),
+          ),
+          // 操作按钮
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12,vertical: 8),
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(
+                  color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
+                  width: 1,
                 ),
               ),
-            ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: _buildActions(),
+            ),
+          ),
+        ],
           ),
         ),
-      ),
+      )
     );
   }
 
@@ -422,10 +419,8 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
                                _errorMessage!.contains('获取'));
       
       return Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          const SizedBox(height: 16),
           Icon(Icons.error_outline, color: Colors.red, size: 48),
           const SizedBox(height: 16),
           Text(
@@ -457,9 +452,8 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
 
   Widget _buildLoadingView() {
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: MainAxisSize.max,
       mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         const CircularProgressIndicator(),
         const SizedBox(height: 16),
@@ -486,67 +480,99 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
         ),
         const SizedBox(height: 6),
-        SizedBox(
-          height: 180,
-          child: _wifiList.isEmpty
-              ? const Center(child: Text('未找到WiFi网络', style: TextStyle(fontSize: 12)))
-              : ListView.builder(
-                  itemCount: _wifiList.length,
-                  itemBuilder: (context, index) {
-                    final wifi = _wifiList[index];
-                    final isSelected = _selectedWifi?.ssid == wifi.ssid;
-                    return Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ListTile(
-                          dense: true,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                          leading: Icon(
-                            Icons.wifi,
-                            size: 20,
-                            color: isSelected ? Colors.blue : Colors.grey[600],
-                          ),
-                          title: Text(
-                            wifi.ssid,
-                            style: const TextStyle(fontSize: 14),
-                          ),
-                          subtitle: Text(
-                            '${wifi.is24GHz ? "2.4G" : wifi.is5GHz ? "5G" : "未知"} | 信号: ${wifi.level}dBm',
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                          selected: isSelected,
-                          onTap: () => _selectWifi(wifi),
-                          trailing: isSelected
-                              ? const Icon(Icons.check_circle, color: Colors.blue, size: 20)
-                              : null,
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: _retryLoadWifiList,
+            child: _wifiList.isEmpty
+                ? ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.3,
+                        child: const Center(
+                          child: Text('未找到WiFi网络', style: TextStyle(fontSize: 12)),
                         ),
-                        // 如果选中此WiFi，在下方显示密码输入框
-                        if (isSelected) ...[
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            child: TextField(
-                              controller: _passwordController,
-                              decoration: const InputDecoration(
-                                labelText: 'WiFi密码',
-                                hintText: '请输入WiFi密码',
-                                border: OutlineInputBorder(),
-                                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                isDense: true,
-                              ),
-                              style: const TextStyle(fontSize: 14),
-                              obscureText: true,
-                              enabled: !_isLoading,
-                              onChanged: (value) {
-                                setState(() {
-                                  // 触发UI更新，使按钮状态实时变化
-                                });
-                              },
+                      ),
+                    ],
+                  )
+                : ListView.builder(
+                    itemCount: _wifiList.length,
+                    itemBuilder: (context, index) {
+                      final wifi = _wifiList[index];
+                      final isSelected = _selectedWifi?.ssid == wifi.ssid;
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ListTile(
+                            dense: true,
+                            visualDensity: VisualDensity.compact,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                            minVerticalPadding: 0,
+                            leading: Icon(
+                              Icons.wifi,
+                              size: 24,
+                              color: isSelected ? Colors.blue : Colors.grey[600],
                             ),
+                            title: Text(
+                              wifi.ssid,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: isSelected ? Colors.blue : null,
+                              ),
+                            ),
+                            subtitle: Text(
+                              '${wifi.is24GHz ? "2.4G" : wifi.is5GHz ? "5G" : "未知"} | 信号: ${wifi.level}dBm',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isSelected ? Colors.blue : null,
+                              ),
+                            ),
+                            selected: isSelected,
+                            onTap: () => _selectWifi(wifi),
+                            trailing: isSelected
+                                ? const Icon(Icons.check_circle, color: Colors.blue, size: 20)
+                                : null,
                           ),
+                          // 如果选中此WiFi，在下方显示密码输入框
+                          if (isSelected) ...[
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                              child: TextField(
+                                controller: _passwordController,
+                                decoration: InputDecoration(
+                                  hintText: '请输入WiFi密码',
+                                  border: const OutlineInputBorder(),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  isDense: true,
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                                      size: 20,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        _obscurePassword = !_obscurePassword;
+                                      });
+                                    },
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                  ),
+                                ),
+                                style: const TextStyle(fontSize: 14),
+                                obscureText: _obscurePassword,
+                                enabled: !_isLoading,
+                                onChanged: (value) {
+                                  setState(() {
+                                    // 触发UI更新，使按钮状态实时变化
+                                  });
+                                },
+                              ),
+                            ),
+                          ],
                         ],
-                      ],
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
         ),
       ],
@@ -556,8 +582,6 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
   Widget _buildSuccessView() {
     return Column(
       mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Icon(Icons.check_circle, color: Colors.green, size: 48),
         const SizedBox(height: 16),

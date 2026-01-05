@@ -486,33 +486,40 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
 
   Widget _buildContent() {
     if (_errorMessage != null) {
-      // 判断是否为蓝牙连接相关的错误（需要重新扫描连接）
-      // 注意：WiFi配置错误中的"连接"不应该触发重新扫描
-      final isBluetoothError = (_errorMessage!.contains('蓝牙') && !_errorMessage!.contains('WiFi配置')) ||
-                              (_errorMessage!.contains('扫描') && !_errorMessage!.contains('WiFi')) ||
-                              (_errorMessage!.contains('未找到目标设备')) ||
-                              (_errorMessage!.contains('连接设备失败')) ||
-                              (_targetDevice == null && _currentStep != ConfigStep.selectingWifi);
-      
-      // 判断是否为WiFi列表获取失败的错误
-      final isWifiListError = _targetDevice != null && 
-                              _currentStep == ConfigStep.selectingWifi &&
-                              (_errorMessage!.contains('WiFi') || 
-                               _errorMessage!.contains('wifi') ||
-                               _errorMessage!.contains('获取'));
+      // 优先判断：如果设备未连接，应该重新扫描连接蓝牙
+      // 使用 BluetoothHelper 的 isConnected 属性来判断设备连接状态
+      final isDeviceNotConnected = !_bluetoothHelper.isConnected;
       
       // 判断是否为WiFi配置相关的错误（不需要重新扫描连接）
-      final isWifiConfigError = _currentStep == ConfigStep.selectingWifi &&
+      // 注意：只有在设备已连接的情况下，WiFi配置错误才不需要重新扫描
+      final isWifiConfigError = !isDeviceNotConnected &&
+                                _currentStep == ConfigStep.selectingWifi &&
                                 (_errorMessage!.contains('WiFi配置') ||
                                  _errorMessage!.contains('未找到WiFi配置特征值') ||
                                  _errorMessage!.contains('无法读取WiFi配置状态') ||
                                  _errorMessage!.contains('SSID不匹配') ||
                                  _errorMessage!.contains('未连接成功'));
       
+      // 判断是否为WiFi列表获取失败的错误
+      final isWifiListError = !isDeviceNotConnected && 
+                              _currentStep == ConfigStep.selectingWifi &&
+                              (_errorMessage!.contains('WiFi') || 
+                               _errorMessage!.contains('wifi') ||
+                               _errorMessage!.contains('获取'));
+      
+      // 判断是否为蓝牙连接相关的错误（需要重新扫描连接）
+      // 注意：WiFi配置错误中的"连接"不应该触发重新扫描
+      final isBluetoothError = isDeviceNotConnected ||
+                              (_errorMessage!.contains('蓝牙') && !_errorMessage!.contains('WiFi配置')) ||
+                              (_errorMessage!.contains('扫描') && !_errorMessage!.contains('WiFi')) ||
+                              (_errorMessage!.contains('未找到目标设备')) ||
+                              (_errorMessage!.contains('连接设备失败')) ||
+                              (_errorMessage!.contains('设备未连接'));
+      
       // 确定重试方法
       VoidCallback? retryCallback;
       if (isBluetoothError) {
-        // 蓝牙连接错误，重新扫描连接
+        // 蓝牙连接错误或设备未连接，重新扫描连接
         retryCallback = _startConfig;
       } else if (isWifiListError) {
         // WiFi列表获取错误，只重试获取列表

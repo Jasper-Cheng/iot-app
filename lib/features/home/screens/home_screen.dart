@@ -8,6 +8,8 @@ import '../../../core/widgets/qr_scanner.dart';
 import '../../../core/utils/error_handler.dart';
 import '../../../core/utils/date_utils.dart';
 import '../../../core/utils/device_mapping.dart';
+import '../../../core/utils/device_config_dialog.dart';
+import '../../../core/constants/api_constants.dart';
 
 /// 首页（设备列表）
 class HomeScreen extends ConsumerWidget {
@@ -717,12 +719,16 @@ class HomeScreen extends ConsumerWidget {
   void _handleDeviceConfigure(BuildContext context, WidgetRef ref, device) {
     Navigator.pop(context); // 关闭侧边栏
     
-    // TODO: 实现设备配网功能
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${device.name} 配网功能开发中'),
-        duration: const Duration(seconds: 2),
-      ),
+    // 显示配网弹窗
+    DeviceConfigDialog.show(
+      context,
+      deviceMac: device.bleMac, // 使用设备的蓝牙MAC地址（优先）
+      deviceName: device.bleName ?? device.name, // 使用蓝牙名称，如果没有则使用设备名称
+      wifiCharacteristicUuid: 'ffe1', // WiFi配置特征值UUID
+      mqttCharacteristicUuid: 'ffe2', // MQTT配置特征值UUID
+      serviceUuid: 'ffe0', // 服务UUID（可选）
+      mqttBroker: ApiConstants.mqttBroker, // 使用API常量中的MQTT服务器地址
+      mqttPort: ApiConstants.mqttPort, // 使用API常量中的MQTT端口
     );
   }
 

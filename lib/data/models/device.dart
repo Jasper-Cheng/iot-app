@@ -21,6 +21,12 @@ class Device extends Equatable {
   @JsonKey(name: 'created_at')
   final DateTime createdAt;
 
+  @JsonKey(name: 'ble_name')
+  final String? bleName;
+
+  @JsonKey(name: 'ble_mac')
+  final String? bleMac;
+
   const Device({
     required this.id,
     required this.name,
@@ -29,6 +35,8 @@ class Device extends Equatable {
     this.accountId,
     required this.modelId,
     required this.createdAt,
+    this.bleName,
+    this.bleMac,
   });
 
   factory Device.fromJson(Map<String, dynamic> json) =>
@@ -68,6 +76,8 @@ class Device extends Equatable {
     int? accountId,
     int? modelId,
     DateTime? createdAt,
+    String? bleName,
+    String? bleMac,
   }) {
     return Device(
       id: id ?? this.id,
@@ -77,11 +87,13 @@ class Device extends Equatable {
       accountId: accountId ?? this.accountId,
       modelId: modelId ?? this.modelId,
       createdAt: createdAt ?? this.createdAt,
+      bleName: bleName ?? this.bleName,
+      bleMac: bleMac ?? this.bleMac,
     );
   }
 
   @override
-  List<Object?> get props => [id, name, sn, status, accountId, modelId, createdAt];
+  List<Object?> get props => [id, name, sn, status, accountId, modelId, createdAt, bleName, bleMac];
 }
 
 /// 绑定设备请求

@@ -14,6 +14,8 @@ Device _$DeviceFromJson(Map<String, dynamic> json) => Device(
       accountId: (json['account_id'] as num?)?.toInt(),
       modelId: (json['model_id'] as num).toInt(),
       createdAt: DateTime.parse(json['created_at'] as String),
+      bleName: json['ble_name'] as String?,
+      bleMac: json['ble_mac'] as String?,
     );
 
 Map<String, dynamic> _$DeviceToJson(Device instance) => <String, dynamic>{
@@ -24,6 +26,8 @@ Map<String, dynamic> _$DeviceToJson(Device instance) => <String, dynamic>{
       'account_id': instance.accountId,
       'model_id': instance.modelId,
       'created_at': instance.createdAt.toIso8601String(),
+      'ble_name': instance.bleName,
+      'ble_mac': instance.bleMac,
     };
 
 BindDeviceRequest _$BindDeviceRequestFromJson(Map<String, dynamic> json) =>

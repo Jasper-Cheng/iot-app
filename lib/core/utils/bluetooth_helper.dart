@@ -55,17 +55,29 @@ class BluetoothHelper {
     }
   }
 
-  /// 扫描设备
+  /// 扫描设备并查找匹配的设备
+  /// [deviceName] 设备名称（可选，用于匹配）
+  /// [deviceMac] 设备MAC地址（可选，用于匹配）
   /// [duration] 扫描时长（秒），默认10秒
   /// [serviceUuids] 服务UUID过滤（可选，四位字符串列表，如 ["ffe0"]）
-  Stream<List<ScanResult>> scanDevices({
+  /// 返回匹配的设备，如果未找到则返回 null
+  Future<BluetoothDevice?> scanDevices({
+    String? deviceName,
+    String? deviceMac,
     Duration duration = const Duration(seconds: 10),
     List<String>? serviceUuids,
-  }) async* {
+  }) async {
     try {
       // 检查蓝牙状态
       if (!await isBluetoothAvailable()) {
         throw Exception('蓝牙不可用');
+      }
+
+      // 如果没有提供名称和MAC，返回 null
+      if ((deviceName == null || deviceName.isEmpty) && 
+          (deviceMac == null || deviceMac.isEmpty)) {
+        print('[Bluetooth] 未提供设备名称或MAC地址');
+        return null;
       }
 
       // 转换服务UUID列表
@@ -84,10 +96,22 @@ class BluetoothHelper {
         );
       }
 
+      print('[Bluetooth] 开始扫描，查找设备: Name=$deviceName, MAC=$deviceMac');
+
       // 监听扫描结果
       await for (final results in FlutterBluePlus.scanResults) {
-        yield results;
+        for (var result in results) {
+          final scanDeviceMac = result.device.remoteId.str;
+          final scanDeviceName = result.device.platformName;
+          if (scanDeviceMac == deviceMac || scanDeviceName == deviceName) {
+            print('[Bluetooth] 找到匹配的设备: Name=$scanDeviceName, MAC=$scanDeviceMac');
+            await FlutterBluePlus.stopScan();
+            return result.device;
+          }
+        }
       }
+      print('[Bluetooth] 扫描完成，未找到匹配的设备');
+      return null;
     } catch (e) {
       print('[Bluetooth] 扫描设备失败: $e');
       rethrow;

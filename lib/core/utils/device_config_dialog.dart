@@ -77,7 +77,6 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
   ConfigStep _currentStep = ConfigStep.scanning;
   String _statusMessage = '正在扫描蓝牙设备...';
   BluetoothDevice? _targetDevice;
-  List<ScanResult> _scanResults = [];
   List<WifiInfo> _wifiList = [];
   WifiInfo? _selectedWifi;
   final TextEditingController _passwordController = TextEditingController();
@@ -143,19 +142,14 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
         _statusMessage = '正在扫描蓝牙设备...';
       });
 
-      BluetoothDevice? foundDevice;
-
-      // 如果有MAC地址，优先使用MAC连接
-      if (widget.deviceMac != null && widget.deviceMac!.isNotEmpty) {
-        foundDevice = await _scanAndFindByMac(widget.deviceMac!);
-      }
-      
       if (_isCancelled) return;
-      
-      // 如果MAC没找到，使用名称
-      if (foundDevice == null && widget.deviceName != null && widget.deviceName!.isNotEmpty) {
-        foundDevice = await _scanAndFindByName(widget.deviceName!);
-      }
+
+      // 使用新的 scanDevices 方法，同时传入名称和MAC
+      final foundDevice = await _bluetoothHelper.scanDevices(
+        deviceName: widget.deviceName,
+        deviceMac: widget.deviceMac,
+        duration: const Duration(seconds: 10),
+      );
 
       if (_isCancelled) return;
 
@@ -211,87 +205,6 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
     }
   }
 
-  /// 通过MAC地址扫描并查找设备
-  Future<BluetoothDevice?> _scanAndFindByMac(String mac) async {
-    try {
-      await for (final results in _bluetoothHelper.scanDevices(
-        duration: const Duration(seconds: 10),
-      )) {
-        if (_isCancelled) {
-          await FlutterBluePlus.stopScan();
-          return null;
-        }
-
-        setState(() {
-          _scanResults = results;
-        });
-
-        for (var result in results) {
-          if (_isCancelled) {
-            await FlutterBluePlus.stopScan();
-            return null;
-          }
-
-          final deviceMac = result.device.remoteId.str.toUpperCase();
-          if (deviceMac == mac.toUpperCase()) {
-            await FlutterBluePlus.stopScan();
-            return result.device;
-          }
-        }
-      }
-    } catch (e) {
-      if (!_isCancelled) {
-        print('[DeviceConfig] 扫描设备失败: $e');
-      }
-    } finally {
-      if (_isCancelled) {
-        await FlutterBluePlus.stopScan();
-      }
-    }
-    return null;
-  }
-
-  /// 通过名称扫描并查找设备
-  Future<BluetoothDevice?> _scanAndFindByName(String name) async {
-    try {
-      await for (final results in _bluetoothHelper.scanDevices(
-        duration: const Duration(seconds: 10),
-      )) {
-        if (_isCancelled) {
-          await FlutterBluePlus.stopScan();
-          return null;
-        }
-
-        setState(() {
-          _scanResults = results;
-        });
-
-        for (var result in results) {
-          if (_isCancelled) {
-            await FlutterBluePlus.stopScan();
-            return null;
-          }
-
-          final deviceName = result.device.platformName.isNotEmpty
-              ? result.device.platformName
-              : result.device.remoteId.str;
-          if (deviceName.contains(name)) {
-            await FlutterBluePlus.stopScan();
-            return result.device;
-          }
-        }
-      }
-    } catch (e) {
-      if (!_isCancelled) {
-        print('[DeviceConfig] 扫描设备失败: $e');
-      }
-    } finally {
-      if (_isCancelled) {
-        await FlutterBluePlus.stopScan();
-      }
-    }
-    return null;
-  }
 
   /// 加载WiFi列表
   Future<void> _loadWifiList() async {

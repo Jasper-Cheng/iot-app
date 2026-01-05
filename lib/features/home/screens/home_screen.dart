@@ -724,8 +724,6 @@ class HomeScreen extends ConsumerWidget {
       context,
       deviceMac: device.bleMac, // 使用设备的蓝牙MAC地址（优先）
       deviceName: device.bleName ?? device.name, // 使用蓝牙名称，如果没有则使用设备名称
-      mqttBroker: ApiConstants.mqttBroker, // 使用API常量中的MQTT服务器地址
-      mqttPort: ApiConstants.mqttPort, // 使用API常量中的MQTT端口
     );
   }
 

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import '../constants/api_constants.dart';
 import 'bluetooth_helper.dart';
 import 'wifi_helper.dart';
 
@@ -35,8 +36,8 @@ class DeviceConfigDialog extends StatefulWidget {
     this.wifiCharacteristicUuid = 'FF04',
     this.mqttCharacteristicUuid = 'FF05',
     this.serviceUuid = '00FF',
-    this.mqttBroker = '192.168.12.119',
-    this.mqttPort = 1883,
+    this.mqttBroker = ApiConstants.mqttBroker,
+    this.mqttPort = ApiConstants.mqttPort,
   });
 
   @override
@@ -50,8 +51,8 @@ class DeviceConfigDialog extends StatefulWidget {
     String wifiCharacteristicUuid = 'FF04',
     String mqttCharacteristicUuid = 'FF05',
     String? serviceUuid = '00FF',
-    String mqttBroker = '192.168.12.119',
-    int mqttPort = 1883,
+    String mqttBroker = ApiConstants.mqttBroker,
+    int mqttPort = ApiConstants.mqttPort,
   }) {
     return showDialog<bool>(
       context: context,
@@ -214,6 +215,19 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  /// 获取信号强度的中文描述
+  String _getSignalStrengthText(int level) {
+    if (level >= -50) {
+      return '很强';
+    } else if (level >= -70) {
+      return '强';
+    } else if (level >= -85) {
+      return '中';
+    } else {
+      return '弱';
     }
   }
 
@@ -512,7 +526,7 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
                         ),
                       ),
                       subtitle: Text(
-                        '${wifi.is24GHz ? "2.4G" : wifi.is5GHz ? "5G" : "未知"} | 信号: ${wifi.level}dBm',
+                        '${wifi.is24GHz ? "2.4G" : wifi.is5GHz ? "5G" : "未知"} | 信号: ${wifi.level}dBm (${_getSignalStrengthText(wifi.level)})',
                         style: TextStyle(
                           fontSize: 12,
                           color: isSelected ? Colors.blue : null,

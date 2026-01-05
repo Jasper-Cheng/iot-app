@@ -231,6 +231,29 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
     }
   }
 
+  /// 读取WiFi配置状态
+  Future<Map<String, dynamic>?> _readWifiStatus(BluetoothCharacteristic characteristic) async {
+    try {
+      // 读取特征值
+      final value = await characteristic.read();
+      
+      if (value.isEmpty) {
+        return null;
+      }
+
+      // 将字节数据转换为UTF-8字符串
+      final jsonString = String.fromCharCodes(value);
+      
+      // 解析JSON
+      final status = jsonDecode(jsonString) as Map<String, dynamic>;
+      print('[DeviceConfig] 读取到的WiFi状态JSON: $jsonString');
+      return status;
+    } catch (e) {
+      print('[DeviceConfig] 读取WiFi状态失败: $e');
+      return null;
+    }
+  }
+
   /// 选择WiFi（如果已选中则取消选择）
   void _selectWifi(WifiInfo wifi) {
     setState(() {
@@ -287,15 +310,55 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
         throw Exception('未找到WiFi配置特征值');
       }
 
-      // 写入WiFi配置
+      // 写入WiFi配置（使用相同的特征值）
       await wifiChar.write(wifiBytes, withoutResponse: false);
 
       setState(() {
-        _statusMessage = 'WiFi配置成功，正在配置MQTT...';
+        _statusMessage = 'WiFi配置已写入，正在验证...';
       });
 
       // 等待一下，确保WiFi配置已生效
-      await Future.delayed(const Duration(seconds: 1));
+      await Future.delayed(const Duration(seconds: 10));
+
+      setState(() {
+        _statusMessage = 'WiFi配置已写入，正在验证...';
+      });
+
+      // 读取WiFi配置状态（使用相同的特征值和服务UUID）
+      final wifiStatus = await _readWifiStatus(wifiChar);
+      print('[DeviceConfig] 读取WiFi状态: $wifiStatus');
+      
+      if (wifiStatus == null) {
+        throw Exception('无法读取WiFi配置状态');
+      }
+
+      // 根据读取的状态判断配置结果
+      final status = wifiStatus['status'] as String?;
+      final readSsid = wifiStatus['ssid'] as String?;
+      
+      // 验证读取的SSID是否与写入的一致
+      if (readSsid != null && readSsid != _selectedWifi!.ssid) {
+        throw Exception('WiFi配置验证失败：SSID不匹配');
+      }
+      
+      if (status == 'connected') {
+        final ip = wifiStatus['ip'] as String?;
+        setState(() {
+          _statusMessage = 'WiFi连接成功${ip != null ? ' (IP: $ip)' : ''}，正在配置MQTT...';
+        });
+      } else if (status == 'disconnected') {
+        // 配置已写入但未连接，可能是密码错误或信号问题
+        setState(() {
+          _statusMessage = 'WiFi配置已写入，但未连接成功，正在配置MQTT...';
+        });
+        throw Exception('WiFi配置写入成功，但未连接成功，请检查密码或信号后重试');
+      } else if (status == 'not_configured') {
+        throw Exception('WiFi配置写入失败，请重试');
+      } else {
+        setState(() {
+          _statusMessage = 'WiFi配置已写入，正在配置MQTT...';
+        });
+      }
 
       // 写入MQTT配置（JSON格式）
       final mqttConfig = {
@@ -330,10 +393,19 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
         Navigator.of(context).pop(true);
       }
     } catch (e) {
-      setState(() {
-        _errorMessage = e.toString().replaceAll('Exception: ', '');
-        _isLoading = false;
-      });
+      // 如果是在配置阶段发生的错误，回到WiFi选择阶段
+      if (_currentStep == ConfigStep.configuring) {
+        setState(() {
+          _currentStep = ConfigStep.selectingWifi;
+          _errorMessage = e.toString().replaceAll('Exception: ', '');
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _errorMessage = e.toString().replaceAll('Exception: ', '');
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -414,13 +486,56 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
 
   Widget _buildContent() {
     if (_errorMessage != null) {
+      // 判断是否为蓝牙连接相关的错误（需要重新扫描连接）
+      // 注意：WiFi配置错误中的"连接"不应该触发重新扫描
+      final isBluetoothError = (_errorMessage!.contains('蓝牙') && !_errorMessage!.contains('WiFi配置')) ||
+                              (_errorMessage!.contains('扫描') && !_errorMessage!.contains('WiFi')) ||
+                              (_errorMessage!.contains('未找到目标设备')) ||
+                              (_errorMessage!.contains('连接设备失败')) ||
+                              (_targetDevice == null && _currentStep != ConfigStep.selectingWifi);
+      
       // 判断是否为WiFi列表获取失败的错误
-      // 如果设备已连接且错误发生在WiFi选择阶段，则只重试WiFi列表获取
       final isWifiListError = _targetDevice != null && 
                               _currentStep == ConfigStep.selectingWifi &&
                               (_errorMessage!.contains('WiFi') || 
                                _errorMessage!.contains('wifi') ||
                                _errorMessage!.contains('获取'));
+      
+      // 判断是否为WiFi配置相关的错误（不需要重新扫描连接）
+      final isWifiConfigError = _currentStep == ConfigStep.selectingWifi &&
+                                (_errorMessage!.contains('WiFi配置') ||
+                                 _errorMessage!.contains('未找到WiFi配置特征值') ||
+                                 _errorMessage!.contains('无法读取WiFi配置状态') ||
+                                 _errorMessage!.contains('SSID不匹配') ||
+                                 _errorMessage!.contains('未连接成功'));
+      
+      // 确定重试方法
+      VoidCallback? retryCallback;
+      if (isBluetoothError) {
+        // 蓝牙连接错误，重新扫描连接
+        retryCallback = _startConfig;
+      } else if (isWifiListError) {
+        // WiFi列表获取错误，只重试获取列表
+        retryCallback = _retryLoadWifiList;
+      } else if (isWifiConfigError) {
+        // WiFi配置错误，保持在WiFi选择阶段，清除错误信息允许重试配置
+        retryCallback = () {
+          setState(() {
+            _errorMessage = null;
+          });
+        };
+      } else {
+        // 其他错误，根据当前步骤判断
+        if (_currentStep == ConfigStep.selectingWifi) {
+          retryCallback = () {
+            setState(() {
+              _errorMessage = null;
+            });
+          };
+        } else {
+          retryCallback = _startConfig;
+        }
+      }
       
       return Column(
         mainAxisSize: MainAxisSize.max,
@@ -436,8 +551,8 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
           ),
           const SizedBox(height: 16),
           ElevatedButton(
-            onPressed: isWifiListError ? _retryLoadWifiList : _startConfig,
-            child: const Text('重试'),
+            onPressed: retryCallback,
+            child: Text(isWifiConfigError ? '返回' : '重试'),
           ),
         ],
       );
@@ -586,7 +701,8 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
 
   Widget _buildSuccessView() {
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: MainAxisSize.max,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Icon(Icons.check_circle, color: Colors.green, size: 48),
         const SizedBox(height: 16),

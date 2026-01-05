@@ -173,15 +173,42 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
   }
 
 
-  /// 加载WiFi列表
+  /// 加载WiFi列表（只显示2.4G WiFi）
   Future<void> _loadWifiList() async {
     try {
-      final wifiList = await _wifiHelper.scanWifiList();
+      final wifiList = await _wifiHelper.get24GHzWifiList();
       setState(() {
         _wifiList = wifiList;
       });
     } catch (e) {
       throw Exception('获取WiFi列表失败: ${e.toString()}');
+    }
+  }
+
+  /// 重试获取WiFi列表（不重新扫描和连接蓝牙）
+  Future<void> _retryLoadWifiList() async {
+    try {
+      setState(() {
+        _currentStep = ConfigStep.selectingWifi;
+        _statusMessage = '正在获取WiFi列表...';
+        _isLoading = true;
+        _errorMessage = null;
+      });
+
+      await _loadWifiList();
+
+      setState(() {
+        _currentStep = ConfigStep.selectingWifi;
+        _statusMessage = '请选择WiFi网络';
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString().replaceAll('Exception: ', '');
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -381,8 +408,18 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
 
   Widget _buildContent() {
     if (_errorMessage != null) {
+      // 判断是否为WiFi列表获取失败的错误
+      // 如果设备已连接且错误发生在WiFi选择阶段，则只重试WiFi列表获取
+      final isWifiListError = _targetDevice != null && 
+                              _currentStep == ConfigStep.selectingWifi &&
+                              (_errorMessage!.contains('WiFi') || 
+                               _errorMessage!.contains('wifi') ||
+                               _errorMessage!.contains('获取'));
+      
       return Column(
         mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Icon(Icons.error_outline, color: Colors.red, size: 48),
           const SizedBox(height: 16),
@@ -393,7 +430,7 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
           ),
           const SizedBox(height: 16),
           ElevatedButton(
-            onPressed: _startConfig,
+            onPressed: isWifiListError ? _retryLoadWifiList : _startConfig,
             child: const Text('重试'),
           ),
         ],
@@ -416,10 +453,15 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
   Widget _buildLoadingView() {
     return Column(
       mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         const CircularProgressIndicator(),
         const SizedBox(height: 16),
-        Text(_statusMessage),
+        Text(
+          _statusMessage,
+          textAlign: TextAlign.center,
+        ),
       ],
     );
   }
@@ -435,7 +477,7 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
         ),
         const SizedBox(height: 8),
         const Text(
-          '选择WiFi网络:',
+          '选择WiFi网络（仅显示2.4G）:',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
@@ -482,10 +524,15 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
   Widget _buildSuccessView() {
     return Column(
       mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Icon(Icons.check_circle, color: Colors.green, size: 48),
         const SizedBox(height: 16),
-        Text(_statusMessage),
+        Text(
+          _statusMessage,
+          textAlign: TextAlign.center,
+        ),
       ],
     );
   }

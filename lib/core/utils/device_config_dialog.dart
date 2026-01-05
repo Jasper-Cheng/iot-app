@@ -293,6 +293,10 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
          _currentStep == ConfigStep.success || 
          _errorMessage != null);
     
+    final screenSize = MediaQuery.of(context).size;
+    final dialogWidth = screenSize.width * 0.9;
+    final dialogHeight = screenSize.height * 0.7;
+    
     return PopScope(
       canPop: canPopDirectly,
       onPopInvokedWithResult: (didPop, result) async {
@@ -304,13 +308,73 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
           await _cancelConfig();
         }
       },
-      child: AlertDialog(
-        title: const Text('设备配网'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: _buildContent(),
+      child: Dialog(
+        child: SizedBox(
+          width: dialogWidth,
+          height: dialogHeight,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 标题栏
+              Container(
+                padding: EdgeInsets.only(left: 16,right: 16,top: 8),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
+                      width: 1,
+                    ),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Text(
+                      '设备配网',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Spacer(),
+                    if (canPopDirectly)
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.of(context).pop(),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                  ],
+                ),
+              ),
+              // 内容区域
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(12),
+                  child: SizedBox(
+                    width: double.maxFinite,
+                    child: _buildContent(),
+                  ),
+                ),
+              ),
+              // 操作按钮
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12,vertical: 8),
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(
+                      color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
+                      width: 1,
+                    ),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: _buildActions(),
+                ),
+              ),
+            ],
+          ),
         ),
-        actions: _buildActions(),
       ),
     );
   }
@@ -367,9 +431,9 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
       children: [
         Text(
           '已连接设备: ${_targetDevice?.platformName.isNotEmpty == true ? _targetDevice!.platformName : _targetDevice?.remoteId.str ?? "未知"}',
-          style: Theme.of(context).textTheme.bodySmall,
+          style: Theme.of(context).textTheme.bodyMedium,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 8),
         const Text(
           '选择WiFi网络:',
           style: TextStyle(fontWeight: FontWeight.bold),

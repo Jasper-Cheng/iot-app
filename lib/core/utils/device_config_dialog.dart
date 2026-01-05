@@ -81,7 +81,6 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
   WifiInfo? _selectedWifi;
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
-  bool _isCancelled = false; // 是否已取消
   String? _errorMessage;
 
   @override
@@ -92,20 +91,6 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
 
   @override
   void dispose() {
-    // 如果正在配网过程中，执行取消操作
-    if (!_isCancelled && (_isLoading || _currentStep == ConfigStep.scanning || _currentStep == ConfigStep.connecting)) {
-      _isCancelled = true;
-      // 停止扫描
-      FlutterBluePlus.stopScan().catchError((e) {
-        // 忽略错误
-      });
-      // 断开连接
-      if (_bluetoothHelper.isConnected) {
-        _bluetoothHelper.disconnectDevice().catchError((e) {
-          // 忽略错误
-        });
-      }
-    }
     _passwordController.dispose();
     _bluetoothHelper.dispose();
     _wifiHelper.dispose();
@@ -123,10 +108,7 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
         _statusMessage = '检查蓝牙状态...';
         _isLoading = true;
         _errorMessage = null;
-        _isCancelled = false;
       });
-
-      if (_isCancelled) return;
 
       if (!await _bluetoothHelper.isBluetoothAvailable()) {
         final turnedOn = await _bluetoothHelper.turnOnBluetooth();
@@ -135,14 +117,10 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
         }
       }
 
-      if (_isCancelled) return;
-
       // 步骤2: 扫描设备
       setState(() {
         _statusMessage = '正在扫描蓝牙设备...';
       });
-
-      if (_isCancelled) return;
 
       // 使用新的 scanDevices 方法，同时传入名称和MAC
       final foundDevice = await _bluetoothHelper.scanDevices(
@@ -150,8 +128,6 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
         deviceMac: widget.deviceMac,
         duration: const Duration(seconds: 10),
       );
-
-      if (_isCancelled) return;
 
       if (foundDevice == null) {
         throw Exception('未找到目标设备，请确保设备已开启并处于可发现状态');
@@ -165,14 +141,10 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
         _statusMessage = '正在连接设备...';
       });
 
-      if (_isCancelled) return;
-
       final connected = await _bluetoothHelper.connectDevice(
         foundDevice,
         timeout: const Duration(seconds: 15),
       );
-
-      if (_isCancelled) return;
 
       if (!connected) {
         throw Exception('连接设备失败，请重试');
@@ -184,11 +156,7 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
         _statusMessage = '正在获取WiFi列表...';
       });
 
-      if (_isCancelled) return;
-
       await _loadWifiList();
-
-      if (_isCancelled) return;
 
       setState(() {
         _currentStep = ConfigStep.selectingWifi;
@@ -196,7 +164,7 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
         _isLoading = false;
       });
     } catch (e) {
-      if (!_isCancelled && mounted) {
+      if (mounted) {
         setState(() {
           _errorMessage = e.toString().replaceAll('Exception: ', '');
           _isLoading = false;
@@ -462,25 +430,11 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
   /// 取消配网
   Future<void> _cancelConfig() async {
     setState(() {
-      _isCancelled = true;
       _isLoading = false;
     });
     
-    // 停止扫描
-    try {
-      await FlutterBluePlus.stopScan();
-    } catch (e) {
-      // 忽略停止扫描的错误
-    }
-    
-    // 断开连接
-    try {
-      if (_bluetoothHelper.isConnected) {
-        await _bluetoothHelper.disconnectDevice();
-      }
-    } catch (e) {
-      // 忽略断开连接的错误
-    }
+    // 调用 BluetoothHelper 的 dispose 方法，它会自动停止扫描和断开连接
+    await _bluetoothHelper.dispose();
     
     // 关闭弹窗
     if (mounted) {

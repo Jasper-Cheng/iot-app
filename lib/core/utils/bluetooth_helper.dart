@@ -391,6 +391,7 @@ class BluetoothHelper {
     try {
       await disconnectDevice();
       await FlutterBluePlus.stopScan();
+      print('[Bluetooth] 资源已释放');
     } catch (e) {
       print('[Bluetooth] 释放资源失败: $e');
     }

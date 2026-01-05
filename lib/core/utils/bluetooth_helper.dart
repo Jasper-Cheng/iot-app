@@ -141,8 +141,6 @@ class BluetoothHelper {
         return true;
       }
 
-      _connectedDevice = device;
-
       // 监听连接状态
       _connectionSubscription?.cancel();
       _connectionSubscription = device.connectionState.listen((state) {
@@ -150,6 +148,8 @@ class BluetoothHelper {
         if (state == BluetoothConnectionState.disconnected) {
           _connectedDevice = null;
           _cachedServices = null;
+        }else if (state == BluetoothConnectionState.connected) {
+          _connectedDevice = device;
         }
       });
 
@@ -173,6 +173,7 @@ class BluetoothHelper {
   /// 断开连接
   Future<void> disconnectDevice() async {
     try {
+      print('[Bluetooth] 断开连接设备: ${_connectedDevice?.platformName ?? "无设备"}');
       if (_connectedDevice != null) {
         await _connectedDevice!.disconnect();
       }

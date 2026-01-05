@@ -100,8 +100,7 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
   /// 开始配网流程
   Future<void> _startConfig() async {
     try {
-      print
-          ('[DeviceConfig] 开始配网: MAC=${widget.deviceMac}, Name=${widget.deviceName}');
+      print('[DeviceConfig] 开始配网: MAC=${widget.deviceMac}, Name=${widget.deviceName}');
       // 步骤1: 检查蓝牙
       setState(() {
         _currentStep = ConfigStep.scanning;

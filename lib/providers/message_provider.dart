@@ -172,9 +172,10 @@ class MessageNotifier extends StateNotifier<MessageState> {
 
 /// 消息 Provider
 final messageProvider = StateNotifierProvider<MessageNotifier, MessageState>((ref) {
-  // 从 authProvider 获取当前家庭 ID
-  final authState = ref.watch(authProvider);
-  final currentFamilyId = authState.account?.currentFamilyId;
+  // 只监听 currentFamilyId 的变化，忽略其他字段（如昵称、头像等）的变化
+  // 这样修改用户信息时不会导致 messageProvider 重新创建，但切换家庭时会自动重建
+  final currentFamilyId = ref.watch(authProvider.select((state) => state.account?.currentFamilyId));
+  
   return MessageNotifier(
     MessageRepository(),
     currentFamilyId: currentFamilyId,

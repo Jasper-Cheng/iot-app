@@ -290,10 +290,11 @@ class FamilyListNotifier extends StateNotifier<FamilyListState> {
 
 /// 家庭列表 Provider
 final familyListProvider = StateNotifierProvider<FamilyListNotifier, FamilyListState>((ref) {
-  // 从 authProvider 获取当前用户 ID 和当前家庭 ID
-  final authState = ref.watch(authProvider);
-  final currentUserId = authState.account?.id;
-  final currentFamilyId = authState.account?.currentFamilyId;
+  // 只监听 userId 和 currentFamilyId 的变化，忽略其他字段（如昵称、头像等）的变化
+  // 这样修改用户信息时不会导致 familyListProvider 重新创建，但切换家庭时会自动重建
+  final currentUserId = ref.watch(authProvider.select((state) => state.account?.id));
+  final currentFamilyId = ref.watch(authProvider.select((state) => state.account?.currentFamilyId));
+  
   return FamilyListNotifier(
     FamilyRepository(),
     currentUserId: currentUserId,

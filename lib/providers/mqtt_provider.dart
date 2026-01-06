@@ -43,6 +43,9 @@ class MqttNotifier extends StateNotifier<MqttState> {
   // Handler 回调函数
   void Function(Map<String, dynamic> data)? onSystemMessage;
   void Function(int homeId, Map<String, dynamic> data)? onFamilyMessage;
+  
+  // 设备数据处理器 Map: deviceSn -> handler
+  final Map<String, void Function(Map<String, dynamic> data)> _deviceDataHandlers = {};
 
   MqttNotifier() : super(const MqttState()) {
     _init();
@@ -56,6 +59,18 @@ class MqttNotifier extends StateNotifier<MqttState> {
   /// 设置家庭消息处理器
   void setFamilyMessageHandler(void Function(int homeId, Map<String, dynamic> data) handler) {
     onFamilyMessage = handler;
+  }
+  
+  /// 注册设备数据处理器
+  void registerDeviceDataHandler(String deviceSn, void Function(Map<String, dynamic> data) handler) {
+    _deviceDataHandlers[deviceSn] = handler;
+    print('[MQTT] 注册设备数据处理器: $deviceSn');
+  }
+  
+  /// 注销设备数据处理器
+  void unregisterDeviceDataHandler(String deviceSn) {
+    _deviceDataHandlers.remove(deviceSn);
+    print('[MQTT] 注销设备数据处理器: $deviceSn');
   }
 
   void _init() {
@@ -118,10 +133,15 @@ class MqttNotifier extends StateNotifier<MqttState> {
 
   /// 取消订阅
   void unsubscribe(String topic) {
-    _service.unsubscribe(topic);
-    state = state.copyWith(
-      subscribedTopics: state.subscribedTopics.where((t) => t != topic).toList(),
-    );
+    if (state.subscribedTopics.contains(topic)) {
+      _service.unsubscribe(topic);
+      state = state.copyWith(
+        subscribedTopics: state.subscribedTopics.where((t) => t != topic).toList(),
+      );
+      print('[MQTT] 取消订阅主题: $topic');
+    } else {
+      print('[MQTT] 主题未订阅，跳过取消: $topic');
+    }
   }
 
   /// 订阅家庭通知
@@ -174,10 +194,22 @@ class MqttNotifier extends StateNotifier<MqttState> {
   void _handleDeviceData(IoTMessage message) {
     try {
       final data = jsonDecode(message.payload);
-      print('设备数据: $data');
-      // 这里可以更新设备状态到 device provider
+      
+      // 从 topic 中提取设备 SN: app/{deviceSn}/data
+      final topicParts = message.topic.split('/');
+      if (topicParts.length >= 2) {
+        final deviceSn = topicParts[1];
+        
+        // 调用对应设备的数据处理器
+        final handler = _deviceDataHandlers[deviceSn];
+        if (handler != null) {
+          handler(data);
+        } else {
+          print('[MQTT] 未找到设备 $deviceSn 的数据处理器');
+        }
+      }
     } catch (e) {
-      print('解析设备数据失败: $e');
+      print('[MQTT] 解析设备数据失败: $e');
     }
   }
 

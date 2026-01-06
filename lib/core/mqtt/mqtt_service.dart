@@ -92,8 +92,6 @@ class MqttService {
 
   /// 取消订阅
   void unsubscribe(String topic) {
-    print('[MQTT] 取消订阅主题: $topic');
-    print('[MQTT] 当前连接状态: ${_client?.connectionStatus?.state}');
     if (_client == null) return;
     _client!.unsubscribe(topic);
   }

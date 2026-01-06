@@ -210,7 +210,7 @@ class MqttNotifier extends StateNotifier<MqttState> {
     try {
       final data = jsonDecode(message.payload);
       
-      // 从 topic 中提取设备 SN: app/{deviceSn}/data
+      // 从 topic 中提取设备 SN: client/{deviceSn}/data
       final topicParts = message.topic.split('/');
       if (topicParts.length >= 2) {
         final deviceSn = topicParts[1];
@@ -233,7 +233,7 @@ class MqttNotifier extends StateNotifier<MqttState> {
     try {
       final data = jsonDecode(message.payload);
       
-      // 从 topic 中提取设备 SN: app/{deviceSn}/status
+      // 从 topic 中提取设备 SN: client/{deviceSn}/status
       final topicParts = message.topic.split('/');
       if (topicParts.length >= 2) {
         final deviceSn = topicParts[1];

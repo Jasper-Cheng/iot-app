@@ -5,6 +5,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'theme/app_theme.dart';
 import 'routes/router.dart';
 import '../providers/theme_provider.dart';
+import '../providers/auth_provider.dart';
 import '../core/network/api_interceptor.dart';
 
 /// 应用根组件
@@ -18,6 +19,11 @@ class App extends ConsumerWidget {
 
     // 设置路由实例到拦截器（用于401自动跳转）
     ApiInterceptor.setRouter(router);
+    
+    // 设置登出回调到拦截器（用于401时更新认证状态）
+    ApiInterceptor.setLogoutCallback(() {
+      ref.read(authProvider.notifier).logout();
+    });
 
     // 设置系统UI样式
     SystemChrome.setSystemUIOverlayStyle(

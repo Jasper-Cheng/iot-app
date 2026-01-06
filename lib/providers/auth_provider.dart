@@ -101,8 +101,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isLoading: false,
       );
       
-      // 重置拦截器的跳转标志
-      ApiInterceptor.resetRedirectFlag();
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -154,8 +152,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isLoading: false,
       );
       
-      // 重置拦截器的跳转标志
-      ApiInterceptor.resetRedirectFlag();
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -187,8 +183,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isLoading: false,
       );
       
-      // 重置拦截器的跳转标志
-      ApiInterceptor.resetRedirectFlag();
     } catch (e) {
       state = state.copyWith(
         isLoading: false,

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import '../constants/api_constants.dart';
 import 'bluetooth_helper.dart';
 import 'wifi_helper.dart';
@@ -273,8 +274,10 @@ class _DeviceConfigDialogState extends State<DeviceConfigDialog> {
   /// 开始配置
   Future<void> _startConfigure() async {
     if (_selectedWifi == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('请选择WiFi网络')),
+      Fluttertoast.showToast(
+        msg: '请选择WiFi网络',
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
       );
       return;
     }

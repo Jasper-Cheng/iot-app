@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -17,8 +18,10 @@ class QRScanner {
       final result = await Permission.camera.request();
       if (!result.isGranted) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('需要相机权限才能扫描二维码')),
+          Fluttertoast.showToast(
+            msg: '需要相机权限才能扫描二维码',
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
           );
         }
         onResult?.call('');

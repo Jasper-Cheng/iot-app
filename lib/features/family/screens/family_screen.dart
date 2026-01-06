@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../../providers/family_provider.dart';
 import '../../../providers/auth_provider.dart';
@@ -682,11 +683,12 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
         description: result['description'],
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('家庭创建成功'),
-            backgroundColor: Colors.green,
-          ),
+        Fluttertoast.showToast(
+          msg: '家庭创建成功',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.green,
+          textColor: Colors.white,
         );
       }
     }
@@ -715,11 +717,12 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
     
     if (currentState.families.isEmpty) {
       if (mounted && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('您还没有加入任何家庭'),
-            backgroundColor: Colors.orange,
-          ),
+        Fluttertoast.showToast(
+          msg: '您还没有加入任何家庭',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.orange,
+          textColor: Colors.white,
         );
       }
       return;
@@ -925,21 +928,23 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       try {
       await notifier.updateMemberNickname(member.id, result);
         if (mounted && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('昵称更新成功'),
-              backgroundColor: Colors.green,
-            ),
+          Fluttertoast.showToast(
+            msg: '昵称更新成功',
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            backgroundColor: Colors.green,
+            textColor: Colors.white,
           );
         }
       } catch (e) {
         if (mounted && context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('昵称更新失败: ${ErrorHandler.extractErrorMessage(e)}'),
-              backgroundColor: Colors.red,
-            ),
-        );
+          Fluttertoast.showToast(
+            msg: '昵称更新失败: ${ErrorHandler.extractErrorMessage(e)}',
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            backgroundColor: Colors.red,
+            textColor: Colors.white,
+          );
         }
       }
     }
@@ -973,11 +978,12 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
     if (confirm == true && mounted) {
       await notifier.removeMember(member.id);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('成员已移除'),
-            backgroundColor: Colors.green,
-          ),
+        Fluttertoast.showToast(
+          msg: '成员已移除',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.green,
+          textColor: Colors.white,
         );
       }
     }
@@ -992,20 +998,22 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
     try {
       await ref.read(deviceListProvider.notifier).updateDeviceName(device.id, newName);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('设备名称已更新'),
-            backgroundColor: Colors.green,
-          ),
+        Fluttertoast.showToast(
+          msg: '设备名称已更新',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.green,
+          textColor: Colors.white,
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('更新失败: ${ErrorHandler.extractErrorMessage(e)}'),
-            backgroundColor: Colors.red,
-          ),
+        Fluttertoast.showToast(
+          msg: '更新失败: ${ErrorHandler.extractErrorMessage(e)}',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
         );
       }
     }
@@ -1021,11 +1029,12 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
     
     if (currentFamily == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('请先选择一个家庭'),
-            backgroundColor: Colors.red,
-          ),
+        Fluttertoast.showToast(
+          msg: '请先选择一个家庭',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
         );
       }
       return;
@@ -1062,20 +1071,22 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
         ]);
         
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('设备已从家庭中移除'),
-              backgroundColor: Colors.green,
-            ),
+          Fluttertoast.showToast(
+            msg: '设备已从家庭中移除',
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            backgroundColor: Colors.green,
+            textColor: Colors.white,
           );
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('移除失败: ${ErrorHandler.extractErrorMessage(e)}'),
-              backgroundColor: Colors.red,
-            ),
+          Fluttertoast.showToast(
+            msg: '移除失败: ${ErrorHandler.extractErrorMessage(e)}',
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            backgroundColor: Colors.red,
+            textColor: Colors.white,
           );
         }
       }
@@ -1132,20 +1143,22 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
         ]);
         
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('设备已解绑'),
-              backgroundColor: Colors.green,
-            ),
+          Fluttertoast.showToast(
+            msg: '设备已解绑',
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            backgroundColor: Colors.green,
+            textColor: Colors.white,
           );
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('解绑失败: ${ErrorHandler.extractErrorMessage(e)}'),
-              backgroundColor: Colors.red,
-            ),
+          Fluttertoast.showToast(
+            msg: '解绑失败: ${ErrorHandler.extractErrorMessage(e)}',
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            backgroundColor: Colors.red,
+            textColor: Colors.white,
           );
         }
       }
@@ -1159,11 +1172,12 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
     
     if (currentFamily == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('请先选择一个家庭'),
-            backgroundColor: Colors.red,
-          ),
+        Fluttertoast.showToast(
+          msg: '请先选择一个家庭',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
         );
       }
       return;
@@ -1177,11 +1191,12 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       personalDevices = personalDevices.where((d) => d.isBound).toList();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('获取设备列表失败: ${ErrorHandler.extractErrorMessage(e)}'),
-            backgroundColor: Colors.red,
-          ),
+        Fluttertoast.showToast(
+          msg: '获取设备列表失败: ${ErrorHandler.extractErrorMessage(e)}',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
         );
       }
       return;
@@ -1358,20 +1373,22 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
         ]);
         
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('已添加 ${result.length} 个设备到家庭'),
-              backgroundColor: Colors.green,
-            ),
+          Fluttertoast.showToast(
+            msg: '已添加 ${result.length} 个设备到家庭',
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            backgroundColor: Colors.green,
+            textColor: Colors.white,
           );
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('添加失败: ${ErrorHandler.extractErrorMessage(e)}'),
-              backgroundColor: Colors.red,
-            ),
+          Fluttertoast.showToast(
+            msg: '添加失败: ${ErrorHandler.extractErrorMessage(e)}',
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            backgroundColor: Colors.red,
+            textColor: Colors.white,
           );
         }
       }
@@ -1441,11 +1458,12 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
   /// 复制邀请码
   void _copyInviteCode(String code) {
     Clipboard.setData(ClipboardData(text: code));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('邀请码已复制到剪贴板'),
-        backgroundColor: Colors.green,
-      ),
+    Fluttertoast.showToast(
+      msg: '邀请码已复制到剪贴板',
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.BOTTOM,
+      backgroundColor: Colors.green,
+      textColor: Colors.white,
     );
   }
 
@@ -1454,11 +1472,12 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
     // 构建邀请链接，使用深度链接格式
     final inviteLink = 'iotapp://join?invite_code=$inviteCode';
     Clipboard.setData(ClipboardData(text: inviteLink));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('邀请链接已复制到剪贴板'),
-        backgroundColor: Colors.green,
-      ),
+    Fluttertoast.showToast(
+      msg: '邀请链接已复制到剪贴板',
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.BOTTOM,
+      backgroundColor: Colors.green,
+      textColor: Colors.white,
     );
   }
 
@@ -1513,11 +1532,12 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
             onPressed: () {
               Clipboard.setData(ClipboardData(text: inviteCode));
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('邀请码已复制到剪贴板'),
-                  backgroundColor: Colors.green,
-                ),
+              Fluttertoast.showToast(
+                msg: '邀请码已复制到剪贴板',
+                toastLength: Toast.LENGTH_SHORT,
+                gravity: ToastGravity.BOTTOM,
+                backgroundColor: Colors.green,
+                textColor: Colors.white,
               );
             },
             child: const Text('复制邀请码'),
@@ -2044,20 +2064,22 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       if (!mounted) return;
       
       if (mounted && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('已切换到家庭「${family.name}」'),
+        Fluttertoast.showToast(
+          msg: '已切换到家庭「${family.name}」',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
           backgroundColor: Colors.green,
-        ),
-      );
+          textColor: Colors.white,
+        );
       }
     } catch (e) {
       if (mounted && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('切换失败: ${ErrorHandler.extractErrorMessage(e)}'),
-            backgroundColor: Colors.red,
-          ),
+        Fluttertoast.showToast(
+          msg: '切换失败: ${ErrorHandler.extractErrorMessage(e)}',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
         );
       }
     }
@@ -2096,20 +2118,22 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       if (!mounted) return;
       
       if (mounted && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('已切回个人设备管理'),
+        Fluttertoast.showToast(
+          msg: '已切回个人设备管理',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
           backgroundColor: Colors.green,
-        ),
-      );
+          textColor: Colors.white,
+        );
       }
     } catch (e) {
       if (mounted && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('切换失败: ${ErrorHandler.extractErrorMessage(e)}'),
-            backgroundColor: Colors.red,
-          ),
+        Fluttertoast.showToast(
+          msg: '切换失败: ${ErrorHandler.extractErrorMessage(e)}',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
         );
       }
     }
@@ -2132,11 +2156,12 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
 
     if (currentUserId == null) {
       if (mounted && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('无法获取当前用户信息'),
-            backgroundColor: Colors.red,
-          ),
+        Fluttertoast.showToast(
+          msg: '无法获取当前用户信息',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
         );
       }
       return;
@@ -2203,20 +2228,22 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
         ]);
 
         if (mounted && context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(isCreator ? '已删除家庭' : '已退出家庭'),
-              backgroundColor: Colors.green,
-            ),
+          Fluttertoast.showToast(
+            msg: isCreator ? '已删除家庭' : '已退出家庭',
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            backgroundColor: Colors.green,
+            textColor: Colors.white,
           );
         }
       } catch (e) {
         if (mounted && context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('退出家庭失败: ${ErrorHandler.extractErrorMessage(e)}'),
-              backgroundColor: Colors.red,
-            ),
+          Fluttertoast.showToast(
+            msg: '退出家庭失败: ${ErrorHandler.extractErrorMessage(e)}',
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            backgroundColor: Colors.red,
+            textColor: Colors.white,
           );
         }
       }
@@ -2261,20 +2288,22 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
         ]);
 
         if (mounted && context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('已删除家庭'),
-              backgroundColor: Colors.green,
-            ),
+          Fluttertoast.showToast(
+            msg: '已删除家庭',
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            backgroundColor: Colors.green,
+            textColor: Colors.white,
           );
         }
       } catch (e) {
         if (mounted && context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('删除家庭失败: ${ErrorHandler.extractErrorMessage(e)}'),
-              backgroundColor: Colors.red,
-            ),
+          Fluttertoast.showToast(
+            msg: '删除家庭失败: ${ErrorHandler.extractErrorMessage(e)}',
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            backgroundColor: Colors.red,
+            textColor: Colors.white,
           );
         }
       }

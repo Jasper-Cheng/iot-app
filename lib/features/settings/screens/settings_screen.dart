@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:go_router/go_router.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/theme_provider.dart';
@@ -578,11 +579,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               } catch (e) {
                 if (context.mounted) {
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('注销失败: ${ErrorHandler.extractErrorMessage(e)}'),
-                      backgroundColor: Colors.red,
-                    ),
+                  Fluttertoast.showToast(
+                    msg: '注销失败: ${ErrorHandler.extractErrorMessage(e)}',
+                    toastLength: Toast.LENGTH_SHORT,
+                    gravity: ToastGravity.BOTTOM,
+                    backgroundColor: Colors.red,
+                    textColor: Colors.white,
                   );
                 }
               }
@@ -676,14 +678,18 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
     // 验证密码
     if (_passwordController.text.isNotEmpty) {
       if (_passwordController.text.length < 6) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('密码至少6位')),
+        Fluttertoast.showToast(
+          msg: '密码至少6位',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
         );
         return;
       }
       if (_passwordController.text != _confirmPasswordController.text) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('两次密码输入不一致')),
+        Fluttertoast.showToast(
+          msg: '两次密码输入不一致',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
         );
         return;
       }
@@ -717,20 +723,22 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
       if (mounted) {
         widget.onUpdate();
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('用户信息更新成功'),
-            backgroundColor: Colors.green,
-          ),
+        Fluttertoast.showToast(
+          msg: '用户信息更新成功',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.green,
+          textColor: Colors.white,
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('更新失败: ${ErrorHandler.extractErrorMessage(e)}'),
-            backgroundColor: Colors.red,
-          ),
+        Fluttertoast.showToast(
+          msg: '更新失败: ${ErrorHandler.extractErrorMessage(e)}',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
         );
       }
     } finally {

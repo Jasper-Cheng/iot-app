@@ -65,7 +65,7 @@ class ApiInterceptor extends Interceptor {
         break;
       case DioExceptionType.badResponse:
         final statusCode = err.response?.statusCode;
-        
+
         // 默认HTTP状态码错误消息
         switch (statusCode) {
           case 400:
@@ -98,10 +98,11 @@ class ApiInterceptor extends Interceptor {
             errorMessage = '服务不可用';
             break;
           default:
-            // 对于未知状态码，再次尝试从响应中获取错误信息
-            final fallbackErrorMessage = _extractErrorMessageFromResponse(err);
-            errorMessage = fallbackErrorMessage ?? '请求失败 ($statusCode)';
+            errorMessage = '请求失败 ($statusCode)';
         }
+        // 再次尝试从响应中获取错误信息
+        final fallbackErrorMessage = _extractErrorMessageFromResponse(err);
+        errorMessage = fallbackErrorMessage ?? errorMessage;
         break;
       case DioExceptionType.cancel:
         errorMessage = '请求已取消';

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 /// 联系客服页面
 class CustomerServiceScreen extends ConsumerWidget {
@@ -35,8 +36,10 @@ class CustomerServiceScreen extends ConsumerWidget {
                     icon: const Icon(Icons.copy),
                     onPressed: () {
                       Clipboard.setData(const ClipboardData(text: '400-888-8888'));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('已复制到剪贴板')),
+                      Fluttertoast.showToast(
+                        msg: '已复制到剪贴板',
+                        toastLength: Toast.LENGTH_SHORT,
+                        gravity: ToastGravity.BOTTOM,
                       );
                     },
                   ),
@@ -72,8 +75,10 @@ class CustomerServiceScreen extends ConsumerWidget {
               subtitle: const Text('点击进入在线聊天'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('在线客服功能开发中...')),
+                Fluttertoast.showToast(
+                  msg: '在线客服功能开发中...',
+                  toastLength: Toast.LENGTH_SHORT,
+                  gravity: ToastGravity.BOTTOM,
                 );
               },
             ),
@@ -97,8 +102,10 @@ class CustomerServiceScreen extends ConsumerWidget {
                 icon: const Icon(Icons.copy),
                 onPressed: () {
                   Clipboard.setData(const ClipboardData(text: 'support@iot-app.com'));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('已复制到剪贴板')),
+                  Fluttertoast.showToast(
+                    msg: '已复制到剪贴板',
+                    toastLength: Toast.LENGTH_SHORT,
+                    gravity: ToastGravity.BOTTOM,
                   );
                 },
               ),

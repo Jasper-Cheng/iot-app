@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/family_provider.dart';
 import '../../../core/utils/error_handler.dart';
@@ -58,11 +59,12 @@ class _JoinFamilyDialogState extends ConsumerState<JoinFamilyDialog> {
       // 成功时关闭弹窗
       if (mounted) {
         Navigator.pop(context, true);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('加入家庭成功'),
-            backgroundColor: Colors.green,
-          ),
+        Fluttertoast.showToast(
+          msg: '加入家庭成功',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.green,
+          textColor: Colors.white,
         );
       }
     } catch (e) {

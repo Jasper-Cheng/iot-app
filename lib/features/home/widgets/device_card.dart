@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:go_router/go_router.dart';
 import '../../../data/models/device.dart';
 import '../../../app/theme/colors.dart';
@@ -256,8 +257,10 @@ class DeviceCard extends ConsumerWidget {
                     .updateDeviceName(device.id, newName);
                 if (context.mounted) {
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('设备名称已更新')),
+                  Fluttertoast.showToast(
+                    msg: '设备名称已更新',
+                    toastLength: Toast.LENGTH_SHORT,
+                    gravity: ToastGravity.BOTTOM,
                   );
                 }
               } else {
@@ -290,8 +293,10 @@ class DeviceCard extends ConsumerWidget {
                   .unbindDevice(device.sn);
               if (context.mounted) {
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('设备已解绑')),
+                Fluttertoast.showToast(
+                  msg: '设备已解绑',
+                  toastLength: Toast.LENGTH_SHORT,
+                  gravity: ToastGravity.BOTTOM,
                 );
               }
             },

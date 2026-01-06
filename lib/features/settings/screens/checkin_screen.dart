@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import '../../../providers/checkin_provider.dart';
 import '../widgets/checkin_calendar_widget.dart';
 
@@ -62,18 +63,20 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
                         onCheckIn: () async {
                           final record = await notifier.checkIn();
                           if (record != null && mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('签到成功！获得 ${record.pointsEarned} 积分'),
-                                backgroundColor: Colors.green,
-                              ),
+                            Fluttertoast.showToast(
+                              msg: '签到成功！获得 ${record.pointsEarned} 积分',
+                              toastLength: Toast.LENGTH_SHORT,
+                              gravity: ToastGravity.BOTTOM,
+                              backgroundColor: Colors.green,
+                              textColor: Colors.white,
                             );
                           } else if (state.error != null && mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(state.error!),
-                                backgroundColor: Colors.orange,
-                              ),
+                            Fluttertoast.showToast(
+                              msg: state.error!,
+                              toastLength: Toast.LENGTH_SHORT,
+                              gravity: ToastGravity.BOTTOM,
+                              backgroundColor: Colors.orange,
+                              textColor: Colors.white,
                             );
                           }
                         },

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:go_router/go_router.dart';
 import '../../../data/repositories/settings_repository.dart';
 
@@ -200,11 +201,12 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('反馈提交成功，感谢您的宝贵意见！'),
-            backgroundColor: Colors.green,
-          ),
+        Fluttertoast.showToast(
+          msg: '反馈提交成功，感谢您的宝贵意见！',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.green,
+          textColor: Colors.white,
         );
         if (context.canPop()) {
           context.pop();
@@ -212,11 +214,12 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('提交失败: $e'),
-            backgroundColor: Colors.red,
-          ),
+        Fluttertoast.showToast(
+          msg: '提交失败: $e',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
         );
       }
     } finally {

@@ -74,7 +74,7 @@ class ApiConstants {
   // MQTT 配置
   static const String mqttBroker = '192.168.12.119';
   static const int mqttPort = 1883;
-  static const String mqttClientPrefix = 'flutter_iot_';
+  static const String mqttClientPrefix = 'app_iot_';
   
   // MQTT 主题
   static const String mqttSystemNotice = 'system/notice';        // 系统通知

@@ -641,10 +641,8 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
       _selectedAvatar = 'assets/avatars/$fileName';
     } else if (widget.account.avatar != null && widget.account.avatar!.startsWith('assets/')) {
       _selectedAvatar = widget.account.avatar;
-    } else {
-      // 默认选择第一个头像
-      _selectedAvatar = 'assets/avatars/avatar1.png';
     }
+    // 如果用户没有头像，不设置默认值，让用户自己选择
   }
 
   @override
@@ -954,7 +952,6 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
                     onPressed: _isSubmitting ? null : _handleUpdate,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: theme.colorScheme.primary,
-                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                     ),
                     child: _isSubmitting

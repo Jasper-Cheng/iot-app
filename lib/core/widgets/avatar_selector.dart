@@ -68,10 +68,8 @@ class _AvatarSelectorState extends State<AvatarSelector> {
       } else {
         _selectedAvatar = widget.initialAvatar;
       }
-    } else {
-      // 默认选择第一个
-      _selectedAvatar = _avatars[0];
     }
+    // 如果没有初始头像，不默认选择（保持为 null）
 
     // 延迟滚动到选中的头像
     WidgetsBinding.instance.addPostFrameCallback((_) {

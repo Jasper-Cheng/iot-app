@@ -78,6 +78,7 @@ class _CreateFamilyDialogState extends State<CreateFamilyDialog> {
                   avatarSize: 48,
                   listHeight: 48,
                   spacing: 6,
+                  initialAvatar: 'assets/avatars/avatar1.png', // 默认选择第一个头像
                   onAvatarSelected: (avatarPath) {
                     // 将assets路径转换为服务器路径
                     final fileName = avatarPath.replaceFirst('assets/avatars/', '');

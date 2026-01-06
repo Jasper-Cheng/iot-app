@@ -7,6 +7,8 @@ import '../../../providers/family_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/device_provider.dart';
 import '../../../providers/message_provider.dart';
+import '../../../providers/mqtt_provider.dart';
+import '../../../core/constants/api_constants.dart';
 import '../../../data/models/family.dart' as family_models;
 import '../../../data/models/device.dart';
 import '../../../data/repositories/auth_repository.dart';
@@ -2001,6 +2003,10 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
     FamilyListNotifier notifier,
   ) async {
     try {
+      // 0. 获取之前的家庭ID，用于取消订阅
+      final authState = ref.read(authProvider);
+      final previousFamilyId = authState.account?.currentFamilyId;
+      
       // 1. 调用接口更新当前家庭
       final authRepository = AuthRepository();
       await authRepository.updateCurrentFamily(family.id);
@@ -2021,6 +2027,19 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       // 6. 重新获取消息列表 notifier 并刷新消息列表（确保使用最新的 currentFamilyId）
       final messageNotifier = ref.read(messageProvider.notifier);
       await messageNotifier.refresh();
+      
+      // 7. 重新订阅家庭通知
+      final mqttNotifier = ref.read(mqttProvider.notifier);
+      // 只有在 MQTT 已连接时才进行订阅操作
+      if (mqttNotifier.state.isConnected) {
+        // 如果之前有订阅家庭通知，先取消订阅
+        if (previousFamilyId != null && previousFamilyId != family.id) {
+          final previousTopic = ApiConstants.mqttHomeNotice(previousFamilyId);
+          mqttNotifier.unsubscribe(previousTopic);
+        }
+        // 订阅新的家庭通知
+        mqttNotifier.subscribeHomeNotice(family.id);
+      }
       
       Fluttertoast.showToast(
         msg: '已切换到家庭「${family.name}」',
@@ -2046,6 +2065,10 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
     FamilyListNotifier notifier,
   ) async {
     try {
+      // 0. 获取之前的家庭ID，用于取消订阅
+      final authState = ref.read(authProvider);
+      final previousFamilyId = authState.account?.currentFamilyId;
+      
       // 1. 调用接口切换到个人模式
       final authRepository = AuthRepository();
       await authRepository.updateCurrentFamily(null);
@@ -2066,6 +2089,21 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       // 6. 重新获取消息列表 notifier 并刷新消息列表（确保使用最新的 currentFamilyId）
       final messageNotifier = ref.read(messageProvider.notifier);
       await messageNotifier.refresh();
+      
+      // 7. 取消订阅之前的家庭通知（如果存在）
+      if (previousFamilyId != null) {
+        try {
+          final mqttNotifier = ref.read(mqttProvider.notifier);
+          // 只有在 MQTT 已连接时才取消订阅，避免导致连接断开
+          if (mqttNotifier.state.isConnected) {
+            final previousTopic = ApiConstants.mqttHomeNotice(previousFamilyId);
+            mqttNotifier.unsubscribe(previousTopic);
+          }
+        } catch (e) {
+          // 取消订阅失败不应该影响切换操作，只记录错误
+          print('[FamilyScreen] 取消订阅家庭通知失败: $e');
+        }
+      }
       
       Fluttertoast.showToast(
         msg: '已切回个人设备管理',

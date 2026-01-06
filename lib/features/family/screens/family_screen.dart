@@ -38,10 +38,8 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
     
     // 初始化时加载家庭数据
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        final notifier = ref.read(familyListProvider.notifier);
-        notifier.loadFamilies();
-      }
+      final notifier = ref.read(familyListProvider.notifier);
+      notifier.loadFamilies();
     });
   }
 
@@ -675,22 +673,20 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       builder: (context) => const CreateFamilyDialog(),
     );
 
-    if (result != null && mounted) {
+    if (result != null) {
       final notifier = ref.read(familyListProvider.notifier);
       await notifier.createFamily(
         name: result['name']!,
         avatar: result['avatar'],
         description: result['description'],
       );
-      if (mounted) {
-        Fluttertoast.showToast(
-          msg: '家庭创建成功',
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: Colors.green,
-          textColor: Colors.white,
-        );
-      }
+      Fluttertoast.showToast(
+        msg: '家庭创建成功',
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.green,
+        textColor: Colors.white,
+      );
     }
   }
 
@@ -716,15 +712,13 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
     final currentState = ref.read(familyListProvider);
     
     if (currentState.families.isEmpty) {
-      if (mounted && context.mounted) {
-        Fluttertoast.showToast(
-          msg: '您还没有加入任何家庭',
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: Colors.orange,
-          textColor: Colors.white,
-        );
-      }
+      Fluttertoast.showToast(
+        msg: '您还没有加入任何家庭',
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.orange,
+        textColor: Colors.white,
+      );
       return;
     }
 
@@ -924,28 +918,24 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       ),
     );
 
-    if (result != null && result.isNotEmpty && mounted) {
+    if (result != null && result.isNotEmpty) {
       try {
       await notifier.updateMemberNickname(member.id, result);
-        if (mounted && context.mounted) {
-          Fluttertoast.showToast(
-            msg: '昵称更新成功',
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-            backgroundColor: Colors.green,
-            textColor: Colors.white,
-          );
-        }
+        Fluttertoast.showToast(
+          msg: '昵称更新成功',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.green,
+          textColor: Colors.white,
+        );
       } catch (e) {
-        if (mounted && context.mounted) {
-          Fluttertoast.showToast(
-            msg: '昵称更新失败: ${ErrorHandler.extractErrorMessage(e)}',
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-            backgroundColor: Colors.red,
-            textColor: Colors.white,
-          );
-        }
+        Fluttertoast.showToast(
+          msg: '昵称更新失败: ${ErrorHandler.extractErrorMessage(e)}',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+        );
       }
     }
   }
@@ -975,17 +965,15 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       ),
     );
 
-    if (confirm == true && mounted) {
+    if (confirm == true) {
       await notifier.removeMember(member.id);
-      if (mounted) {
-        Fluttertoast.showToast(
-          msg: '成员已移除',
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: Colors.green,
-          textColor: Colors.white,
-        );
-      }
+      Fluttertoast.showToast(
+        msg: '成员已移除',
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.green,
+        textColor: Colors.white,
+      );
     }
   }
 
@@ -997,25 +985,21 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
   ) async {
     try {
       await ref.read(deviceListProvider.notifier).updateDeviceName(device.id, newName);
-      if (mounted) {
-        Fluttertoast.showToast(
-          msg: '设备名称已更新',
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: Colors.green,
-          textColor: Colors.white,
-        );
-      }
+      Fluttertoast.showToast(
+        msg: '设备名称已更新',
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.green,
+        textColor: Colors.white,
+      );
     } catch (e) {
-      if (mounted) {
-        Fluttertoast.showToast(
-          msg: '更新失败: ${ErrorHandler.extractErrorMessage(e)}',
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-        );
-      }
+      Fluttertoast.showToast(
+        msg: '更新失败: ${ErrorHandler.extractErrorMessage(e)}',
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+      );
     }
   }
 
@@ -1028,15 +1012,13 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
     final currentFamily = familyState.currentFamily;
     
     if (currentFamily == null) {
-      if (mounted) {
-        Fluttertoast.showToast(
-          msg: '请先选择一个家庭',
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-        );
-      }
+      Fluttertoast.showToast(
+        msg: '请先选择一个家庭',
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+      );
       return;
     }
 
@@ -1059,7 +1041,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       ),
     );
 
-    if (confirm == true && mounted) {
+    if (confirm == true) {
       try {
         final notifier = ref.read(familyListProvider.notifier);
         await notifier.removeDeviceFromFamily(currentFamily.id, device.id);
@@ -1070,25 +1052,21 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
           ref.read(messageProvider.notifier).loadDeviceMessages(status: 'new'),
         ]);
         
-        if (mounted) {
-          Fluttertoast.showToast(
-            msg: '设备已从家庭中移除',
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-            backgroundColor: Colors.green,
-            textColor: Colors.white,
-          );
-        }
+        Fluttertoast.showToast(
+          msg: '设备已从家庭中移除',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.green,
+          textColor: Colors.white,
+        );
       } catch (e) {
-        if (mounted) {
-          Fluttertoast.showToast(
-            msg: '移除失败: ${ErrorHandler.extractErrorMessage(e)}',
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-            backgroundColor: Colors.red,
-            textColor: Colors.white,
-          );
-        }
+        Fluttertoast.showToast(
+          msg: '移除失败: ${ErrorHandler.extractErrorMessage(e)}',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+        );
       }
     }
   }
@@ -1131,7 +1109,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       ),
     );
 
-    if (confirm == true && mounted) {
+    if (confirm == true) {
       try {
         // 解绑设备
         await ref.read(deviceListProvider.notifier).unbindDevice(device.sn);
@@ -1142,25 +1120,21 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
           ref.read(messageProvider.notifier).loadDeviceMessages(status: 'new'),
         ]);
         
-        if (mounted) {
-          Fluttertoast.showToast(
-            msg: '设备已解绑',
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-            backgroundColor: Colors.green,
-            textColor: Colors.white,
-          );
-        }
+        Fluttertoast.showToast(
+          msg: '设备已解绑',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.green,
+          textColor: Colors.white,
+        );
       } catch (e) {
-        if (mounted) {
-          Fluttertoast.showToast(
-            msg: '解绑失败: ${ErrorHandler.extractErrorMessage(e)}',
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-            backgroundColor: Colors.red,
-            textColor: Colors.white,
-          );
-        }
+        Fluttertoast.showToast(
+          msg: '解绑失败: ${ErrorHandler.extractErrorMessage(e)}',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+        );
       }
     }
   }
@@ -1171,15 +1145,13 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
     final currentFamily = familyState.currentFamily;
     
     if (currentFamily == null) {
-      if (mounted) {
-        Fluttertoast.showToast(
-          msg: '请先选择一个家庭',
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-        );
-      }
+      Fluttertoast.showToast(
+        msg: '请先选择一个家庭',
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+      );
       return;
     }
 
@@ -1190,15 +1162,13 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       personalDevices = await deviceRepository.getDevices(familyId: null);
       personalDevices = personalDevices.where((d) => d.isBound).toList();
     } catch (e) {
-      if (mounted) {
-        Fluttertoast.showToast(
-          msg: '获取设备列表失败: ${ErrorHandler.extractErrorMessage(e)}',
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-        );
-      }
+      Fluttertoast.showToast(
+        msg: '获取设备列表失败: ${ErrorHandler.extractErrorMessage(e)}',
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+      );
       return;
     }
 
@@ -1357,7 +1327,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       ),
     );
 
-    if (result != null && result.isNotEmpty && mounted) {
+    if (result != null && result.isNotEmpty) {
       try {
         final notifier = ref.read(familyListProvider.notifier);
         
@@ -1372,25 +1342,21 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
           ref.read(messageProvider.notifier).loadDeviceMessages(status: 'new'),
         ]);
         
-        if (mounted) {
-          Fluttertoast.showToast(
-            msg: '已添加 ${result.length} 个设备到家庭',
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-            backgroundColor: Colors.green,
-            textColor: Colors.white,
-          );
-        }
+        Fluttertoast.showToast(
+          msg: '已添加 ${result.length} 个设备到家庭',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.green,
+          textColor: Colors.white,
+        );
       } catch (e) {
-        if (mounted) {
-          Fluttertoast.showToast(
-            msg: '添加失败: ${ErrorHandler.extractErrorMessage(e)}',
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-            backgroundColor: Colors.red,
-            textColor: Colors.white,
-          );
-        }
+        Fluttertoast.showToast(
+          msg: '添加失败: ${ErrorHandler.extractErrorMessage(e)}',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+        );
       }
     }
   }
@@ -1818,11 +1784,9 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
             future: _familyMembersCache[family.id] != null
                 ? Future.value(_familyMembersCache[family.id])
                 : notifier.getFamilyMembers(family.id).then((members) {
-                    if (mounted) {
-                      setState(() {
-                        _familyMembersCache[family.id] = members;
-                      });
-                    }
+                    setState(() {
+                      _familyMembersCache[family.id] = members;
+                    });
                     return members;
                   }),
             builder: (context, snapshot) {
@@ -2040,48 +2004,39 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       // 1. 调用接口更新当前家庭
       final authRepository = AuthRepository();
       await authRepository.updateCurrentFamily(family.id);
-      if (!mounted) return;
       
       // 2. 刷新用户信息（更新 authProvider 中的 currentFamilyId）
       await ref.read(authProvider.notifier).refreshProfile();
-      if (!mounted) return;
       
       // 3. 重新获取 notifier（因为 familyListProvider 会重新创建，使用最新的 currentFamilyId）
       final newNotifier = ref.read(familyListProvider.notifier);
       
       // 4. 重新加载家庭列表（会使用最新的 currentFamilyId）
       await newNotifier.loadFamilies();
-      if (!mounted) return;
       
       // 5. 重新获取设备列表 notifier 并刷新设备列表（确保使用最新的 currentFamilyId）
       final deviceNotifier = ref.read(deviceListProvider.notifier);
       await deviceNotifier.refresh();
-      if (!mounted) return;
       
       // 6. 重新获取消息列表 notifier 并刷新消息列表（确保使用最新的 currentFamilyId）
       final messageNotifier = ref.read(messageProvider.notifier);
       await messageNotifier.refresh();
-      if (!mounted) return;
       
-      if (mounted && context.mounted) {
-        Fluttertoast.showToast(
-          msg: '已切换到家庭「${family.name}」',
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: Colors.green,
-          textColor: Colors.white,
-        );
-      }
+      Fluttertoast.showToast(
+        msg: '已切换到家庭「${family.name}」',
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.green,
+        textColor: Colors.white,
+      );
     } catch (e) {
-      if (mounted && context.mounted) {
-        Fluttertoast.showToast(
-          msg: '切换失败: ${ErrorHandler.extractErrorMessage(e)}',
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-        );
-      }
+      Fluttertoast.showToast(
+        msg: '切换失败: ${ErrorHandler.extractErrorMessage(e)}',
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+      );
     }
   }
 
@@ -2094,48 +2049,39 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       // 1. 调用接口切换到个人模式
       final authRepository = AuthRepository();
       await authRepository.updateCurrentFamily(null);
-      if (!mounted) return;
       
       // 2. 刷新用户信息（更新 authProvider 中的 currentFamilyId 为 null）
       await ref.read(authProvider.notifier).refreshProfile();
-      if (!mounted) return;
       
       // 3. 重新获取 notifier（因为 familyListProvider 会重新创建，使用最新的 currentFamilyId）
       final newNotifier = ref.read(familyListProvider.notifier);
       
       // 4. 重新加载家庭列表（会使用最新的 currentFamilyId，应该是 null）
       await newNotifier.loadFamilies();
-      if (!mounted) return;
       
       // 5. 重新获取设备列表 notifier 并刷新设备列表（确保使用最新的 currentFamilyId）
       final deviceNotifier = ref.read(deviceListProvider.notifier);
       await deviceNotifier.refresh();
-      if (!mounted) return;
       
       // 6. 重新获取消息列表 notifier 并刷新消息列表（确保使用最新的 currentFamilyId）
       final messageNotifier = ref.read(messageProvider.notifier);
       await messageNotifier.refresh();
-      if (!mounted) return;
       
-      if (mounted && context.mounted) {
-        Fluttertoast.showToast(
-          msg: '已切回个人设备管理',
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: Colors.green,
-          textColor: Colors.white,
-        );
-      }
+      Fluttertoast.showToast(
+        msg: '已切回个人设备管理',
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.green,
+        textColor: Colors.white,
+      );
     } catch (e) {
-      if (mounted && context.mounted) {
-        Fluttertoast.showToast(
-          msg: '切换失败: ${ErrorHandler.extractErrorMessage(e)}',
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-        );
-      }
+      Fluttertoast.showToast(
+        msg: '切换失败: ${ErrorHandler.extractErrorMessage(e)}',
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+      );
     }
   }
 
@@ -2148,22 +2094,19 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
     // 先加载家庭成员以检查当前用户是否是创建者
     final currentNotifier = ref.read(familyListProvider.notifier);
     await currentNotifier.loadMembers(family.id);
-    if (!mounted) return;
     
     final members = currentNotifier.state.members;
     final authState = ref.read(authProvider);
     final currentUserId = authState.account?.id;
 
     if (currentUserId == null) {
-      if (mounted && context.mounted) {
-        Fluttertoast.showToast(
-          msg: '无法获取当前用户信息',
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-        );
-      }
+      Fluttertoast.showToast(
+        msg: '无法获取当前用户信息',
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+      );
       return;
     }
 
@@ -2199,27 +2142,23 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       ),
     );
 
-    if (confirm == true && mounted) {
+    if (confirm == true) {
       try {
 
         // 移除自己（退出家庭）
         await currentNotifier.removeMember(currentMember.id);
-        if (!mounted) return;
 
         // 退出家庭后，无论是否是当前家庭，都切回个人设备管理
         // 1. 调用接口更新当前家庭为null（切换到个人模式）
         final authRepository = AuthRepository();
         await authRepository.updateCurrentFamily(null);
-        if (!mounted) return;
         
         // 2. 刷新用户信息（更新 authProvider 中的 currentFamilyId）
         await ref.read(authProvider.notifier).refreshProfile();
-        if (!mounted) return;
 
         // 3. 重新获取notifier并重新加载家庭列表
         final updatedNotifier = ref.read(familyListProvider.notifier);
         await updatedNotifier.loadFamilies();
-        if (!mounted) return;
         
         // 4. 刷新设备和消息数据
         await Future.wait([
@@ -2227,25 +2166,21 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
           ref.read(messageProvider.notifier).refresh(),
         ]);
 
-        if (mounted && context.mounted) {
-          Fluttertoast.showToast(
-            msg: isCreator ? '已删除家庭' : '已退出家庭',
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-            backgroundColor: Colors.green,
-            textColor: Colors.white,
-          );
-        }
+        Fluttertoast.showToast(
+          msg: isCreator ? '已删除家庭' : '已退出家庭',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.green,
+          textColor: Colors.white,
+        );
       } catch (e) {
-        if (mounted && context.mounted) {
-          Fluttertoast.showToast(
-            msg: '退出家庭失败: ${ErrorHandler.extractErrorMessage(e)}',
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-            backgroundColor: Colors.red,
-            textColor: Colors.white,
-          );
-        }
+        Fluttertoast.showToast(
+          msg: '退出家庭失败: ${ErrorHandler.extractErrorMessage(e)}',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+        );
       }
     }
   }
@@ -2257,29 +2192,25 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
     FamilyListNotifier notifier,
   ) async {
     final confirm = await _showDeleteConfirmDialog(context, family.name);
-    if (confirm == true && mounted) {
+    if (confirm == true) {
       try {
         // 重新获取notifier，避免使用已销毁的notifier
         final currentNotifier = ref.read(familyListProvider.notifier);
 
         // 删除家庭
         await currentNotifier.deleteFamily(family.id);
-        if (!mounted) return;
 
         // 删除家庭后，无论是否是当前家庭，都切回个人设备管理
         // 1. 调用接口更新当前家庭为null（切换到个人模式）
         final authRepository = AuthRepository();
         await authRepository.updateCurrentFamily(null);
-        if (!mounted) return;
         
         // 2. 刷新用户信息（更新 authProvider 中的 currentFamilyId）
         await ref.read(authProvider.notifier).refreshProfile();
-        if (!mounted) return;
         
         // 3. 重新获取notifier并重新加载家庭列表
         final updatedNotifier = ref.read(familyListProvider.notifier);
         await updatedNotifier.loadFamilies();
-        if (!mounted) return;
         
         // 4. 刷新设备和消息数据
         await Future.wait([
@@ -2287,25 +2218,21 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
           ref.read(messageProvider.notifier).refresh(),
         ]);
 
-        if (mounted && context.mounted) {
-          Fluttertoast.showToast(
-            msg: '已删除家庭',
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-            backgroundColor: Colors.green,
-            textColor: Colors.white,
-          );
-        }
+        Fluttertoast.showToast(
+          msg: '已删除家庭',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.green,
+          textColor: Colors.white,
+        );
       } catch (e) {
-        if (mounted && context.mounted) {
-          Fluttertoast.showToast(
-            msg: '删除家庭失败: ${ErrorHandler.extractErrorMessage(e)}',
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-            backgroundColor: Colors.red,
-            textColor: Colors.white,
-          );
-        }
+        Fluttertoast.showToast(
+          msg: '删除家庭失败: ${ErrorHandler.extractErrorMessage(e)}',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+        );
       }
     }
   }

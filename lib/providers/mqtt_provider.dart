@@ -77,7 +77,8 @@ class MqttNotifier extends StateNotifier<MqttState> {
     String? password,
   }) async {
     try {
-      final clientId = '${ApiConstants.mqttClientPrefix}$userId';
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final clientId = '${ApiConstants.mqttClientPrefix}${userId}_$timestamp';
       final success = await _service.connect(
         clientId: clientId,
         username: username,

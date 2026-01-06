@@ -31,12 +31,18 @@ class _EnvironmentMonitorCardState extends ConsumerState<EnvironmentMonitorCard>
   };
 
   bool _isSubscribed = false;
+  
+  // 设备在线状态（本地维护，通过 MQTT 状态消息更新）
+  late bool _isOnline;
 
   @override
   void initState() {
     super.initState();
+    // 初始化在线状态
+    _isOnline = widget.device.isOnline;
     _setupMqttSubscription();
     _registerDataHandler();
+    _registerStatusHandler();
   }
 
   /// 设置 MQTT 订阅
@@ -62,56 +68,110 @@ class _EnvironmentMonitorCardState extends ConsumerState<EnvironmentMonitorCard>
     });
   }
   
+  /// 注册状态处理器
+  void _registerStatusHandler() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      
+      final mqttNotifier = ref.read(mqttProvider.notifier);
+      mqttNotifier.registerDeviceStatusHandler(widget.device.sn, _handleDeviceStatus);
+    });
+  }
+  
   /// 处理设备数据
   void _handleDeviceData(Map<String, dynamic> data) {
     if (!mounted) return;
     
     try {
-      // 解析设备数据
-      if (data.containsKey('data')) {
-        final deviceData = data['data'] as Map<String, dynamic>;
-        
-        if (mounted) {
-          setState(() {
-            // 更新传感器数据
-            if (deviceData.containsKey('pm25')) {
-              _sensors['pm25'] = deviceData['pm25'] is int 
-                  ? deviceData['pm25'] 
-                  : (deviceData['pm25'] as num).toInt();
-            }
-            if (deviceData.containsKey('pm10')) {
-              _sensors['pm10'] = deviceData['pm10'] is int 
-                  ? deviceData['pm10'] 
-                  : (deviceData['pm10'] as num).toInt();
-            }
-            if (deviceData.containsKey('co2')) {
-              _sensors['co2'] = deviceData['co2'] is int 
-                  ? deviceData['co2'] 
-                  : (deviceData['co2'] as num).toInt();
-            }
-            if (deviceData.containsKey('tvoc')) {
-              _sensors['tvoc'] = deviceData['tvoc'] is int 
-                  ? deviceData['tvoc'] 
-                  : (deviceData['tvoc'] as num).toInt();
-            }
-            if (deviceData.containsKey('hcho')) {
-              _sensors['hcho'] = deviceData['hcho'] is int 
-                  ? deviceData['hcho'] 
-                  : (deviceData['hcho'] as num).toInt();
-            }
-            if (deviceData.containsKey('temp') || deviceData.containsKey('temperature')) {
-              final temp = deviceData['temp'] ?? deviceData['temperature'];
-              _sensors['temp'] = temp is double ? temp : (temp as num).toDouble();
-            }
-            if (deviceData.containsKey('humi') || deviceData.containsKey('humidity')) {
-              final humi = deviceData['humi'] ?? deviceData['humidity'];
-              _sensors['humi'] = humi is double ? humi : (humi as num).toDouble();
-            }
-          });
-        }
+      print('[EnvironmentMonitorCard] 收到设备数据: $data');
+      
+      // 数据格式：{'co2': 517, 'hcho': 10, 'tvoc': 15, 'pm25': 22, 'pm10': 27, 'temp': 19.0, 'humi': 39.0, 'sn': 'M701001-220403-000001'}
+      // 数据直接在顶层，不需要访问嵌套的 'data' 字段
+      
+      if (mounted) {
+        setState(() {
+          // 更新传感器数据
+          if (data.containsKey('pm25')) {
+            _sensors['pm25'] = data['pm25'] is int 
+                ? data['pm25'] 
+                : (data['pm25'] as num).toInt();
+          }
+          if (data.containsKey('pm10')) {
+            _sensors['pm10'] = data['pm10'] is int 
+                ? data['pm10'] 
+                : (data['pm10'] as num).toInt();
+          }
+          if (data.containsKey('co2')) {
+            _sensors['co2'] = data['co2'] is int 
+                ? data['co2'] 
+                : (data['co2'] as num).toInt();
+          }
+          if (data.containsKey('tvoc')) {
+            _sensors['tvoc'] = data['tvoc'] is int 
+                ? data['tvoc'] 
+                : (data['tvoc'] as num).toInt();
+          }
+          if (data.containsKey('hcho')) {
+            _sensors['hcho'] = data['hcho'] is int 
+                ? data['hcho'] 
+                : (data['hcho'] as num).toInt();
+          }
+          if (data.containsKey('temp') || data.containsKey('temperature')) {
+            final temp = data['temp'] ?? data['temperature'];
+            _sensors['temp'] = temp is double ? temp : (temp as num).toDouble();
+          }
+          if (data.containsKey('humi') || data.containsKey('humidity')) {
+            final humi = data['humi'] ?? data['humidity'];
+            _sensors['humi'] = humi is double ? humi : (humi as num).toDouble();
+          }
+        });
+        print('[EnvironmentMonitorCard] 传感器数据已更新');
       }
     } catch (e) {
       print('[EnvironmentMonitorCard] 解析设备数据失败: $e');
+    }
+  }
+  
+  /// 处理设备状态
+  void _handleDeviceStatus(Map<String, dynamic> data) {
+    if (!mounted) return;
+    
+    try {
+      print('[EnvironmentMonitorCard] 收到设备状态: $data');
+      
+      // 数据格式：{'status': 'online', 'sn': 'M701001-220403-000001'} 或 {'status': 'offline', 'sn': ...}
+      // 处理设备在线/离线状态
+      bool? newOnlineStatus;
+      
+      // 尝试多种可能的字段名和格式
+      if (data.containsKey('status')) {
+        final status = data['status'];
+        if (status is String) {
+          // 字符串格式：'online' 或 'offline'
+          newOnlineStatus = status.toLowerCase() == 'online';
+        } else if (status is bool) {
+          // 布尔格式
+          newOnlineStatus = status;
+        }
+      } else if (data.containsKey('online')) {
+        newOnlineStatus = data['online'] as bool?;
+      } else if (data.containsKey('isOnline')) {
+        newOnlineStatus = data['isOnline'] as bool?;
+      }
+      
+      // 如果状态发生变化，更新 UI
+      if (newOnlineStatus != null && newOnlineStatus != _isOnline) {
+        if (mounted) {
+          setState(() {
+            _isOnline = newOnlineStatus!;
+          });
+          print('[EnvironmentMonitorCard] 设备状态变更: ${widget.device.sn} ${_isOnline ? "在线" : "离线"}');
+        }
+      } else if (newOnlineStatus == null) {
+        print('[EnvironmentMonitorCard] 警告：状态消息中未找到有效的状态字段');
+      }
+    } catch (e) {
+      print('[EnvironmentMonitorCard] 解析设备状态失败: $e');
     }
   }
 
@@ -123,6 +183,14 @@ class _EnvironmentMonitorCardState extends ConsumerState<EnvironmentMonitorCard>
       mqttNotifier.unregisterDeviceDataHandler(widget.device.sn);
     } catch (e) {
       print('[EnvironmentMonitorCard] 注销数据处理器失败: $e');
+    }
+    
+    // 注销状态处理器
+    try {
+      final mqttNotifier = ref.read(mqttProvider.notifier);
+      mqttNotifier.unregisterDeviceStatusHandler(widget.device.sn);
+    } catch (e) {
+      print('[EnvironmentMonitorCard] 注销状态处理器失败: $e');
     }
     
     // 取消订阅设备数据 - 由设备生命周期管理
@@ -142,8 +210,6 @@ class _EnvironmentMonitorCardState extends ConsumerState<EnvironmentMonitorCard>
     
     super.dispose();
   }
-
-  bool get _deviceOnline => widget.device.isOnline;
 
   @override
   Widget build(BuildContext context) {
@@ -206,10 +272,10 @@ class _EnvironmentMonitorCardState extends ConsumerState<EnvironmentMonitorCard>
               height: 8,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: _deviceOnline ? AppColors.statusOnline : AppColors.danger,
+                color: _isOnline ? AppColors.statusOnline : AppColors.danger,
                 boxShadow: [
                   BoxShadow(
-                    color: (_deviceOnline ? AppColors.statusOnline : AppColors.danger)
+                    color: (_isOnline ? AppColors.statusOnline : AppColors.danger)
                         .withOpacity(0.5),
                     blurRadius: 6,
                   ),
@@ -219,7 +285,7 @@ class _EnvironmentMonitorCardState extends ConsumerState<EnvironmentMonitorCard>
             const SizedBox(width: 6),
             // 状态文本
             Text(
-              _deviceOnline ? '在线' : '离线',
+              _isOnline ? '在线' : '离线',
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w500,

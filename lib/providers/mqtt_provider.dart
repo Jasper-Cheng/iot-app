@@ -46,6 +46,9 @@ class MqttNotifier extends StateNotifier<MqttState> {
   
   // 设备数据处理器 Map: deviceSn -> handler
   final Map<String, void Function(Map<String, dynamic> data)> _deviceDataHandlers = {};
+  
+  // 设备状态处理器 Map: deviceSn -> handler
+  final Map<String, void Function(Map<String, dynamic> data)> _deviceStatusHandlers = {};
 
   MqttNotifier() : super(const MqttState()) {
     _init();
@@ -71,6 +74,18 @@ class MqttNotifier extends StateNotifier<MqttState> {
   void unregisterDeviceDataHandler(String deviceSn) {
     _deviceDataHandlers.remove(deviceSn);
     print('[MQTT] 注销设备数据处理器: $deviceSn');
+  }
+  
+  /// 注册设备状态处理器
+  void registerDeviceStatusHandler(String deviceSn, void Function(Map<String, dynamic> data) handler) {
+    _deviceStatusHandlers[deviceSn] = handler;
+    print('[MQTT] 注册设备状态处理器: $deviceSn');
+  }
+  
+  /// 注销设备状态处理器
+  void unregisterDeviceStatusHandler(String deviceSn) {
+    _deviceStatusHandlers.remove(deviceSn);
+    print('[MQTT] 注销设备状态处理器: $deviceSn');
   }
 
   void _init() {
@@ -217,10 +232,22 @@ class MqttNotifier extends StateNotifier<MqttState> {
   void _handleDeviceStatus(IoTMessage message) {
     try {
       final data = jsonDecode(message.payload);
-      print('设备状态: $data');
-      // 这里可以更新设备在线状态到 device provider
+      
+      // 从 topic 中提取设备 SN: app/{deviceSn}/status
+      final topicParts = message.topic.split('/');
+      if (topicParts.length >= 2) {
+        final deviceSn = topicParts[1];
+        
+        // 调用对应设备的状态处理器
+        final handler = _deviceStatusHandlers[deviceSn];
+        if (handler != null) {
+          handler(data);
+        } else {
+          print('[MQTT] 未找到设备 $deviceSn 的状态处理器');
+        }
+      }
     } catch (e) {
-      print('解析设备状态失败: $e');
+      print('[MQTT] 解析设备状态失败: $e');
     }
   }
 

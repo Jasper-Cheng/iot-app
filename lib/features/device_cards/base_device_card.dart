@@ -51,6 +51,7 @@ abstract class BaseDeviceCardState<T extends BaseDeviceCard> extends ConsumerSta
       final mqttNotifier = ref.read(mqttProvider.notifier);
       if (mqttNotifier.state.isConnected && !_isSubscribed) {
         mqttNotifier.subscribeDeviceData(widget.device.sn);
+        mqttNotifier.subscribeDeviceStatus(widget.device.sn);
         _isSubscribed = true;
       }
     });
@@ -154,13 +155,13 @@ abstract class BaseDeviceCardState<T extends BaseDeviceCard> extends ConsumerSta
       print('[${widget.device.sn}] 注销状态处理器失败: $e');
     }
     
-    // 取消订阅设备数据
+    // 取消订阅设备数据和状态
     if (_isSubscribed) {
       try {
         final mqttNotifier = ref.read(mqttProvider.notifier);
         if (mqttNotifier.state.isConnected) {
-          final topic = ApiConstants.mqttDeviceData(widget.device.sn);
-          mqttNotifier.unsubscribe(topic);
+          mqttNotifier.unsubscribe(ApiConstants.mqttDeviceData(widget.device.sn));
+          mqttNotifier.unsubscribe(ApiConstants.mqttDeviceStatus(widget.device.sn));
         }
       } catch (e) {
         print('[${widget.device.sn}] 取消订阅失败: $e');

@@ -184,7 +184,7 @@ class HomeScreen extends ConsumerWidget {
                         fontWeight: FontWeight.bold,
                       ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 4),
                 Row(
                   children: [
                     Expanded(
@@ -194,7 +194,7 @@ class HomeScreen extends ConsumerWidget {
                         },
                         borderRadius: BorderRadius.circular(12),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 2,vertical: 8),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
                           decoration: BoxDecoration(
                             color: Theme.of(context).cardColor,
                             borderRadius: BorderRadius.circular(12),
@@ -210,20 +210,20 @@ class HomeScreen extends ConsumerWidget {
                               Container(
                                 decoration: BoxDecoration(
                                   color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.5),
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: const Icon(
                                   Icons.power_settings_new,
-                                  size: 28,
+                                  size: 20,
                                 ),
                               ),
-                              const SizedBox(height: 6),
+                              const SizedBox(height: 4),
                               // 主标题
                               Text(
                                 '离家断电',
                                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 14,
+                                      fontSize: 12,
                                     ),
                                 textAlign: TextAlign.center,
                               ),
@@ -231,7 +231,7 @@ class HomeScreen extends ConsumerWidget {
                               Text(
                                 '关闭所有设备',
                                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      fontSize: 10,
+                                      fontSize: 9,
                                     ),
                                 textAlign: TextAlign.center,
                               ),
@@ -240,7 +240,7 @@ class HomeScreen extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: InkWell(
                         onTap: () {
@@ -248,7 +248,7 @@ class HomeScreen extends ConsumerWidget {
                         },
                         borderRadius: BorderRadius.circular(12),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 8),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
                           decoration: BoxDecoration(
                             color: Theme.of(context).cardColor,
                             borderRadius: BorderRadius.circular(12),
@@ -264,20 +264,20 @@ class HomeScreen extends ConsumerWidget {
                               Container(
                                 decoration: BoxDecoration(
                                   color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.5),
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: const Icon(
                                   Icons.power,
-                                  size: 28,
+                                  size: 20,
                                 ),
                               ),
-                              const SizedBox(height: 6),
+                              const SizedBox(height: 4),
                               // 主标题
                               Text(
                                 '回家通电',
                                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 14,
+                                      fontSize: 12,
                                     ),
                                 textAlign: TextAlign.center,
                               ),
@@ -285,7 +285,7 @@ class HomeScreen extends ConsumerWidget {
                               Text(
                                 '开启常用设备',
                                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      fontSize: 10,
+                                      fontSize: 9,
                                     ),
                                 textAlign: TextAlign.center,
                               ),
@@ -294,7 +294,7 @@ class HomeScreen extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: InkWell(
                         onTap: () {
@@ -302,7 +302,7 @@ class HomeScreen extends ConsumerWidget {
                         },
                         borderRadius: BorderRadius.circular(12),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 8),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
@@ -317,20 +317,20 @@ class HomeScreen extends ConsumerWidget {
                               Container(
                                 decoration: BoxDecoration(
                                   color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.5),
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: const Icon(
                                   Icons.flash_on,
-                                  size: 28,
+                                  size: 20,
                                 ),
                               ),
-                              const SizedBox(height: 6),
+                              const SizedBox(height: 4),
                               // 主标题
                               Text(
                                 '全部打开',
                                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 14,
+                                      fontSize: 12,
                                     ),
                                 textAlign: TextAlign.center,
                               ),
@@ -338,7 +338,7 @@ class HomeScreen extends ConsumerWidget {
                               Text(
                                 '开启所有设备',
                                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      fontSize: 10,
+                                      fontSize: 9,
                                     ),
                                 textAlign: TextAlign.center,
                               ),

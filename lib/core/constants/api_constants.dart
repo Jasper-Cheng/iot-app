@@ -12,8 +12,8 @@ class ApiConstants {
   static const String baseUrl = 'http://192.168.12.119:8000/api/v1/client';
   
   // 超时时间
-  static const Duration connectTimeout = Duration(seconds: 3);
-  static const Duration receiveTimeout = Duration(seconds: 3);
+  static const Duration connectTimeout = Duration(seconds: 30);
+  static const Duration receiveTimeout = Duration(seconds: 30);
 
   // 认证接口
   static const String register = '/auth/register';

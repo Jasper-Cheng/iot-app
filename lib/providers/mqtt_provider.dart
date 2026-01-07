@@ -43,6 +43,8 @@ class MqttNotifier extends StateNotifier<MqttState> {
   // Handler 回调函数
   void Function(Map<String, dynamic> data)? onSystemMessage;
   void Function(int homeId, Map<String, dynamic> data)? onFamilyMessage;
+  void Function(String deviceSn, Map<String, dynamic> data)? onDeviceNotice;
+  void Function(String accountId, Map<String, dynamic> data)? onClientNotice;
   
   // 设备数据处理器 Map: deviceSn -> handler
   final Map<String, void Function(Map<String, dynamic> data)> _deviceDataHandlers = {};
@@ -62,6 +64,16 @@ class MqttNotifier extends StateNotifier<MqttState> {
   /// 设置家庭消息处理器
   void setFamilyMessageHandler(void Function(int homeId, Map<String, dynamic> data) handler) {
     onFamilyMessage = handler;
+  }
+  
+  /// 设置设备消息通知处理器
+  void setDeviceNoticeHandler(void Function(String deviceSn, Map<String, dynamic> data) handler) {
+    onDeviceNotice = handler;
+  }
+  
+  /// 设置个人消息通知处理器
+  void setClientNoticeHandler(void Function(String accountId, Map<String, dynamic> data) handler) {
+    onClientNotice = handler;
   }
   
   /// 注册设备数据处理器
@@ -173,6 +185,16 @@ class MqttNotifier extends StateNotifier<MqttState> {
   void subscribeDeviceStatus(String sn) {
     subscribe(ApiConstants.mqttDeviceStatus(sn));
   }
+  
+  /// 订阅设备消息通知
+  void subscribeDeviceNotice(String sn) {
+    subscribe(ApiConstants.mqttDeviceNotice(sn));
+  }
+  
+  /// 订阅个人消息通知
+  void subscribeClientNotice(String accountId) {
+    subscribe(ApiConstants.mqttClientNotice(accountId));
+  }
 
   /// 发送设备控制指令
   void controlDevice(String sn, Map<String, dynamic> command) {
@@ -256,7 +278,7 @@ class MqttNotifier extends StateNotifier<MqttState> {
     try {
       final data = jsonDecode(message.payload);
       
-      // 根据 topic 区分系统消息和家庭消息
+      // 根据 topic 区分不同类型的通知
       if (message.topic == ApiConstants.mqttSystemNotice) {
         // 处理系统消息
         if (onSystemMessage != null) {
@@ -270,6 +292,26 @@ class MqttNotifier extends StateNotifier<MqttState> {
           final homeId = int.tryParse(parts[1]);
           if (homeId != null && onFamilyMessage != null) {
             onFamilyMessage!(homeId, data);
+          }
+        }
+      } else if (message.topic.startsWith('device/') && message.topic.endsWith('/notice')) {
+        // 处理设备消息通知
+        // 从 topic 中提取设备 SN: device/{deviceSn}/notice
+        final parts = message.topic.split('/');
+        if (parts.length >= 2) {
+          final deviceSn = parts[1];
+          if (onDeviceNotice != null) {
+            onDeviceNotice!(deviceSn, data);
+          }
+        }
+      } else if (message.topic.startsWith('client/') && message.topic.endsWith('/notice')) {
+        // 处理个人消息通知
+        // 从 topic 中提取账户ID: client/{accountId}/notice
+        final parts = message.topic.split('/');
+        if (parts.length >= 2) {
+          final accountId = parts[1];
+          if (onClientNotice != null) {
+            onClientNotice!(accountId, data);
           }
         }
       }

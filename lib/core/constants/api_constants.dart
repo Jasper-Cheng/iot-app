@@ -79,6 +79,8 @@ class ApiConstants {
   // MQTT 主题
   static const String mqttSystemNotice = 'system/notice';        // 系统通知
   static String mqttHomeNotice(int homeId) => 'home/$homeId/notice';  // 家庭通知
+  static String mqttDeviceNotice(String sn) => 'device/$sn/notice';    // 设备消息通知
+  static String mqttClientNotice(String accountId) => 'client/$accountId/notice';  // 个人消息通知
   static String mqttDeviceData(String sn) => 'client/$sn/data';          // 后台 -> 客户端（web/app）
   static String mqttDeviceStatus(String sn) => 'client/$sn/status';      // 后台 -> 客户端（web/app）
   static String mqttDeviceControl(String sn) => 'client/$sn/control';    // 客户端（web/app）-> 后台

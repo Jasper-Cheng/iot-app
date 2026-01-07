@@ -8,6 +8,7 @@ import '../../providers/mqtt_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/device_provider.dart';
 import '../../providers/message_provider.dart';
+import '../../core/constants/api_constants.dart';
 
 /// 主框架页面（包含底部导航）
 class MainScreen extends ConsumerStatefulWidget {
@@ -142,6 +143,20 @@ class _MainScreenState extends ConsumerState<MainScreen> with WidgetsBindingObse
       // TODO: 具体处理逻辑待实现
       // 例如：显示通知、更新家庭消息列表等
     });
+    
+    // 设置设备消息通知处理器
+    mqttNotifier.setDeviceNoticeHandler((deviceSn, data) {
+      print('[MQTT] 收到设备消息通知 (Device SN: $deviceSn): $data');
+      // 刷新消息列表
+      ref.read(messageProvider.notifier).loadMessages();
+    });
+    
+    // 设置个人消息通知处理器
+    mqttNotifier.setClientNoticeHandler((accountId, data) {
+      print('[MQTT] 收到个人消息通知 (Account ID: $accountId): $data');
+      // 刷新消息列表
+      ref.read(messageProvider.notifier).loadMessages();
+    });
   }
 
   @override
@@ -181,15 +196,32 @@ class _MainScreenState extends ConsumerState<MainScreen> with WidgetsBindingObse
       // 只在连接状态真正变化时输出日志
       if (previous?.connectionState != next.connectionState) {
         if (next.isConnected) {
-
+          final mqttNotifier = ref.read(mqttProvider.notifier);
+          
           // 如果有当前家庭 ID，自动订阅家庭消息
           final currentFamilyId = authState.account?.currentFamilyId;
           print('[MQTT] 检查家庭 ID - Account: ${authState.account != null ? "存在" : "null"}, CurrentFamilyId: $currentFamilyId');
           if (currentFamilyId != null) {
             print('[MQTT] 当前家庭 ID: $currentFamilyId，订阅家庭消息');
-            ref.read(mqttProvider.notifier).subscribeHomeNotice(currentFamilyId);
+            mqttNotifier.subscribeHomeNotice(currentFamilyId);
           } else {
             print('[MQTT] 当前无家庭 ID，跳过订阅家庭消息');
+          }
+          
+          // 订阅个人消息通知
+          if (authState.account != null) {
+            final accountId = authState.account!.id.toString();
+            print('[MQTT] 订阅个人消息通知 (Account ID: $accountId)');
+            mqttNotifier.subscribeClientNotice(accountId);
+          }
+          
+          // 订阅所有设备的设备消息通知
+          final deviceState = ref.read(deviceListProvider);
+          if (deviceState.devices.isNotEmpty) {
+            print('[MQTT] 订阅设备消息通知，设备数量: ${deviceState.devices.length}');
+            for (final device in deviceState.devices) {
+              mqttNotifier.subscribeDeviceNotice(device.sn);
+            }
           }
         } else {
           print('[MQTT] 已断开连接');
@@ -198,6 +230,36 @@ class _MainScreenState extends ConsumerState<MainScreen> with WidgetsBindingObse
         // 输出错误信息（如果有）
         if (next.error != null) {
           print('[MQTT] 错误: ${next.error}');
+        }
+      }
+    });
+    
+    // 监听设备列表变化，自动订阅新设备的设备消息通知
+    ref.listen<DeviceListState>(deviceListProvider, (previous, next) {
+      if (!mounted) return;
+      
+      final mqttState = ref.read(mqttProvider);
+      if (!mqttState.isConnected) return;
+      
+      final mqttNotifier = ref.read(mqttProvider.notifier);
+      
+      // 获取之前和现在的设备 SN 列表
+      final previousSns = previous?.devices.map((d) => d.sn).toSet() ?? <String>{};
+      final currentSns = next.devices.map((d) => d.sn).toSet();
+      
+      // 订阅新设备的设备消息通知
+      for (final sn in currentSns) {
+        if (!previousSns.contains(sn)) {
+          print('[MQTT] 新设备加入，订阅设备消息通知 (Device SN: $sn)');
+          mqttNotifier.subscribeDeviceNotice(sn);
+        }
+      }
+      
+      // 取消订阅已移除设备的设备消息通知
+      for (final sn in previousSns) {
+        if (!currentSns.contains(sn)) {
+          print('[MQTT] 设备移除，取消订阅设备消息通知 (Device SN: $sn)');
+          mqttNotifier.unsubscribe(ApiConstants.mqttDeviceNotice(sn));
         }
       }
     });

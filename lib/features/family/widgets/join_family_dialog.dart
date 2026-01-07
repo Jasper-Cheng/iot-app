@@ -47,32 +47,30 @@ class _JoinFamilyDialogState extends ConsumerState<JoinFamilyDialog> {
       _errorMessage = null;
     });
 
-    try {
-      final notifier = ref.read(familyListProvider.notifier);
-      await notifier.joinFamily(
-        _inviteCodeController.text.toUpperCase(),
-        nickname: _nicknameController.text.isEmpty
-            ? null
-            : _nicknameController.text,
-      );
+    final notifier = ref.read(familyListProvider.notifier);
+    final joinResult = await notifier.joinFamily(
+      _inviteCodeController.text.toUpperCase(),
+      nickname: _nicknameController.text.isEmpty
+          ? null
+          : _nicknameController.text,
+    );
 
-      // 成功时关闭弹窗
-      if (mounted) {
+    if (mounted) {
+      if (joinResult.success) {
+        // 成功时关闭弹窗
         Navigator.pop(context, true);
         Fluttertoast.showToast(
-          msg: '加入家庭成功',
+          msg: joinResult.message,
           toastLength: Toast.LENGTH_SHORT,
           gravity: ToastGravity.BOTTOM,
           backgroundColor: Colors.green,
           textColor: Colors.white,
         );
-      }
-    } catch (e) {
-      // 失败时保持弹窗打开，显示错误信息
-      if (mounted) {
+      } else {
+        // 失败时保持弹窗打开，显示错误信息
         setState(() {
           _isSubmitting = false;
-          _errorMessage = ErrorHandler.extractErrorMessage(e);
+          _errorMessage = joinResult.message;
         });
       }
     }

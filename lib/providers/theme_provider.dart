@@ -22,32 +22,54 @@ class ThemeModeNotifier extends StateNotifier<ThemeMode> {
   }
 
   /// 切换主题模式
-  Future<void> setThemeMode(ThemeMode mode) async {
-    state = mode;
-    await _storage.setString(StorageService.keyThemeMode, mode.toString());
+  /// 返回 ({bool success, String message}) 表示状态和消息
+  Future<({bool success, String message})> setThemeMode(ThemeMode mode) async {
+    try {
+      state = mode;
+      await _storage.setString(StorageService.keyThemeMode, mode.toString());
+      String modeName;
+      switch (mode) {
+        case ThemeMode.light:
+          modeName = '亮色';
+          break;
+        case ThemeMode.dark:
+          modeName = '暗色';
+          break;
+        case ThemeMode.system:
+          modeName = '跟随系统';
+          break;
+      }
+      return (success: true, message: '已切换到$modeName主题');
+    } catch (e) {
+      return (success: false, message: '切换主题失败');
+    }
   }
 
   /// 切换到亮色主题
-  Future<void> setLightMode() async {
-    await setThemeMode(ThemeMode.light);
+  /// 返回 ({bool success, String message}) 表示状态和消息
+  Future<({bool success, String message})> setLightMode() async {
+    return await setThemeMode(ThemeMode.light);
   }
 
   /// 切换到暗色主题
-  Future<void> setDarkMode() async {
-    await setThemeMode(ThemeMode.dark);
+  /// 返回 ({bool success, String message}) 表示状态和消息
+  Future<({bool success, String message})> setDarkMode() async {
+    return await setThemeMode(ThemeMode.dark);
   }
 
   /// 切换到系统主题
-  Future<void> setSystemMode() async {
-    await setThemeMode(ThemeMode.system);
+  /// 返回 ({bool success, String message}) 表示状态和消息
+  Future<({bool success, String message})> setSystemMode() async {
+    return await setThemeMode(ThemeMode.system);
   }
 
   /// 切换主题（亮色 <-> 暗色）
-  Future<void> toggleTheme() async {
+  /// 返回 ({bool success, String message}) 表示状态和消息
+  Future<({bool success, String message})> toggleTheme() async {
     if (state == ThemeMode.light) {
-      await setDarkMode();
+      return await setDarkMode();
     } else {
-      await setLightMode();
+      return await setLightMode();
     }
   }
 }

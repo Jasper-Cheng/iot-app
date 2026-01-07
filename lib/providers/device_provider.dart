@@ -43,7 +43,8 @@ class DeviceListNotifier extends StateNotifier<DeviceListState> {
   }
 
   /// 加载设备列表
-  Future<void> loadDevices() async {
+  /// 返回 ({bool success, String message}) 表示状态和消息
+  Future<({bool success, String message})> loadDevices() async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
@@ -51,56 +52,77 @@ class DeviceListNotifier extends StateNotifier<DeviceListState> {
       state = state.copyWith(
         devices: devices,
         isLoading: false,
+        error: null, // 清除之前的错误
       );
+      return (success: true, message: '设备列表加载成功');
     } catch (e) {
+      final errorMessage = ErrorHandler.extractErrorMessage(e);
       state = state.copyWith(
         isLoading: false,
-        error: ErrorHandler.extractErrorMessage(e),
+        error: errorMessage,
       );
+      return (success: false, message: errorMessage);
     }
   }
 
   /// 绑定设备
-  Future<void> bindDevice(String sn, {String? name}) async {
+  /// 返回 ({bool success, String message}) 表示状态和消息
+  Future<({bool success, String message})> bindDevice(String sn, {String? name}) async {
     try {
       await _repository.bindDevice(sn, name: name);
       // 如果当前在家庭模式下，重新加载设备列表（只显示家庭中的设备）
       // 如果不在家庭模式下，重新加载设备列表（显示个人设备）
       await loadDevices();
+      state = state.copyWith(error: null); // 清除之前的错误
+      return (success: true, message: '设备绑定成功');
     } catch (e) {
-      state = state.copyWith(error: ErrorHandler.extractErrorMessage(e));
-      rethrow; // 重新抛出异常，让UI层能够捕获
+      final errorMessage = ErrorHandler.extractErrorMessage(e);
+      state = state.copyWith(error: errorMessage);
+      return (success: false, message: errorMessage);
     }
   }
 
   /// 解绑设备
-  Future<void> unbindDevice(String sn) async {
+  /// 返回 ({bool success, String message}) 表示状态和消息
+  Future<({bool success, String message})> unbindDevice(String sn) async {
     try {
       await _repository.unbindDevice(sn);
       state = state.copyWith(
         devices: state.devices.where((d) => d.sn != sn).toList(),
+        error: null, // 清除之前的错误
       );
+      return (success: true, message: '设备已解绑');
     } catch (e) {
-      state = state.copyWith(error: ErrorHandler.extractErrorMessage(e));
+      final errorMessage = ErrorHandler.extractErrorMessage(e);
+      state = state.copyWith(error: errorMessage);
+      return (success: false, message: errorMessage);
     }
   }
 
   /// 更新设备名称
-  Future<void> updateDeviceName(int id, String name) async {
+  /// 返回 ({bool success, String message}) 表示状态和消息
+  Future<({bool success, String message})> updateDeviceName(int id, String name) async {
     try {
       final updatedDevice = await _repository.updateDeviceName(id, name);
       final devices = state.devices.map((d) {
         return d.id == id ? updatedDevice : d;
       }).toList();
-      state = state.copyWith(devices: devices);
+      state = state.copyWith(
+        devices: devices,
+        error: null, // 清除之前的错误
+      );
+      return (success: true, message: '设备名称已更新');
     } catch (e) {
-      state = state.copyWith(error: ErrorHandler.extractErrorMessage(e));
+      final errorMessage = ErrorHandler.extractErrorMessage(e);
+      state = state.copyWith(error: errorMessage);
+      return (success: false, message: errorMessage);
     }
   }
 
   /// 刷新设备列表
-  Future<void> refresh() async {
-    await loadDevices();
+  /// 返回 ({bool success, String message}) 表示状态和消息
+  Future<({bool success, String message})> refresh() async {
+    return await loadDevices();
   }
 }
 

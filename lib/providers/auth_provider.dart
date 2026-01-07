@@ -70,7 +70,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   /// 登录
-  Future<void> login(String phone, String password) async {
+  /// 返回 ({bool success, String message}) 表示状态和消息
+  Future<({bool success, String message})> login(String phone, String password) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
@@ -99,18 +100,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
         account: loginResponse.account,
         token: loginResponse.accessToken,
         isLoading: false,
+        error: null, // 清除之前的错误
       );
       
+      return (success: true, message: '登录成功');
     } catch (e) {
+      final errorMessage = ErrorHandler.extractErrorMessage(e);
       state = state.copyWith(
         isLoading: false,
-        error: ErrorHandler.extractErrorMessage(e),
+        error: errorMessage,
       );
+      return (success: false, message: errorMessage);
     }
   }
 
   /// 注册
-  Future<void> register({
+  /// 返回 ({bool success, String message}) 表示状态和消息
+  Future<({bool success, String message})> register({
     required String nickname,
     required String phone,
     required String password,
@@ -150,18 +156,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
         account: loginResponse.account,
         token: loginResponse.accessToken,
         isLoading: false,
+        error: null, // 清除之前的错误
       );
       
+      return (success: true, message: '注册成功');
     } catch (e) {
+      final errorMessage = ErrorHandler.extractErrorMessage(e);
       state = state.copyWith(
         isLoading: false,
-        error: ErrorHandler.extractErrorMessage(e),
+        error: errorMessage,
       );
+      return (success: false, message: errorMessage);
     }
   }
 
   /// 微信登录
-  Future<void> wechatLogin(String code) async {
+  /// 返回 ({bool success, String message}) 表示状态和消息
+  Future<({bool success, String message})> wechatLogin(String code) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
@@ -181,18 +192,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
         account: loginResponse.account,
         token: loginResponse.accessToken,
         isLoading: false,
+        error: null, // 清除之前的错误
       );
       
+      return (success: true, message: '微信登录成功');
     } catch (e) {
+      final errorMessage = ErrorHandler.extractErrorMessage(e);
       state = state.copyWith(
         isLoading: false,
-        error: ErrorHandler.extractErrorMessage(e),
+        error: errorMessage,
       );
+      return (success: false, message: errorMessage);
     }
   }
 
   /// 登出
-  Future<void> logout() async {
+  /// 返回 ({bool success, String message}) 表示状态和消息
+  Future<({bool success, String message})> logout() async {
     try {
       // 调用后端登出接口
       await _authRepository.logout();
@@ -208,13 +224,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       state = const AuthState();
     }
+    return (success: true, message: '已退出登录');
   }
 
   /// 注销账号
-  Future<void> deleteAccount() async {
+  /// 返回 ({bool success, String message}) 表示状态和消息
+  Future<({bool success, String message})> deleteAccount() async {
     try {
       await _authRepository.deleteAccount();
-    } finally {
       // 清除本地存储
       await _storage.remove(StorageService.keyToken);
       await _storage.remove(StorageService.keyTokenType);
@@ -222,6 +239,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
       await _storage.remove(StorageService.keyCurrentFamilyId);
 
       state = const AuthState();
+      return (success: true, message: '账号已注销');
+    } catch (e) {
+      final errorMessage = ErrorHandler.extractErrorMessage(e);
+      // 即使后端注销失败，也要清除本地数据
+      await _storage.remove(StorageService.keyToken);
+      await _storage.remove(StorageService.keyTokenType);
+      await _storage.remove(StorageService.keyUserInfo);
+      await _storage.remove(StorageService.keyCurrentFamilyId);
+
+      state = const AuthState();
+      return (success: false, message: errorMessage);
     }
   }
 
@@ -237,7 +265,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   /// 更新用户信息（调用API）
   /// 支持部分更新，只更新请求中提供的字段
-  Future<void> updateUserProfile({
+  /// 返回 ({bool success, String message}) 表示状态和消息
+  Future<({bool success, String message})> updateUserProfile({
     String? nickname,
     String? phone,
     String? gender,
@@ -268,18 +297,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(
         account: updatedAccount,
         isLoading: false,
+        error: null, // 清除之前的错误
       );
+      return (success: true, message: '用户信息更新成功');
     } catch (e) {
+      final errorMessage = ErrorHandler.extractErrorMessage(e);
       state = state.copyWith(
         isLoading: false,
-        error: ErrorHandler.extractErrorMessage(e),
+        error: errorMessage,
       );
-      rethrow;
+      return (success: false, message: errorMessage);
     }
   }
 
   /// 刷新用户信息（从服务器获取最新信息）
-  Future<void> refreshProfile() async {
+  /// 返回 ({bool success, String message}) 表示状态和消息
+  Future<({bool success, String message})> refreshProfile() async {
     try {
       final account = await _authRepository.getProfile();
       
@@ -290,9 +323,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
 
       state = state.copyWith(account: account);
+      return (success: true, message: '用户信息已刷新');
     } catch (e) {
       // 刷新失败不影响当前状态
+      final errorMessage = ErrorHandler.extractErrorMessage(e);
       print('[AuthProvider] 刷新用户信息失败: $e');
+      return (success: false, message: errorMessage);
     }
   }
 }

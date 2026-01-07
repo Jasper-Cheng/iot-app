@@ -130,7 +130,8 @@ class FamilyListNotifier extends StateNotifier<FamilyListState> {
 
 
   /// 创建家庭
-  Future<void> createFamily({
+  /// 返回 ({bool success, String message}) 表示状态和消息
+  Future<({bool success, String message})> createFamily({
     required String name,
     String? avatar,
     String? description,
@@ -143,18 +144,24 @@ class FamilyListNotifier extends StateNotifier<FamilyListState> {
       );
       state = state.copyWith(
         families: [...state.families, family],
+        error: null, // 清除之前的错误
       );
+      return (success: true, message: '家庭创建成功');
     } catch (e) {
-      state = state.copyWith(error: ErrorHandler.extractErrorMessage(e));
+      final errorMessage = ErrorHandler.extractErrorMessage(e);
+      state = state.copyWith(error: errorMessage);
+      return (success: false, message: errorMessage);
     }
   }
 
   /// 删除家庭
-  Future<void> deleteFamily(int id) async {
+  /// 返回 ({bool success, String message}) 表示状态和消息
+  Future<({bool success, String message})> deleteFamily(int id) async {
     try {
       await _familyRepository.deleteFamily(id);
       state = state.copyWith(
         families: state.families.where((f) => f.id != id).toList(),
+        error: null, // 清除之前的错误
       );
       // 如果删除的是当前家庭，清除当前家庭数据
       if (state.currentFamily?.id == id) {
@@ -163,22 +170,27 @@ class FamilyListNotifier extends StateNotifier<FamilyListState> {
           members: [],
         );
       }
+      return (success: true, message: '已删除家庭');
     } catch (e) {
-      state = state.copyWith(error: ErrorHandler.extractErrorMessage(e));
+      final errorMessage = ErrorHandler.extractErrorMessage(e);
+      state = state.copyWith(error: errorMessage);
+      return (success: false, message: errorMessage);
     }
   }
 
   /// 加入家庭
-  Future<void> joinFamily(String inviteCode, {String? nickname}) async {
+  /// 返回 ({bool success, String message}) 表示状态和消息
+  Future<({bool success, String message})> joinFamily(String inviteCode, {String? nickname}) async {
     try {
       // 调用API加入家庭，返回family_id
       await _familyRepository.joinFamily(inviteCode, nickname: nickname);
       // 重新加载家庭列表，获取最新的家庭信息（包括新加入的家庭）
       await loadFamilies();
+      return (success: true, message: '加入家庭成功');
     } catch (e) {
       final errorMessage = ErrorHandler.extractErrorMessage(e);
       state = state.copyWith(error: errorMessage);
-      rethrow; // 重新抛出异常，让调用者知道失败了
+      return (success: false, message: errorMessage);
     }
   }
 
@@ -232,7 +244,8 @@ class FamilyListNotifier extends StateNotifier<FamilyListState> {
   }
 
   /// 更新成员昵称
-  Future<void> updateMemberNickname(int memberId, String nickname) async {
+  /// 返回 ({bool success, String message}) 表示状态和消息
+  Future<({bool success, String message})> updateMemberNickname(int memberId, String nickname) async {
     try {
       final updatedMember = await _familyRepository.updateMemberNickname(
         memberId,
@@ -241,42 +254,60 @@ class FamilyListNotifier extends StateNotifier<FamilyListState> {
       final members = state.members.map((m) {
         return m.id == memberId ? updatedMember : m;
       }).toList();
-      state = state.copyWith(members: members);
+      state = state.copyWith(
+        members: members,
+        error: null, // 清除之前的错误
+      );
+      return (success: true, message: '昵称更新成功');
     } catch (e) {
-      state = state.copyWith(error: ErrorHandler.extractErrorMessage(e));
-      rethrow; // 重新抛出异常，让调用者知道失败了
+      final errorMessage = ErrorHandler.extractErrorMessage(e);
+      state = state.copyWith(error: errorMessage);
+      return (success: false, message: errorMessage);
     }
   }
 
   /// 移除成员
-  Future<void> removeMember(int memberId) async {
+  /// 返回 ({bool success, String message}) 表示状态和消息
+  Future<({bool success, String message})> removeMember(int memberId) async {
     try {
       await _familyRepository.removeMember(memberId);
       state = state.copyWith(
         members: state.members.where((m) => m.id != memberId).toList(),
+        error: null, // 清除之前的错误
       );
+      return (success: true, message: '成员已移除');
     } catch (e) {
-      state = state.copyWith(error: ErrorHandler.extractErrorMessage(e));
+      final errorMessage = ErrorHandler.extractErrorMessage(e);
+      state = state.copyWith(error: errorMessage);
+      return (success: false, message: errorMessage);
     }
   }
 
   /// 添加设备到家庭
-  Future<void> addDeviceToFamily(int familyId, int deviceId) async {
+  /// 返回 ({bool success, String message}) 表示状态和消息
+  Future<({bool success, String message})> addDeviceToFamily(int familyId, int deviceId) async {
     try {
       await _familyRepository.addDeviceToFamily(familyId, deviceId);
+      state = state.copyWith(error: null); // 清除之前的错误
+      return (success: true, message: '设备已添加到家庭');
     } catch (e) {
-      state = state.copyWith(error: ErrorHandler.extractErrorMessage(e));
-      rethrow;
+      final errorMessage = ErrorHandler.extractErrorMessage(e);
+      state = state.copyWith(error: errorMessage);
+      return (success: false, message: errorMessage);
     }
   }
 
   /// 从家庭移除设备
-  Future<void> removeDeviceFromFamily(int familyId, int deviceId) async {
+  /// 返回 ({bool success, String message}) 表示状态和消息
+  Future<({bool success, String message})> removeDeviceFromFamily(int familyId, int deviceId) async {
     try {
       await _familyRepository.removeDeviceFromFamily(familyId, deviceId);
+      state = state.copyWith(error: null); // 清除之前的错误
+      return (success: true, message: '设备已从家庭中移除');
     } catch (e) {
-      state = state.copyWith(error: ErrorHandler.extractErrorMessage(e));
-      rethrow;
+      final errorMessage = ErrorHandler.extractErrorMessage(e);
+      state = state.copyWith(error: errorMessage);
+      return (success: false, message: errorMessage);
     }
   }
 

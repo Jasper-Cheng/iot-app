@@ -513,11 +513,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           ElevatedButton(
             onPressed: () async {
-              await ref.read(authProvider.notifier).logout();
+              final logoutResult = await ref.read(authProvider.notifier).logout();
               if (context.mounted) {
                 Navigator.pop(context);
+                // 显示登出结果提示
+                Fluttertoast.showToast(
+                  msg: logoutResult.message,
+                  toastLength: Toast.LENGTH_SHORT,
+                  gravity: ToastGravity.BOTTOM,
+                  backgroundColor: logoutResult.success ? Colors.green : Colors.red,
+                  textColor: Colors.white,
+                );
                 // 登出成功后，跳转到登录页
-                context.go(AppRouter.login);
+                if (logoutResult.success) {
+                  context.go(AppRouter.login);
+                }
               }
             },
             child: const Text('确定'),
@@ -569,23 +579,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           ElevatedButton(
             onPressed: () async {
-              try {
-                await ref.read(authProvider.notifier).deleteAccount();
-                if (context.mounted) {
-                  Navigator.pop(context);
-                  // 注销成功后，跳转到登录页
+              final deleteResult = await ref.read(authProvider.notifier).deleteAccount();
+              if (context.mounted) {
+                Navigator.pop(context);
+                // 显示注销结果提示
+                Fluttertoast.showToast(
+                  msg: deleteResult.message,
+                  toastLength: Toast.LENGTH_SHORT,
+                  gravity: ToastGravity.BOTTOM,
+                  backgroundColor: deleteResult.success ? Colors.green : Colors.red,
+                  textColor: Colors.white,
+                );
+                // 注销成功后，跳转到登录页
+                if (deleteResult.success) {
                   context.go(AppRouter.login);
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  Navigator.pop(context);
-                  Fluttertoast.showToast(
-                    msg: '注销失败: ${ErrorHandler.extractErrorMessage(e)}',
-                    toastLength: Toast.LENGTH_SHORT,
-                    gravity: ToastGravity.BOTTOM,
-                    backgroundColor: Colors.red,
-                    textColor: Colors.white,
-                  );
                 }
               }
             },
@@ -699,49 +706,41 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
       _isSubmitting = true;
     });
 
-    try {
-      // 转换头像路径
-      String? avatarPath;
-      if (_selectedAvatar != null) {
-        final fileName = _selectedAvatar!.replaceFirst('assets/avatars/', '');
-        avatarPath = '/avatars/$fileName';
-      }
+    // 转换头像路径
+    String? avatarPath;
+    if (_selectedAvatar != null) {
+      final fileName = _selectedAvatar!.replaceFirst('assets/avatars/', '');
+      avatarPath = '/avatars/$fileName';
+    }
 
-      await ref.read(authProvider.notifier).updateUserProfile(
-            nickname: _nicknameController.text.trim(),
-            phone: _phoneController.text.trim(),
-            gender: _selectedGender ?? 'other', // 如果为 null，默认设置为 'other'
-            email: _emailController.text.trim().isEmpty
-                ? null
-                : _emailController.text.trim(),
-            avatar: avatarPath,
-            password: _passwordController.text.isEmpty
-                ? null
-                : _passwordController.text,
-          );
+    final updateResult = await ref.read(authProvider.notifier).updateUserProfile(
+          nickname: _nicknameController.text.trim(),
+          phone: _phoneController.text.trim(),
+          gender: _selectedGender ?? 'other', // 如果为 null，默认设置为 'other'
+          email: _emailController.text.trim().isEmpty
+              ? null
+              : _emailController.text.trim(),
+          avatar: avatarPath,
+          password: _passwordController.text.isEmpty
+              ? null
+              : _passwordController.text,
+        );
 
-      if (mounted) {
+    if (mounted) {
+      if (updateResult.success) {
         widget.onUpdate();
         Navigator.pop(context);
-        Fluttertoast.showToast(
-          msg: '用户信息更新成功',
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: Colors.green,
-          textColor: Colors.white,
-        );
       }
-    } catch (e) {
-      if (mounted) {
-        Fluttertoast.showToast(
-          msg: '更新失败: ${ErrorHandler.extractErrorMessage(e)}',
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-        );
-      }
-    } finally {
+      Fluttertoast.showToast(
+        msg: updateResult.message,
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: updateResult.success ? Colors.green : Colors.red,
+        textColor: Colors.white,
+      );
+    }
+    
+    if (mounted) {
       if (mounted) {
         setState(() {
           _isSubmitting = false;

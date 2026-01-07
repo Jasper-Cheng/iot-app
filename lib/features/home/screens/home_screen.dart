@@ -630,36 +630,26 @@ class HomeScreen extends ConsumerWidget {
     );
 
     if (confirm == true) {
-      try {
-        // 解绑设备
-        await ref.read(deviceListProvider.notifier).unbindDevice(device.sn);
-        
+      // 解绑设备
+      final unbindResult = await ref.read(deviceListProvider.notifier).unbindDevice(device.sn);
+      
+      if (unbindResult.success) {
         // 刷新设备列表和设备消息
         await Future.wait([
           ref.read(deviceListProvider.notifier).refresh(),
           ref.read(messageProvider.notifier).loadDeviceMessages(status: 'new'),
         ]);
-        
-        if (context.mounted) {
-          Navigator.pop(context); // 关闭侧边栏
-          Fluttertoast.showToast(
-            msg: '设备已解绑',
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-            backgroundColor: Colors.green,
-            textColor: Colors.white,
-          );
-        }
-      } catch (e) {
-        if (context.mounted) {
-          Fluttertoast.showToast(
-            msg: '解绑失败: ${ErrorHandler.extractErrorMessage(e)}',
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-            backgroundColor: Colors.red,
-            textColor: Colors.white,
-          );
-        }
+      }
+      
+      if (context.mounted) {
+        Navigator.pop(context); // 关闭侧边栏
+        Fluttertoast.showToast(
+          msg: unbindResult.message,
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: unbindResult.success ? Colors.green : Colors.red,
+          textColor: Colors.white,
+        );
       }
     }
   }
@@ -701,29 +691,17 @@ class HomeScreen extends ConsumerWidget {
     );
 
     if (result == true) {
-      try {
-        final newName = nameController.text.trim();
-        await ref.read(deviceListProvider.notifier).updateDeviceName(device.id, newName);
-        
-        if (context.mounted) {
-          Fluttertoast.showToast(
-            msg: '设备名称已更新',
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-            backgroundColor: Colors.green,
-            textColor: Colors.white,
-          );
-        }
-      } catch (e) {
-        if (context.mounted) {
-          Fluttertoast.showToast(
-            msg: '更新失败: ${ErrorHandler.extractErrorMessage(e)}',
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-            backgroundColor: Colors.red,
-            textColor: Colors.white,
-          );
-        }
+      final newName = nameController.text.trim();
+      final updateResult = await ref.read(deviceListProvider.notifier).updateDeviceName(device.id, newName);
+      
+      if (context.mounted) {
+        Fluttertoast.showToast(
+          msg: updateResult.message,
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: updateResult.success ? Colors.green : Colors.red,
+          textColor: Colors.white,
+        );
       }
     }
   }
@@ -789,38 +767,27 @@ class HomeScreen extends ConsumerWidget {
           ElevatedButton(
             onPressed: () async {
               if (snController.text.isNotEmpty) {
-                try {
-                  await ref.read(deviceListProvider.notifier).bindDevice(
-                        snController.text,
-                        name: nameController.text.isEmpty
-                            ? null
-                            : nameController.text,
-                      );
-                  
+                final bindResult = await ref.read(deviceListProvider.notifier).bindDevice(
+                      snController.text,
+                      name: nameController.text.isEmpty
+                          ? null
+                          : nameController.text,
+                    );
+                
+                if (bindResult.success) {
                   // 刷新设备消息
                   await ref.read(messageProvider.notifier).loadDeviceMessages(status: 'new');
-                  
-                  if (context.mounted) {
-                    Navigator.pop(context);
-                    Fluttertoast.showToast(
-                      msg: '设备绑定成功',
-                      toastLength: Toast.LENGTH_SHORT,
-                      gravity: ToastGravity.BOTTOM,
-                      backgroundColor: Colors.green,
-                      textColor: Colors.white,
-                    );
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    Navigator.pop(context);
-                    Fluttertoast.showToast(
-                      msg: '设备绑定失败: ${ErrorHandler.extractErrorMessage(e)}',
-                      toastLength: Toast.LENGTH_SHORT,
-                      gravity: ToastGravity.BOTTOM,
-                      backgroundColor: Colors.red,
-                      textColor: Colors.white,
-                    );
-                  }
+                }
+                
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  Fluttertoast.showToast(
+                    msg: bindResult.message,
+                    toastLength: Toast.LENGTH_SHORT,
+                    gravity: ToastGravity.BOTTOM,
+                    backgroundColor: bindResult.success ? Colors.green : Colors.red,
+                    textColor: Colors.white,
+                  );
                 }
               }
             },
@@ -985,13 +952,13 @@ class _DeviceMessagesTab extends ConsumerWidget {
                   opacity: deviceMessages.isEmpty ? 0.5 : 1.0,
                   child: InkWell(
                     onTap: deviceMessages.isEmpty ? null : () async {
-                      await ref.read(messageProvider.notifier).markAllDeviceMessagesAsRead();
+                      final markResult = await ref.read(messageProvider.notifier).markAllDeviceMessagesAsRead();
                       if (context.mounted) {
                         Fluttertoast.showToast(
-                          msg: '已全部标记为已读',
+                          msg: markResult.message,
                           toastLength: Toast.LENGTH_SHORT,
                           gravity: ToastGravity.BOTTOM,
-                          backgroundColor: Colors.green,
+                          backgroundColor: markResult.success ? Colors.green : Colors.red,
                           textColor: Colors.white,
                         );
                       }
@@ -1295,11 +1262,21 @@ class _MessageLogDialogState extends State<_MessageLogDialog> {
 
   Future<void> _loadReadMessages() async {
     setState(() => _isLoading = true);
-    final messages = await widget.ref.read(messageProvider.notifier).loadReadDeviceMessages();
+    final loadResult = await widget.ref.read(messageProvider.notifier).loadReadDeviceMessages();
     setState(() {
-      _readMessages = messages;
+      _readMessages = loadResult.messages;
       _isLoading = false;
     });
+    // 如果加载失败，可以显示错误提示（可选）
+    if (!loadResult.success && mounted) {
+      Fluttertoast.showToast(
+        msg: loadResult.message,
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+      );
+    }
   }
 
   @override

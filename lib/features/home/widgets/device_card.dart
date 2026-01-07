@@ -252,15 +252,17 @@ class DeviceCard extends ConsumerWidget {
             onPressed: () async {
               final newName = nameController.text.trim();
               if (newName.isNotEmpty && newName != device.name) {
-                await ref
+                final updateResult = await ref
                     .read(deviceListProvider.notifier)
                     .updateDeviceName(device.id, newName);
                 if (context.mounted) {
                   Navigator.pop(context);
                   Fluttertoast.showToast(
-                    msg: '设备名称已更新',
+                    msg: updateResult.message,
                     toastLength: Toast.LENGTH_SHORT,
                     gravity: ToastGravity.BOTTOM,
+                    backgroundColor: updateResult.success ? Colors.green : Colors.red,
+                    textColor: Colors.white,
                   );
                 }
               } else {
@@ -288,15 +290,17 @@ class DeviceCard extends ConsumerWidget {
           ),
           ElevatedButton(
             onPressed: () async {
-              await ref
+              final unbindResult = await ref
                   .read(deviceListProvider.notifier)
                   .unbindDevice(device.sn);
               if (context.mounted) {
                 Navigator.pop(context);
                 Fluttertoast.showToast(
-                  msg: '设备已解绑',
+                  msg: unbindResult.message,
                   toastLength: Toast.LENGTH_SHORT,
                   gravity: ToastGravity.BOTTOM,
+                  backgroundColor: unbindResult.success ? Colors.green : Colors.red,
+                  textColor: Colors.white,
                 );
               }
             },

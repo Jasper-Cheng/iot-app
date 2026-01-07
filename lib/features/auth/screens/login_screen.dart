@@ -100,10 +100,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       await _saveRememberedCredentials();
       
       // 执行登录
-      await ref.read(authProvider.notifier).login(
+      final loginResult = await ref.read(authProvider.notifier).login(
             _phoneController.text,
             _passwordController.text,
           );
+      
+      // 显示登录结果提示（登录成功时会自动跳转，这里只显示错误）
+      if (!loginResult.success && mounted) {
+        Fluttertoast.showToast(
+          msg: loginResult.message,
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.CENTER,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+        );
+      }
     }
   }
 
@@ -143,7 +154,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
       if (result.isSuccessful && result.code != null) {
         // 获取到授权码，调用后端登录接口
-        await ref.read(authProvider.notifier).wechatLogin(result.code!);
+        final wechatLoginResult = await ref.read(authProvider.notifier).wechatLogin(result.code!);
+        if (!wechatLoginResult.success && mounted) {
+          Fluttertoast.showToast(
+            msg: wechatLoginResult.message,
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.CENTER,
+            backgroundColor: Colors.red,
+            textColor: Colors.white,
+          );
+        }
       } else {
         if (mounted) {
           Fluttertoast.showToast(

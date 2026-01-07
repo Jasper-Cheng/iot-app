@@ -61,21 +61,13 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
                           _showRewardRulesDialog(context);
                         },
                         onCheckIn: () async {
-                          final record = await notifier.checkIn();
-                          if (record != null && mounted) {
+                          final checkInResult = await notifier.checkIn();
+                          if (mounted) {
                             Fluttertoast.showToast(
-                              msg: '签到成功！获得 ${record.pointsEarned} 积分',
+                              msg: checkInResult.message,
                               toastLength: Toast.LENGTH_SHORT,
                               gravity: ToastGravity.BOTTOM,
-                              backgroundColor: Colors.green,
-                              textColor: Colors.white,
-                            );
-                          } else if (state.error != null && mounted) {
-                            Fluttertoast.showToast(
-                              msg: state.error!,
-                              toastLength: Toast.LENGTH_SHORT,
-                              gravity: ToastGravity.BOTTOM,
-                              backgroundColor: Colors.orange,
+                              backgroundColor: checkInResult.success ? Colors.green : Colors.orange,
                               textColor: Colors.white,
                             );
                           }
@@ -118,7 +110,17 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
   void _showCheckInRecordDialog(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(checkinProvider.notifier);
     // 打开弹窗时加载第一页数据
-    notifier.loadCheckInHistory();
+    notifier.loadCheckInHistory().then((result) {
+      if (!result.success && context.mounted) {
+        Fluttertoast.showToast(
+          msg: result.message,
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+        );
+      }
+    });
 
     showDialog(
       context: context,

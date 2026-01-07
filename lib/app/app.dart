@@ -21,8 +21,8 @@ class App extends ConsumerWidget {
     ApiInterceptor.setRouter(router);
     
     // 设置登出回调到拦截器（用于401时更新认证状态）
-    ApiInterceptor.setLogoutCallback(() {
-      ref.read(authProvider.notifier).logout();
+    ApiInterceptor.setLogoutCallback(() async {
+      await ref.read(authProvider.notifier).logout();
     });
 
     // 设置系统UI样式

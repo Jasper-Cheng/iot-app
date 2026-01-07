@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:go_router/go_router.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../app/routes/router.dart';
@@ -53,7 +54,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         avatarPath = '/avatars/$fileName';
       }
 
-      await ref.read(authProvider.notifier).register(
+      final registerResult = await ref.read(authProvider.notifier).register(
             nickname: _nicknameController.text.trim(),
             phone: _phoneController.text.trim(),
             password: _passwordController.text,
@@ -63,6 +64,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 : _emailController.text.trim(),
             avatar: avatarPath,
           );
+      
+      // 显示注册结果提示（注册成功时会自动跳转，这里只显示错误）
+      if (!registerResult.success && mounted) {
+        Fluttertoast.showToast(
+          msg: registerResult.message,
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.CENTER,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+        );
+      }
     }
   }
 

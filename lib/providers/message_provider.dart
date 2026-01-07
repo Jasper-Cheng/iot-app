@@ -50,7 +50,8 @@ class MessageNotifier extends StateNotifier<MessageState> {
   }
 
   /// 加载消息（初始只加载未读设备消息）
-  Future<void> loadMessages() async {
+  /// 返回 ({bool success, String message}) 表示状态和消息
+  Future<({bool success, String message})> loadMessages() async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
@@ -65,30 +66,37 @@ class MessageNotifier extends StateNotifier<MessageState> {
         deviceMessages: deviceMessages,
         systemMessages: systemMessages,
         isLoading: false,
+        error: null, // 清除之前的错误
       );
+      return (success: true, message: '消息加载成功');
     } catch (e) {
+      final errorMessage = ErrorHandler.extractErrorMessage(e);
       state = state.copyWith(
         isLoading: false,
-        error: ErrorHandler.extractErrorMessage(e),
+        error: errorMessage,
       );
+      return (success: false, message: errorMessage);
     }
   }
 
   /// 加载已读设备消息（用于消息日志）
-  Future<List<DeviceMessage>> loadReadDeviceMessages() async {
+  /// 返回 ({bool success, String message, List<DeviceMessage> messages}) 表示状态、消息和消息列表
+  Future<({bool success, String message, List<DeviceMessage> messages})> loadReadDeviceMessages() async {
     try {
       final messages = await _repository.getDeviceMessages(
         familyId: _currentFamilyId,
         status: 'read',
       );
-      return messages;
+      return (success: true, message: '已读消息加载成功', messages: messages);
     } catch (e) {
-      return [];
+      final errorMessage = ErrorHandler.extractErrorMessage(e);
+      return (success: false, message: errorMessage, messages: <DeviceMessage>[]);
     }
   }
 
   /// 加载设备消息
-  Future<void> loadDeviceMessages({
+  /// 返回 ({bool success, String message}) 表示状态和消息
+  Future<({bool success, String message})> loadDeviceMessages({
     List<String>? level,
     String? status,
     int skip = 0,
@@ -107,17 +115,22 @@ class MessageNotifier extends StateNotifier<MessageState> {
       state = state.copyWith(
         deviceMessages: messages,
         isLoading: false,
+        error: null, // 清除之前的错误
       );
+      return (success: true, message: '设备消息加载成功');
     } catch (e) {
+      final errorMessage = ErrorHandler.extractErrorMessage(e);
       state = state.copyWith(
         isLoading: false,
-        error: ErrorHandler.extractErrorMessage(e),
+        error: errorMessage,
       );
+      return (success: false, message: errorMessage);
     }
   }
 
   /// 加载系统消息
-  Future<void> loadSystemMessages({String? type}) async {
+  /// 返回 ({bool success, String message}) 表示状态和消息
+  Future<({bool success, String message})> loadSystemMessages({String? type}) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
@@ -125,48 +138,63 @@ class MessageNotifier extends StateNotifier<MessageState> {
       state = state.copyWith(
         systemMessages: messages,
         isLoading: false,
+        error: null, // 清除之前的错误
       );
+      return (success: true, message: '系统消息加载成功');
     } catch (e) {
+      final errorMessage = ErrorHandler.extractErrorMessage(e);
       state = state.copyWith(
         isLoading: false,
-        error: ErrorHandler.extractErrorMessage(e),
+        error: errorMessage,
       );
+      return (success: false, message: errorMessage);
     }
   }
 
   /// 标记设备消息为已读
-  Future<void> markDeviceMessageAsRead(int id) async {
+  /// 返回 ({bool success, String message}) 表示状态和消息
+  Future<({bool success, String message})> markDeviceMessageAsRead(int id) async {
     try {
       await _repository.markMessageAsRead(id, familyId: _currentFamilyId);
-      
+
       // 从未读列表中移除该消息
       final updatedMessages = state.deviceMessages.where((msg) => msg.id != id).toList();
 
       state = state.copyWith(
         deviceMessages: updatedMessages,
+        error: null, // 清除之前的错误
       );
+      return (success: true, message: '消息已标记为已读');
     } catch (e) {
-      state = state.copyWith(error: ErrorHandler.extractErrorMessage(e));
+      final errorMessage = ErrorHandler.extractErrorMessage(e);
+      state = state.copyWith(error: errorMessage);
+      return (success: false, message: errorMessage);
     }
   }
 
   /// 标记所有设备消息为已读
-  Future<void> markAllDeviceMessagesAsRead() async {
+  /// 返回 ({bool success, String message}) 表示状态和消息
+  Future<({bool success, String message})> markAllDeviceMessagesAsRead() async {
     try {
       await _repository.markAllAsRead(familyId: _currentFamilyId);
-      
+
       // 清空未读消息列表
       state = state.copyWith(
         deviceMessages: [],
+        error: null, // 清除之前的错误
       );
+      return (success: true, message: '已全部标记为已读');
     } catch (e) {
-      state = state.copyWith(error: ErrorHandler.extractErrorMessage(e));
+      final errorMessage = ErrorHandler.extractErrorMessage(e);
+      state = state.copyWith(error: errorMessage);
+      return (success: false, message: errorMessage);
     }
   }
 
   /// 刷新
-  Future<void> refresh() async {
-    await loadMessages();
+  /// 返回 ({bool success, String message}) 表示状态和消息
+  Future<({bool success, String message})> refresh() async {
+    return await loadMessages();
   }
 }
 
@@ -175,7 +203,7 @@ final messageProvider = StateNotifierProvider<MessageNotifier, MessageState>((re
   // 只监听 currentFamilyId 的变化，忽略其他字段（如昵称、头像等）的变化
   // 这样修改用户信息时不会导致 messageProvider 重新创建，但切换家庭时会自动重建
   final currentFamilyId = ref.watch(authProvider.select((state) => state.account?.currentFamilyId));
-  
+
   return MessageNotifier(
     MessageRepository(),
     currentFamilyId: currentFamilyId,

@@ -71,7 +71,8 @@ class CheckinNotifier extends StateNotifier<CheckinState> {
   }
 
   /// 加载数据
-  Future<void> loadData({int? year, int? month}) async {
+  /// 返回 ({bool success, String message}) 表示状态和消息
+  Future<({bool success, String message})> loadData({int? year, int? month}) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
@@ -91,21 +92,27 @@ class CheckinNotifier extends StateNotifier<CheckinState> {
         stats: stats,
         hasCheckedInToday: hasCheckedInToday,
         isLoading: false,
+        error: null, // 清除之前的错误
       );
+      return (success: true, message: '数据加载成功');
     } catch (e) {
+      final errorMessage = ErrorHandler.extractErrorMessage(e);
       state = state.copyWith(
         isLoading: false,
-        error: ErrorHandler.extractErrorMessage(e),
+        error: errorMessage,
       );
+      return (success: false, message: errorMessage);
     }
   }
 
   /// 加载打卡历史（第一页）
-  Future<void> loadCheckInHistory() async {
+  /// 返回 ({bool success, String message}) 表示状态和消息
+  Future<({bool success, String message})> loadCheckInHistory() async {
     state = state.copyWith(
       isLoadingHistory: true,
       historyPage: 1,
       hasMoreHistory: true,
+      error: null, // 清除之前的错误
     );
 
     try {
@@ -115,17 +122,23 @@ class CheckinNotifier extends StateNotifier<CheckinState> {
         isLoadingHistory: false,
         hasMoreHistory: history.length >= 20,
       );
+      return (success: true, message: '打卡历史加载成功');
     } catch (e) {
+      final errorMessage = ErrorHandler.extractErrorMessage(e);
       state = state.copyWith(
         isLoadingHistory: false,
-        error: ErrorHandler.extractErrorMessage(e),
+        error: errorMessage,
       );
+      return (success: false, message: errorMessage);
     }
   }
 
   /// 加载更多打卡历史（分页）
-  Future<void> loadMoreCheckInHistory() async {
-    if (state.isLoadingHistory || !state.hasMoreHistory) return;
+  /// 返回 ({bool success, String message}) 表示状态和消息
+  Future<({bool success, String message})> loadMoreCheckInHistory() async {
+    if (state.isLoadingHistory || !state.hasMoreHistory) {
+      return (success: false, message: '无法加载更多数据');
+    }
 
     state = state.copyWith(isLoadingHistory: true);
 
@@ -138,17 +151,22 @@ class CheckinNotifier extends StateNotifier<CheckinState> {
         historyPage: nextPage,
         isLoadingHistory: false,
         hasMoreHistory: history.length >= 20,
+        error: null, // 清除之前的错误
       );
+      return (success: true, message: '加载成功');
     } catch (e) {
+      final errorMessage = ErrorHandler.extractErrorMessage(e);
       state = state.copyWith(
         isLoadingHistory: false,
-        error: ErrorHandler.extractErrorMessage(e),
+        error: errorMessage,
       );
+      return (success: false, message: errorMessage);
     }
   }
 
   /// 加载指定月份的日历数据
-  Future<void> loadCalendarForMonth(int year, int month) async {
+  /// 返回 ({bool success, String message}) 表示状态和消息
+  Future<({bool success, String message})> loadCalendarForMonth(int year, int month) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
@@ -157,11 +175,14 @@ class CheckinNotifier extends StateNotifier<CheckinState> {
         checkedInDates: checkedInDates,
         isLoading: false,
       );
+      return (success: true, message: '日历数据加载成功');
     } catch (e) {
+      final errorMessage = ErrorHandler.extractErrorMessage(e);
       state = state.copyWith(
         isLoading: false,
-        error: ErrorHandler.extractErrorMessage(e),
+        error: errorMessage,
       );
+      return (success: false, message: errorMessage);
     }
   }
 
@@ -182,10 +203,12 @@ class CheckinNotifier extends StateNotifier<CheckinState> {
   }
 
   /// 签到
-  Future<CheckinRecord?> checkIn() async {
+  /// 返回 ({bool success, String message, CheckinRecord? record}) 表示状态、消息和签到记录
+  Future<({bool success, String message, CheckinRecord? record})> checkIn() async {
     if (state.hasCheckedInToday) {
-      state = state.copyWith(error: '今天已经签到过了');
-      return null;
+      final errorMessage = '今天已经签到过了';
+      state = state.copyWith(error: errorMessage);
+      return (success: false, message: errorMessage, record: null);
     }
 
     try {
@@ -206,16 +229,18 @@ class CheckinNotifier extends StateNotifier<CheckinState> {
       // 重新加载数据
       await loadData();
       
-      return record;
+      return (success: true, message: '签到成功！获得 ${record.pointsEarned} 积分', record: record);
     } catch (e) {
-      state = state.copyWith(error: ErrorHandler.extractErrorMessage(e));
-      return null;
+      final errorMessage = ErrorHandler.extractErrorMessage(e);
+      state = state.copyWith(error: errorMessage);
+      return (success: false, message: errorMessage, record: null);
     }
   }
 
   /// 刷新
-  Future<void> refresh() async {
-    await loadData();
+  /// 返回 ({bool success, String message}) 表示状态和消息
+  Future<({bool success, String message})> refresh() async {
+    return await loadData();
   }
 }
 

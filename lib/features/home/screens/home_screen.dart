@@ -161,9 +161,10 @@ class HomeScreen extends ConsumerWidget {
 
   /// 构建侧边栏
   Widget _buildDrawer(BuildContext context, WidgetRef ref) {
-    final deviceState = ref.watch(deviceListProvider);
-    final authState = ref.watch(authProvider);
-    final isFamilyMode = authState.account?.currentFamilyId != null;
+    // 使用 select 只监听需要的字段，减少不必要的重建
+    final devices = ref.watch(deviceListProvider.select((state) => state.devices));
+    final currentFamilyId = ref.watch(authProvider.select((state) => state.account?.currentFamilyId));
+    final isFamilyMode = currentFamilyId != null;
     
     return Drawer(
       width: 280,
@@ -365,7 +366,7 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 const Spacer(),
                 Text(
-                  '${deviceState.devices.length} 个设备',
+                  '${devices.length} 个设备',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context).hintColor,
                       ),
@@ -375,7 +376,7 @@ class HomeScreen extends ConsumerWidget {
           ),
           // 设备列表
           Expanded(
-            child: deviceState.devices.isEmpty
+            child: devices.isEmpty
                 ? Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -396,10 +397,12 @@ class HomeScreen extends ConsumerWidget {
                     ),
                   )
                 : ListView.builder(
+                    // 添加 key 以优化列表重建
+                    key: const ValueKey('drawer_device_list'),
                     padding: EdgeInsets.zero,
-                    itemCount: deviceState.devices.length,
+                    itemCount: devices.length,
                     itemBuilder: (context, index) {
-                      final device = deviceState.devices[index];
+                      final device = devices[index];
                       return _buildDrawerDeviceItem(context, ref, device);
                     },
                   ),
@@ -415,11 +418,14 @@ class HomeScreen extends ConsumerWidget {
     final isOnline = device.isOnline;
     final modelCode = DeviceMapping.getModelCodeBySN(device.sn);
     final deviceIcon = DeviceMapping.getDeviceIconByModel(modelCode);
-    final authState = ref.watch(authProvider);
-    final currentUserId = authState.account?.id;
+    
+    // 使用 select 只监听需要的字段，而不是整个 authProvider
+    final currentUserId = ref.watch(authProvider.select((state) => state.account?.id));
     final isCurrentUserDevice = device.accountId != null && device.accountId == currentUserId;
     
+    // 使用 key 优化列表项重建
     return Card(
+      key: ValueKey(device.id),
       margin: EdgeInsets.symmetric(vertical: 4),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 12,vertical: 4),

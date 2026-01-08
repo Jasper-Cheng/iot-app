@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mqtt_client/mqtt_client.dart';
 import '../home/screens/home_screen.dart';
 import '../family/screens/family_screen.dart';
 import '../settings/screens/settings_screen.dart';
@@ -39,7 +40,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
 
   void _loadInitialData() {
     final authState = ref.read(authProvider);
-    
+
     // 如果已登录，加载数据并连接 MQTT
     if (authState.isAuthenticated && authState.account != null && !_hasLoadedData) {
       print('[MainScreen] 初始化时检测到已登录，加载数据');
@@ -51,7 +52,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
       ]).catchError((error) {
         print('[MainScreen] 加载数据失败: $error');
       });
-      
+
       // 连接 MQTT
       final mqttState = ref.read(mqttProvider);
       if (mqttState.connectionState != MqttConnectionState.connected) {
@@ -66,28 +67,28 @@ class _MainScreenState extends ConsumerState<MainScreen> {
 
   void _setupMqttHandlers() {
     final mqttNotifier = ref.read(mqttProvider.notifier);
-    
+
     // 设置系统消息处理器
     mqttNotifier.setSystemMessageHandler((data) {
       print('[MQTT] 收到系统消息: $data');
       // TODO: 具体处理逻辑待实现
       // 例如：显示通知、更新系统消息列表等
     });
-    
+
     // 设置家庭消息处理器
     mqttNotifier.setFamilyMessageHandler((homeId, data) {
       print('[MQTT] 收到家庭消息 (Home ID: $homeId): $data');
       // TODO: 具体处理逻辑待实现
       // 例如：显示通知、更新家庭消息列表等
     });
-    
+
     // 设置设备消息通知处理器
     mqttNotifier.setDeviceNoticeHandler((deviceSn, data) {
       print('[MQTT] 收到设备消息通知 (Device SN: $deviceSn): $data');
       // 刷新消息列表
       ref.read(messageProvider.notifier).loadMessages();
     });
-    
+
     // 设置个人消息通知处理器
     mqttNotifier.setClientNoticeHandler((accountId, data) {
       print('[MQTT] 收到个人消息通知 (Account ID: $accountId): $data');
@@ -99,7 +100,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
-    
+
     // 监听认证状态变化，登录成功后加载数据
     ref.listen<AuthState>(authProvider, (previous, next) {
       // 如果退出登录，重置加载标志
@@ -108,11 +109,11 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         print('[MainScreen] 用户退出登录，重置加载标志');
         return;
       }
-      
+
       // 从未登录变为已登录时，加载数据
       // 检查：当前已登录 && 不在加载中 && 之前未登录 && 有账户信息 && 尚未加载过数据
-      if (next.isAuthenticated && 
-          !next.isLoading && 
+      if (next.isAuthenticated &&
+          !next.isLoading &&
           (previous == null || !previous.isAuthenticated) &&
           next.account != null &&
           !_hasLoadedData) {
@@ -127,14 +128,14 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         });
       }
     });
-    
+
     // 监听 MQTT 连接状态变化（必须在 build 方法中使用 ref.listen）
     ref.listen<MqttState>(mqttProvider, (previous, next) {
       // 只在连接状态真正变化时输出日志
       if (previous?.connectionState != next.connectionState) {
         if (next.isConnected) {
           final mqttNotifier = ref.read(mqttProvider.notifier);
-          
+
           // 如果有当前家庭 ID，自动订阅家庭消息
           final currentFamilyId = authState.account?.currentFamilyId;
           print('[MQTT] 检查家庭 ID - Account: ${authState.account != null ? "存在" : "null"}, CurrentFamilyId: $currentFamilyId');
@@ -144,14 +145,14 @@ class _MainScreenState extends ConsumerState<MainScreen> {
           } else {
             print('[MQTT] 当前无家庭 ID，跳过订阅家庭消息');
           }
-          
+
           // 订阅个人消息通知
           if (authState.account != null) {
             final accountId = authState.account!.id.toString();
             print('[MQTT] 订阅个人消息通知 (Account ID: $accountId)');
             mqttNotifier.subscribeClientNotice(accountId);
           }
-          
+
           // 订阅所有设备的设备消息通知
           final deviceState = ref.read(deviceListProvider);
           if (deviceState.devices.isNotEmpty) {
@@ -163,27 +164,27 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         } else {
           print('[MQTT] 已断开连接');
         }
-        
+
         // 输出错误信息（如果有）
         if (next.error != null) {
           print('[MQTT] 错误: ${next.error}');
         }
       }
     });
-    
+
     // 监听设备列表变化，自动订阅新设备的设备消息通知
     ref.listen<DeviceListState>(deviceListProvider, (previous, next) {
       if (!mounted) return;
-      
+
       final mqttState = ref.read(mqttProvider);
       if (!mqttState.isConnected) return;
-      
+
       final mqttNotifier = ref.read(mqttProvider.notifier);
-      
+
       // 获取之前和现在的设备 SN 列表
       final previousSns = previous?.devices.map((d) => d.sn).toSet() ?? <String>{};
       final currentSns = next.devices.map((d) => d.sn).toSet();
-      
+
       // 订阅新设备的设备消息通知
       for (final sn in currentSns) {
         if (!previousSns.contains(sn)) {
@@ -191,7 +192,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
           mqttNotifier.subscribeDeviceNotice(sn);
         }
       }
-      
+
       // 取消订阅已移除设备的设备消息通知
       for (final sn in previousSns) {
         if (!currentSns.contains(sn)) {

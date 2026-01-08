@@ -174,30 +174,46 @@ class FamilyMemberItem extends StatelessWidget {
 
   /// 构建成员头像
   Widget _buildMemberAvatar(BuildContext context, String? avatarPath, String nickname) {
-    final defaultChild = Text(
-      nickname.isNotEmpty 
-          ? nickname[0].toUpperCase() 
-          : 'U',
-      style: TextStyle(
-        fontSize: 16,
-        color: Theme.of(context).colorScheme.onSurface,
+    // 默认头像图片
+    final defaultAvatar = ClipOval(
+      child: Image.asset(
+        'assets/no-avatar.png',
+        width: 48,
+        height: 48,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          // 如果 no-avatar.png 也加载失败，显示背景和首字母
+          final defaultChild = Text(
+            nickname.isNotEmpty 
+                ? nickname[0].toUpperCase() 
+                : 'U',
+            style: TextStyle(
+              fontSize: 16,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          );
+          final backgroundColor = Theme.of(context).brightness == Brightness.dark
+              ? Colors.grey[700]
+              : Colors.grey[300];
+          return Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              shape: BoxShape.circle,
+            ),
+            child: Center(child: defaultChild),
+          );
+        },
       ),
     );
 
-    final backgroundColor = Theme.of(context).brightness == Brightness.dark
-        ? Colors.grey[700]
-        : Colors.grey[300];
-
-    // 如果没有头像路径，直接显示背景和首字母
+    // 如果没有头像路径，显示默认头像
     if (avatarPath == null || avatarPath.isEmpty) {
-      return CircleAvatar(
-        radius: 24,
-        backgroundColor: backgroundColor,
-        child: defaultChild,
-      );
+      return defaultAvatar;
     }
 
-    // 如果有头像路径，尝试加载图片，失败时显示背景和首字母
+    // 如果有头像路径，尝试加载图片，失败时显示默认头像
     Widget avatarWidget;
 
     // 如果是完整的 URL（http/https），使用 NetworkImage
@@ -209,15 +225,12 @@ class FamilyMemberItem extends StatelessWidget {
           height: 48,
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) {
-            // 网络图片加载失败时显示背景和首字母
-            return Container(
+            // 网络图片加载失败时显示默认头像
+            return Image.asset(
+              'assets/no-avatar.png',
               width: 48,
               height: 48,
-              decoration: BoxDecoration(
-                color: backgroundColor,
-                shape: BoxShape.circle,
-              ),
-              child: Center(child: defaultChild),
+              fit: BoxFit.cover,
             );
           },
         ),
@@ -235,27 +248,20 @@ class FamilyMemberItem extends StatelessWidget {
           height: 48,
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) {
-            // assets 图片加载失败时显示背景和首字母
-            return Container(
+            // assets 图片加载失败时显示默认头像
+            return Image.asset(
+              'assets/no-avatar.png',
               width: 48,
               height: 48,
-              decoration: BoxDecoration(
-                color: backgroundColor,
-                shape: BoxShape.circle,
-              ),
-              child: Center(child: defaultChild),
+              fit: BoxFit.cover,
             );
           },
         ),
       );
     }
-    // 其他情况，显示背景和首字母
+    // 其他情况，显示默认头像
     else {
-      avatarWidget = CircleAvatar(
-        radius: 24,
-        backgroundColor: backgroundColor,
-        child: defaultChild,
-      );
+      avatarWidget = defaultAvatar;
     }
 
     return avatarWidget;

@@ -19,7 +19,7 @@ class _CreateFamilyDialogState extends State<CreateFamilyDialog> {
   void initState() {
     super.initState();
     // 默认选择第一个头像（转换为服务器路径）
-    _selectedAvatar = '/family/family_avatar1.png';
+    _selectedAvatar = '/families/avatar1.png';
   }
 
   @override
@@ -78,13 +78,13 @@ class _CreateFamilyDialogState extends State<CreateFamilyDialog> {
                   avatarSize: 48,
                   listHeight: 48,
                   spacing: 6,
-                  assetDirectory: 'family',
-                  fileNamePrefix: 'family_avatar',
-                  initialAvatar: 'assets/family/family_avatar1.png', // 默认选择第一个头像
+                  assetDirectory: 'families',
+                  fileNamePrefix: 'avatar',
+                  initialAvatar: 'assets/families/avatar1.png', // 默认选择第一个头像
                   onAvatarSelected: (avatarPath) {
                     // 将assets路径转换为服务器路径
-                    final fileName = avatarPath.replaceFirst('assets/family/', '');
-                    _selectedAvatar = '/family/$fileName';
+                    final fileName = avatarPath.replaceFirst('assets/families/', '');
+                    _selectedAvatar = '/families/$fileName';
                   },
                 ),
                 const SizedBox(height: 24),
@@ -163,7 +163,7 @@ class _CreateFamilyDialogState extends State<CreateFamilyDialog> {
                             if (mounted) {
                               final result = <String, String>{
                                 'name': _nameController.text,
-                                'avatar': _selectedAvatar ?? '/family/family_avatar1.png',
+                                'avatar': _selectedAvatar ?? '/families/avatar1.png',
                               };
                               // 只有当描述不为空时才添加
                               if (_descriptionController.text.isNotEmpty) {

@@ -2243,21 +2243,32 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
 
   /// 构建家庭头像
   Widget _buildFamilyAvatar(BuildContext context, String? avatarPath, double radius) {
-    final defaultIcon = Icon(
-      Icons.family_restroom,
-      size: radius * 1.2,
-      color: Theme.of(context).iconTheme.color,
+    // 默认头像图片
+    final defaultAvatar = ClipOval(
+      child: Image.asset(
+        'assets/no-avatar.png',
+        width: radius * 2,
+        height: radius * 2,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          // 如果 no-avatar.png 也加载失败，显示默认图标
+          final defaultIcon = Icon(
+            Icons.family_restroom,
+            size: radius * 1.2,
+            color: Theme.of(context).iconTheme.color,
+          );
+          return Container(
+            width: radius * 2,
+            height: radius * 2,
+            color: Colors.transparent,
+            child: defaultIcon,
+          );
+        },
+      ),
     );
 
     if (avatarPath == null || avatarPath.isEmpty) {
-      return ClipOval(
-        child: Container(
-          width: radius * 2,
-          height: radius * 2,
-          color: Colors.transparent,
-          child: defaultIcon,
-        ),
-      );
+      return defaultAvatar;
     }
 
     // 如果是完整的 URL（http/https），使用 NetworkImage
@@ -2269,22 +2280,22 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
           height: radius * 2,
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) {
-            // 网络图片加载失败时显示默认图标
-            return Container(
+            // 网络图片加载失败时显示默认头像
+            return Image.asset(
+              'assets/no-avatar.png',
               width: radius * 2,
               height: radius * 2,
-              color: Colors.transparent,
-              child: defaultIcon,
+              fit: BoxFit.cover,
             );
           },
         ),
       );
     }
 
-    // 如果是相对路径 /avatars/avatarX.png，转换为 assets/avatars/avatarX.png
-    if (avatarPath.startsWith('/avatars/')) {
-      final fileName = avatarPath.replaceFirst('/avatars/', '');
-      final assetPath = 'assets/avatars/$fileName';
+    // 如果是相对路径 /families/avatarX.png，转换为 assets/families/avatarX.png
+    if (avatarPath.startsWith('/families/')) {
+      final fileName = avatarPath.replaceFirst('/families/', '');
+      final assetPath = 'assets/families/$fileName';
       
       return ClipOval(
         child: Image.asset(
@@ -2293,26 +2304,19 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
           height: radius * 2,
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) {
-            // assets 图片加载失败时显示默认图标
-            return Container(
+            // assets 图片加载失败时显示默认头像
+            return Image.asset(
+              'assets/no-avatar.png',
               width: radius * 2,
               height: radius * 2,
-              color: Colors.transparent,
-              child: defaultIcon,
+              fit: BoxFit.cover,
             );
           },
         ),
       );
     }
 
-    // 其他情况，显示默认图标
-    return ClipOval(
-      child: Container(
-        width: radius * 2,
-        height: radius * 2,
-        color: Colors.transparent,
-        child: defaultIcon,
-      ),
-    );
+    // 其他情况，显示默认头像
+    return defaultAvatar;
   }
 }

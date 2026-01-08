@@ -65,24 +65,35 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   /// 构建头像 Widget
   Widget _buildAvatar(String? avatarPath, String nickname, ThemeData theme) {
-    final defaultChild = Container(
-      width: 64,
-      height: 64,
-      alignment: Alignment.center,
-      child: Text(
-        nickname.isNotEmpty ? nickname[0] : 'U',
-        style: const TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-        ),
+    // 默认头像图片
+    final defaultAvatar = ClipOval(
+      child: Image.asset(
+        'assets/no-avatar.png',
+        fit: BoxFit.cover,
+        width: 64,
+        height: 64,
+        errorBuilder: (context, error, stackTrace) {
+          // 如果 no-avatar.png 也加载失败，显示首字母
+          final defaultChild = Container(
+            width: 64,
+            height: 64,
+            alignment: Alignment.center,
+            child: Text(
+              nickname.isNotEmpty ? nickname[0] : 'U',
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          );
+          return defaultChild;
+        },
       ),
     );
 
-    // 如果头像路径为空，显示首字母
+    // 如果头像路径为空，显示默认头像
     if (avatarPath == null || avatarPath.isEmpty) {
-      return ClipOval(
-        child: defaultChild,
-      );
+      return defaultAvatar;
     }
 
     // 如果是完整的 URL（http/https），使用 NetworkImage
@@ -94,8 +105,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           width: 64,
           height: 64,
           errorBuilder: (context, error, stackTrace) {
-            // 网络图片加载失败，显示首字母
-            return defaultChild;
+            // 网络图片加载失败，显示默认头像
+            return ClipOval(
+              child: Image.asset(
+                'assets/no-avatar.png',
+                fit: BoxFit.cover,
+                width: 64,
+                height: 64,
+              ),
+            );
           },
         ),
       );
@@ -113,17 +131,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           width: 64,
           height: 64,
           errorBuilder: (context, error, stackTrace) {
-            // assets 图片加载失败，显示首字母
-            return defaultChild;
+            // assets 图片加载失败，显示默认头像
+            return ClipOval(
+              child: Image.asset(
+                'assets/no-avatar.png',
+                fit: BoxFit.cover,
+                width: 64,
+                height: 64,
+              ),
+            );
           },
         ),
       );
     }
 
-    // 其他情况，显示首字母
-    return ClipOval(
-      child: defaultChild,
-    );
+    // 其他情况，显示默认头像
+    return defaultAvatar;
   }
 
   @override

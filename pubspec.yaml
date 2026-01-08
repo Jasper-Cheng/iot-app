@@ -120,6 +120,7 @@ flutter:
   # the material Icons class.
   uses-material-design: true
   assets:
+    - assets/no-avatar.png
     - assets/avatars/
     - assets/families/
 

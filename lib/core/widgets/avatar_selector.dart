@@ -30,7 +30,7 @@ class AvatarSelector extends StatefulWidget {
   final String assetDirectory;
 
   /// 文件名前缀（默认 'avatar'，生成 avatar1.png, avatar2.png...）
-  /// 对于家庭头像，使用 'family_avatar'，生成 family_avatar1.png, family_avatar2.png...
+  /// 对于家庭头像，使用 'avatar'，生成 avatar1.png, avatar2.png...
   final String fileNamePrefix;
 
   const AvatarSelector({
@@ -70,7 +70,7 @@ class _AvatarSelectorState extends State<AvatarSelector> {
 
     // 处理初始选中的头像
     if (widget.initialAvatar != null) {
-      // 如果是服务器路径（/avatars/avatar1.png 或 /family/family_avatar1.png），转换为assets路径
+      // 如果是服务器路径（/avatars/avatar1.png 或 /families/avatar1.png），转换为assets路径
       final serverPathPrefix = '/${widget.assetDirectory}/';
       if (widget.initialAvatar!.startsWith(serverPathPrefix)) {
         final fileName = widget.initialAvatar!.replaceFirst(serverPathPrefix, '');

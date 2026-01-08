@@ -68,7 +68,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     // 默认头像图片
     final defaultAvatar = ClipOval(
       child: Image.asset(
-        'assets/no-avatar.png',
+        'assets/avatars/no-avatar.png',
         fit: BoxFit.cover,
         width: 64,
         height: 64,
@@ -108,7 +108,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             // 网络图片加载失败，显示默认头像
             return ClipOval(
               child: Image.asset(
-                'assets/no-avatar.png',
+                'assets/avatars/no-avatar.png',
                 fit: BoxFit.cover,
                 width: 64,
                 height: 64,
@@ -119,11 +119,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       );
     }
 
-    // 如果是相对路径 /avatars/avatarX.png，转换为 assets/avatars/avatarX.png
-    if (avatarPath.startsWith('/avatars/')) {
+    // 如果是相对路径 /avatars/person/avatarX.png 或 /avatars/family/avatarX.png，转换为 assets 路径
+    String? assetPath;
+    if (avatarPath.startsWith('/avatars/person/')) {
+      final fileName = avatarPath.replaceFirst('/avatars/person/', '');
+      assetPath = 'assets/avatars/person/$fileName';
+    } else if (avatarPath.startsWith('/avatars/family/')) {
+      final fileName = avatarPath.replaceFirst('/avatars/family/', '');
+      assetPath = 'assets/avatars/family/$fileName';
+    } else if (avatarPath.startsWith('/avatars/')) {
+      // 兼容旧格式：/avatars/avatarX.png
       final fileName = avatarPath.replaceFirst('/avatars/', '');
-      final assetPath = 'assets/avatars/$fileName';
-      
+      assetPath = 'assets/avatars/person/$fileName';
+    }
+    
+    if (assetPath != null) {
       return ClipOval(
         child: Image.asset(
           assetPath,
@@ -134,7 +144,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             // assets 图片加载失败，显示默认头像
             return ClipOval(
               child: Image.asset(
-                'assets/no-avatar.png',
+                'assets/avatars/no-avatar.png',
                 fit: BoxFit.cover,
                 width: 64,
                 height: 64,
@@ -668,12 +678,7 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
     _selectedGender = widget.account.gender;
     
     // 将头像路径转换为 assets 路径（用于AvatarSelector）
-    if (widget.account.avatar != null && widget.account.avatar!.startsWith('/avatars/')) {
-      final fileName = widget.account.avatar!.replaceFirst('/avatars/', '');
-      _selectedAvatar = 'assets/avatars/$fileName';
-    } else if (widget.account.avatar != null && widget.account.avatar!.startsWith('assets/')) {
-      _selectedAvatar = widget.account.avatar;
-    }
+    // AvatarSelector 会自动处理路径转换，这里可以直接传入服务器路径
     // 如果用户没有头像，不设置默认值，让用户自己选择
   }
 
@@ -729,11 +734,11 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
       _isSubmitting = true;
     });
 
-    // 转换头像路径
+    // 转换头像路径：从 assets/avatars/person/avatar1.png 转换为 /avatars/person/avatar1.png
     String? avatarPath;
     if (_selectedAvatar != null) {
-      final fileName = _selectedAvatar!.replaceFirst('assets/avatars/', '');
-      avatarPath = '/avatars/$fileName';
+      // 从 assets/avatars/person/avatar1.png 转换为 /avatars/person/avatar1.png
+      avatarPath = _selectedAvatar!.replaceFirst('assets/', '/');
     }
 
     final updateResult = await ref.read(authProvider.notifier).updateUserProfile(

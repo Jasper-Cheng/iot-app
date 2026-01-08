@@ -30,8 +30,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   @override
   void initState() {
     super.initState();
-    // 默认选择第一个头像
-    _selectedAvatar = 'assets/avatars/avatar1.png';
+    // 默认选择第一个头像（使用 person 子目录）
+    _selectedAvatar = 'assets/avatars/person/avatar1.png';
   }
 
   @override
@@ -46,12 +46,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   Future<void> _handleRegister() async {
     if (_formKey.currentState!.validate()) {
-      // 将头像路径从 assets/avatars/avatar1.png 转换为 /avatars/avatar1.png
+      // 将头像路径从 assets/avatars/person/avatar1.png 转换为 /avatars/person/avatar1.png
       String? avatarPath;
       if (_selectedAvatar != null) {
-        // 从 assets/avatars/avatar1.png 提取 avatar1.png
-        final fileName = _selectedAvatar!.replaceFirst('assets/avatars/', '');
-        avatarPath = '/avatars/$fileName';
+        // 从 assets/avatars/person/avatar1.png 转换为 /avatars/person/avatar1.png
+        avatarPath = _selectedAvatar!.replaceFirst('assets/', '/');
       }
 
       final registerResult = await ref.read(authProvider.notifier).register(

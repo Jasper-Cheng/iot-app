@@ -177,7 +177,7 @@ class FamilyMemberItem extends StatelessWidget {
     // 默认头像图片
     final defaultAvatar = ClipOval(
       child: Image.asset(
-        'assets/no-avatar.png',
+        'assets/avatars/no-avatar.png',
         width: 48,
         height: 48,
         fit: BoxFit.cover,
@@ -227,7 +227,7 @@ class FamilyMemberItem extends StatelessWidget {
           errorBuilder: (context, error, stackTrace) {
             // 网络图片加载失败时显示默认头像
             return Image.asset(
-              'assets/no-avatar.png',
+              'assets/avatars/no-avatar.png',
               width: 48,
               height: 48,
               fit: BoxFit.cover,
@@ -236,10 +236,22 @@ class FamilyMemberItem extends StatelessWidget {
         ),
       );
     }
-    // 如果是相对路径 /avatars/avatarX.png，转换为 assets/avatars/avatarX.png
-    else if (avatarPath.startsWith('/avatars/')) {
-      final fileName = avatarPath.replaceFirst('/avatars/', '');
-      final assetPath = 'assets/avatars/$fileName';
+    // 如果是相对路径 /avatars/person/avatarX.png 或 /avatars/family/avatarX.png，转换为 assets 路径
+    else if (avatarPath.startsWith('/avatars/person/') || 
+             avatarPath.startsWith('/avatars/family/') ||
+             avatarPath.startsWith('/avatars/')) {
+      String assetPath;
+      if (avatarPath.startsWith('/avatars/person/')) {
+        final fileName = avatarPath.replaceFirst('/avatars/person/', '');
+        assetPath = 'assets/avatars/person/$fileName';
+      } else if (avatarPath.startsWith('/avatars/family/')) {
+        final fileName = avatarPath.replaceFirst('/avatars/family/', '');
+        assetPath = 'assets/avatars/family/$fileName';
+      } else {
+        // 兼容旧格式：/avatars/avatarX.png
+        final fileName = avatarPath.replaceFirst('/avatars/', '');
+        assetPath = 'assets/avatars/person/$fileName';
+      }
       
       avatarWidget = ClipOval(
         child: Image.asset(
@@ -250,7 +262,7 @@ class FamilyMemberItem extends StatelessWidget {
           errorBuilder: (context, error, stackTrace) {
             // assets 图片加载失败时显示默认头像
             return Image.asset(
-              'assets/no-avatar.png',
+              'assets/avatars/no-avatar.png',
               width: 48,
               height: 48,
               fit: BoxFit.cover,

@@ -2246,7 +2246,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
     // 默认头像图片
     final defaultAvatar = ClipOval(
       child: Image.asset(
-        'assets/no-avatar.png',
+        'assets/avatars/no-avatar.png',
         width: radius * 2,
         height: radius * 2,
         fit: BoxFit.cover,
@@ -2282,7 +2282,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
           errorBuilder: (context, error, stackTrace) {
             // 网络图片加载失败时显示默认头像
             return Image.asset(
-              'assets/no-avatar.png',
+              'assets/avatars/no-avatar.png',
               width: radius * 2,
               height: radius * 2,
               fit: BoxFit.cover,
@@ -2292,10 +2292,19 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
       );
     }
 
-    // 如果是相对路径 /families/avatarX.png，转换为 assets/families/avatarX.png
-    if (avatarPath.startsWith('/families/')) {
+    // 如果是相对路径 /avatars/family/avatarX.png，转换为 assets/avatars/family/avatarX.png
+    // 兼容旧格式：/families/avatarX.png
+    String? assetPath;
+    if (avatarPath.startsWith('/avatars/family/')) {
+      final fileName = avatarPath.replaceFirst('/avatars/family/', '');
+      assetPath = 'assets/avatars/family/$fileName';
+    } else if (avatarPath.startsWith('/families/')) {
+      // 兼容旧格式：/families/avatarX.png
       final fileName = avatarPath.replaceFirst('/families/', '');
-      final assetPath = 'assets/families/$fileName';
+      assetPath = 'assets/avatars/family/$fileName';
+    }
+    
+    if (assetPath != null) {
       
       return ClipOval(
         child: Image.asset(
@@ -2306,7 +2315,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen>
           errorBuilder: (context, error, stackTrace) {
             // assets 图片加载失败时显示默认头像
             return Image.asset(
-              'assets/no-avatar.png',
+              'assets/avatars/no-avatar.png',
               width: radius * 2,
               height: radius * 2,
               fit: BoxFit.cover,

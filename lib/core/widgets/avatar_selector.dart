@@ -13,11 +13,11 @@ class AvatarSelector extends StatefulWidget {
   /// 头像尺寸（默认48）
   final double avatarSize;
   
-  /// 初始选中的头像路径（assets路径，如 'assets/avatars/avatar1.png'）
-  /// 或者服务器路径（如 '/avatars/avatar1.png'），会自动转换
+  /// 初始选中的头像路径（assets路径，如 'assets/avatars/person/avatar1.png'）
+  /// 或者服务器路径（如 '/avatars/person/avatar1.png' 或 '/avatars/family/avatar1.png'），会自动转换
   final String? initialAvatar;
   
-  /// 选中头像时的回调，返回assets路径（如 'assets/avatars/avatar1.png'）
+  /// 选中头像时的回调，返回assets路径（如 'assets/avatars/person/avatar1.png'）
   final ValueChanged<String>? onAvatarSelected;
   
   /// 列表高度（默认60）
@@ -26,11 +26,15 @@ class AvatarSelector extends StatefulWidget {
   /// 头像间距（默认12）
   final double spacing;
 
-  /// 资源目录（默认 'avatars'）
-  final String assetDirectory;
+  /// 单个头像容器的内边距（默认0）
+  /// 对应外层 `Container` 的 `padding: EdgeInsets.all(avatarPadding)`
+  final double avatarPadding;
+
+  /// 资源子目录（默认 'person'，可选 'person' 或 'family'）
+  /// 实际路径为 assets/avatars/{subDirectory}/avatar1.png
+  final String subDirectory;
 
   /// 文件名前缀（默认 'avatar'，生成 avatar1.png, avatar2.png...）
-  /// 对于家庭头像，使用 'avatar'，生成 avatar1.png, avatar2.png...
   final String fileNamePrefix;
 
   const AvatarSelector({
@@ -42,8 +46,9 @@ class AvatarSelector extends StatefulWidget {
     this.onAvatarSelected,
     this.listHeight = 60,
     this.spacing = 12,
-    this.assetDirectory = 'avatars',
+    this.subDirectory = 'person',
     this.fileNamePrefix = 'avatar',
+    this.avatarPadding = 0,
   });
 
   @override
@@ -62,25 +67,19 @@ class _AvatarSelectorState extends State<AvatarSelector> {
     super.initState();
     _scrollController = ScrollController();
     
-    // 生成头像列表
+    // 生成头像列表（路径格式：assets/avatars/{subDirectory}/avatar1.png）
     _avatars = List.generate(
       widget.avatarCount,
-      (index) => 'assets/${widget.assetDirectory}/${widget.fileNamePrefix}${index + 1}.png',
+      (index) => 'assets/avatars/${widget.subDirectory}/${widget.fileNamePrefix}${index + 1}.png',
     );
+    
+    print('[AvatarSelector] 生成头像列表: $_avatars');
 
     // 处理初始选中的头像
     if (widget.initialAvatar != null) {
-      // 如果是服务器路径（/avatars/avatar1.png 或 /families/avatar1.png），转换为assets路径
-      final serverPathPrefix = '/${widget.assetDirectory}/';
-      if (widget.initialAvatar!.startsWith(serverPathPrefix)) {
-        final fileName = widget.initialAvatar!.replaceFirst(serverPathPrefix, '');
-        _selectedAvatar = 'assets/${widget.assetDirectory}/$fileName';
-      } else if (widget.initialAvatar!.startsWith('assets/${widget.assetDirectory}/')) {
-        _selectedAvatar = widget.initialAvatar;
-      } else {
-        _selectedAvatar = widget.initialAvatar;
-      }
+      _selectedAvatar = _convertToAssetPath(widget.initialAvatar!);
     }
+    print('[AvatarSelector] 初始选中头像: $_selectedAvatar');
     // 如果没有初始头像，不默认选择（保持为 null）
 
     // 延迟滚动到选中的头像
@@ -89,6 +88,43 @@ class _AvatarSelectorState extends State<AvatarSelector> {
         _scrollToSelectedAvatar();
       });
     });
+  }
+
+  /// 将路径格式转换为 assets 路径
+  /// 支持的输入格式：
+  /// - 服务器路径：/avatars/person/avatar1.png, /avatars/family/avatar1.png
+  /// - assets 路径：assets/avatars/person/avatar1.png, assets/avatars/family/avatar1.png
+  String? _convertToAssetPath(String path) {
+    final expectedPrefix = 'assets/avatars/${widget.subDirectory}/';
+    
+    // 如果已经是正确的 assets 路径格式（assets/avatars/{subDirectory}/avatarX.png）
+    if (path.startsWith(expectedPrefix)) {
+      return path;
+    }
+    
+    // 处理服务器路径：/avatars/person/avatar1.png 或 /avatars/family/avatar1.png
+    if (path.startsWith('/avatars/person/')) {
+      final fileName = path.replaceFirst('/avatars/person/', '');
+      return 'assets/avatars/person/$fileName';
+    } else if (path.startsWith('/avatars/family/')) {
+      final fileName = path.replaceFirst('/avatars/family/', '');
+      return 'assets/avatars/family/$fileName';
+    }
+    
+    // 如果路径已经是 assets/avatars/ 开头但子目录不匹配，提取文件名并根据当前 subDirectory 转换
+    if (path.startsWith('assets/avatars/')) {
+      // 提取文件名（去掉 assets/avatars/ 和子目录部分）
+      // 格式：assets/avatars/{subDir}/filename.png
+      final parts = path.split('/');
+      if (parts.length >= 4) {
+        // 从第 4 个元素开始是文件名（可能包含子路径，但头像文件通常只有一层）
+        final fileName = parts.last;
+        return 'assets/avatars/${widget.subDirectory}/$fileName';
+      }
+    }
+    
+    // 其他格式不支持，返回 null
+    return null;
   }
 
   @override
@@ -172,6 +208,7 @@ class _AvatarSelectorState extends State<AvatarSelector> {
                   width: widget.avatarSize,
                   height: widget.avatarSize,
                   margin: EdgeInsets.only(right: widget.spacing),
+                  padding: EdgeInsets.all(widget.avatarPadding),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
@@ -180,15 +217,6 @@ class _AvatarSelectorState extends State<AvatarSelector> {
                           : Colors.transparent,
                       width: isSelected ? 3 : 0,
                     ),
-                    boxShadow: isSelected
-                        ? [
-                            BoxShadow(
-                              color: theme.colorScheme.primary.withValues(alpha: 0.3),
-                              blurRadius: 8,
-                              spreadRadius: 2,
-                            ),
-                          ]
-                        : null,
                   ),
                   child: ClipOval(
                     child: Image.asset(

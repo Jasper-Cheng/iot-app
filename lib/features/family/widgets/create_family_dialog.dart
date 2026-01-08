@@ -19,7 +19,7 @@ class _CreateFamilyDialogState extends State<CreateFamilyDialog> {
   void initState() {
     super.initState();
     // 默认选择第一个头像（转换为服务器路径）
-    _selectedAvatar = '/families/avatar1.png';
+    _selectedAvatar = '/avatars/family/avatar1.png';
   }
 
   @override
@@ -74,17 +74,18 @@ class _CreateFamilyDialogState extends State<CreateFamilyDialog> {
                 // 家庭头像选择
                 AvatarSelector(
                   title: '家庭头像',
-                  avatarCount: 18,
-                  avatarSize: 48,
-                  listHeight: 48,
+                  avatarCount: 20,
+                  avatarSize: 50,
+                  listHeight: 50,
+                  avatarPadding: 4,
                   spacing: 6,
-                  assetDirectory: 'families',
+                  subDirectory: 'family',
                   fileNamePrefix: 'avatar',
-                  initialAvatar: 'assets/families/avatar1.png', // 默认选择第一个头像
+                  initialAvatar: 'assets/avatars/family/avatar1.png', // 默认选择第一个头像
                   onAvatarSelected: (avatarPath) {
                     // 将assets路径转换为服务器路径
-                    final fileName = avatarPath.replaceFirst('assets/families/', '');
-                    _selectedAvatar = '/families/$fileName';
+                    // 从 assets/avatars/family/avatar1.png 转换为 /avatars/family/avatar1.png
+                    _selectedAvatar = avatarPath.replaceFirst('assets/', '/');
                   },
                 ),
                 const SizedBox(height: 24),
@@ -163,7 +164,7 @@ class _CreateFamilyDialogState extends State<CreateFamilyDialog> {
                             if (mounted) {
                               final result = <String, String>{
                                 'name': _nameController.text,
-                                'avatar': _selectedAvatar ?? '/families/avatar1.png',
+                                'avatar': _selectedAvatar ?? '/avatars/family/avatar1.png',
                               };
                               // 只有当描述不为空时才添加
                               if (_descriptionController.text.isNotEmpty) {

@@ -188,7 +188,6 @@ class _MainScreenState extends ConsumerState<MainScreen> {
       // 订阅新设备的设备消息通知
       for (final sn in currentSns) {
         if (!previousSns.contains(sn)) {
-          print('[MQTT] 新设备加入，订阅设备消息通知 (Device SN: $sn)');
           mqttNotifier.subscribeDeviceNotice(sn);
         }
       }

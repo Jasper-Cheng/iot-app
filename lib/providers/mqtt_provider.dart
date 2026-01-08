@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mqtt_client/mqtt_client.dart';
+import 'dart:async';
 import 'dart:convert';
 import '../core/mqtt/mqtt_service.dart';
 import '../core/constants/api_constants.dart';
@@ -51,6 +52,16 @@ class MqttNotifier extends StateNotifier<MqttState> {
   
   // 设备状态处理器 Map: deviceSn -> handler
   final Map<String, void Function(Map<String, dynamic> data)> _deviceStatusHandlers = {};
+  
+  // 重连相关
+  String? _userId;
+  String? _username;
+  String? _password;
+  bool _isReconnecting = false;
+  bool _isManualDisconnect = false;
+  Timer? _reconnectTimer;
+  int _reconnectAttempts = 0;
+  static const Duration _reconnectDelay = Duration(seconds: 3); // 固定重连延迟：3秒
 
   MqttNotifier() : super(const MqttState()) {
     _init();
@@ -103,13 +114,98 @@ class MqttNotifier extends StateNotifier<MqttState> {
   void _init() {
     // 监听连接状态
     _service.connectionStream.listen((connectionState) {
+      final previousState = state.connectionState;
       state = state.copyWith(connectionState: connectionState);
+      
+      // 处理连接状态变化
+      if (previousState != connectionState) {
+        _handleConnectionStateChange(previousState, connectionState);
+      }
     });
 
     // 监听消息
     _service.messageStream.listen((message) {
       _handleMessage(message);
     });
+  }
+  
+  /// 处理连接状态变化
+  void _handleConnectionStateChange(
+    MqttConnectionState previousState,
+    MqttConnectionState currentState,
+  ) {
+    // 连接成功
+    if (currentState == MqttConnectionState.connected) {
+      _isReconnecting = false;
+      _reconnectAttempts = 0;
+      _isManualDisconnect = false;
+      _reconnectTimer?.cancel();
+      _reconnectTimer = null;
+      state = state.copyWith(error: null);
+      print('[MQTT] 连接成功，清除重连状态');
+    }
+    // 连接断开（非主动断开）- 也处理从其他状态变为断开的情况
+    else if (currentState == MqttConnectionState.disconnected && 
+             !_isManualDisconnect &&
+             _userId != null) {
+      print('[MQTT] 检测到非主动断开，准备重连');
+      _scheduleReconnect();
+    }
+  }
+  
+  /// 安排重连
+  void _scheduleReconnect() {
+    if (_isReconnecting || _userId == null) {
+      return;
+    }
+    
+    _isReconnecting = true;
+    _reconnectAttempts++;
+    
+    print('[MQTT] 将在 ${_reconnectDelay.inSeconds} 秒后尝试第 $_reconnectAttempts 次重连（无限重连）');
+    
+    _reconnectTimer?.cancel();
+    _reconnectTimer = Timer(_reconnectDelay, () {
+      _attemptReconnect();
+    });
+  }
+  
+  /// 尝试重连
+  Future<void> _attemptReconnect() async {
+    if (_userId == null) {
+      _isReconnecting = false;
+      return;
+    }
+    
+    print('[MQTT] 开始第 $_reconnectAttempts 次重连尝试');
+    state = state.copyWith(error: '正在重连...');
+    
+    try {
+      // 直接调用服务连接，避免触发connect方法中的重连逻辑
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final clientId = '${ApiConstants.mqttClientPrefix}${_userId!}_$timestamp';
+      final success = await _service.connect(
+        clientId: clientId,
+        username: _username,
+        password: _password,
+      );
+      
+      if (success) {
+        print('[MQTT] 重连成功');
+        // 连接成功会在 _handleConnectionStateChange 中处理
+        // 自动订阅系统通知主题
+        subscribe(ApiConstants.mqttSystemNotice);
+      } else {
+        // 连接失败，继续重连
+        _isReconnecting = false;
+        _scheduleReconnect();
+      }
+    } catch (e) {
+      print('[MQTT] 重连失败: $e');
+      _isReconnecting = false;
+      state = state.copyWith(error: '重连失败: ${ErrorHandler.extractErrorMessage(e)}');
+      _scheduleReconnect();
+    }
   }
 
   /// 连接
@@ -119,6 +215,12 @@ class MqttNotifier extends StateNotifier<MqttState> {
     String? password,
   }) async {
     try {
+      // 保存连接参数，用于重连
+      _userId = userId;
+      _username = username;
+      _password = password;
+      _isManualDisconnect = false;
+      
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final clientId = '${ApiConstants.mqttClientPrefix}${userId}_$timestamp';
       final success = await _service.connect(
@@ -135,13 +237,29 @@ class MqttNotifier extends StateNotifier<MqttState> {
         print('[MQTT]   UserId: $userId');
         print('[MQTT]   认证: ${username != null && password != null ? "是" : "否"}');
         
+        // 重置重连状态
+        _isReconnecting = false;
+        _reconnectAttempts = 0;
+        _reconnectTimer?.cancel();
+        _reconnectTimer = null;
+        
         // 自动订阅系统通知主题
         subscribe(ApiConstants.mqttSystemNotice);
       } else {
         state = state.copyWith(error: '连接失败');
+        // 连接失败时，如果不是手动断开，则安排重连
+        if (!_isManualDisconnect) {
+          _scheduleReconnect();
+        }
       }
     } catch (e) {
-      state = state.copyWith(error: ErrorHandler.extractErrorMessage(e));
+      final errorMsg = ErrorHandler.extractErrorMessage(e);
+      state = state.copyWith(error: errorMsg);
+      print('[MQTT] 连接异常: $e');
+      // 连接异常时，如果不是手动断开，则安排重连
+      if (!_isManualDisconnect) {
+        _scheduleReconnect();
+      }
     }
   }
 
@@ -322,12 +440,28 @@ class MqttNotifier extends StateNotifier<MqttState> {
 
   /// 断开连接
   void disconnect() {
+    _isManualDisconnect = true;
+    _userId = null;
+    _username = null;
+    _password = null;
+    _isReconnecting = false;
+    _reconnectAttempts = 0;
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
     _service.disconnect();
     state = const MqttState();
+    print('[MQTT] 手动断开连接');
+  }
+  
+  /// 重置重连计数（用于手动重连）
+  void resetReconnectAttempts() {
+    _reconnectAttempts = 0;
+    print('[MQTT] 重置重连计数');
   }
 
   @override
   void dispose() {
+    _reconnectTimer?.cancel();
     _service.dispose();
     super.dispose();
   }

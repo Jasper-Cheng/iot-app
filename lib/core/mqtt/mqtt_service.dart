@@ -30,6 +30,16 @@ class MqttService {
     String? password,
   }) async {
     try {
+      // 如果已有客户端，先断开
+      if (_client != null) {
+        try {
+          _client!.disconnect();
+        } catch (e) {
+          // 忽略断开时的错误
+        }
+        _client = null;
+      }
+      
       // 创建客户端
       _client = MqttServerClient(ApiConstants.mqttBroker, clientId);
       _client!.port = ApiConstants.mqttPort;
@@ -73,10 +83,16 @@ class MqttService {
 
         return true;
       } else {
+        // 连接失败，触发断开状态
+        _onDisconnected();
+        _client = null;
         return false;
       }
     } catch (e) {
       print('[MQTT] 连接异常: $e');
+      // 连接异常，触发断开状态
+      _onDisconnected();
+      _client = null;
       return false;
     }
   }

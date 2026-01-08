@@ -10,19 +10,16 @@ class MessageRepository {
   /// [familyId] 家庭ID，如果不为 null 则作为查询参数传递
   /// [level] 消息级别数组，支持多个值：low, normal, error, fatal
   /// [status] 消息状态：new（未读）、read（已读）
-  /// [skip] 跳过数量，用于分页
-  /// [limit] 限制数量，范围：1-500
+  /// [skip] 跳过数量，用于分页，如果不传入则不拼接参数
+  /// [limit] 限制数量，范围：1-500，如果不传入则不拼接参数
   Future<List<DeviceMessage>> getDeviceMessages({
     int? familyId,
     List<String>? level,
     String? status,
-    int skip = 0,
-    int limit = 20,
+    int? skip,
+    int? limit,
   }) async {
-    final queryParameters = <String, dynamic>{
-      'skip': skip,
-      'limit': limit,
-    };
+    final queryParameters = <String, dynamic>{};
     
     if (familyId != null) {
       queryParameters['family_id'] = familyId;
@@ -35,6 +32,14 @@ class MessageRepository {
     
     if (status != null) {
       queryParameters['status'] = status;
+    }
+    
+    if (skip != null) {
+      queryParameters['skip'] = skip;
+    }
+    
+    if (limit != null) {
+      queryParameters['limit'] = limit;
     }
     
     final response = await _dio.get(

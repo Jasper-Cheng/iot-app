@@ -99,8 +99,8 @@ class MessageNotifier extends StateNotifier<MessageState> {
   Future<({bool success, String message})> loadDeviceMessages({
     List<String>? level,
     String? status,
-    int skip = 0,
-    int limit = 20,
+    int? skip,
+    int? limit,
   }) async {
     state = state.copyWith(isLoading: true, error: null);
 

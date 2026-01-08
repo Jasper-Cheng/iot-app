@@ -16,53 +16,65 @@ class EnvironmentMonitorCard extends BaseDeviceCard {
 
 class _EnvironmentMonitorCardState extends BaseDeviceCardState<EnvironmentMonitorCard> {
   // 传感器数据
-  Map<String, dynamic> _sensors = {
-    'co2': 517,
-    'hcho': 12,
-    'tvoc': 19,
-    'pm25': 20,
-    'pm10': 24,
-    'temp': 26.1,
-    'humi': 40.1,
-  };
+  Map<String, dynamic>? _sensors;
+
+  @override
+  void onInitState() {
+    super.onInitState();
+    // 初始默认不在线
+    isOnline = false;
+  }
+
+  @override
+  void onDeviceStatusChanged(bool isOnline) {
+    super.onDeviceStatusChanged(isOnline);
+    // 当设备变为离线时，清空数据
+    if (!isOnline) {
+      setState(() {
+        _sensors = null;
+      });
+    }
+  }
 
   @override
   void onDeviceDataReceived(Map<String, dynamic> data) {
     // 数据格式：{'co2': 517, 'hcho': 10, 'tvoc': 15, 'pm25': 22, 'pm10': 27, 'temp': 19.0, 'humi': 39.0, 'sn': 'M701001-220403-000001'}
     setState(() {
+      // 初始化传感器数据（如果还没有数据）
+      _sensors ??= {};
       // 更新传感器数据
       if (data.containsKey('pm25')) {
-        _sensors['pm25'] = data['pm25'] is int 
+        _sensors!['pm25'] = data['pm25'] is int 
             ? data['pm25'] 
             : (data['pm25'] as num).toInt();
       }
       if (data.containsKey('pm10')) {
-        _sensors['pm10'] = data['pm10'] is int 
+        _sensors!['pm10'] = data['pm10'] is int 
             ? data['pm10'] 
             : (data['pm10'] as num).toInt();
       }
       if (data.containsKey('co2')) {
-        _sensors['co2'] = data['co2'] is int 
+        _sensors!['co2'] = data['co2'] is int 
             ? data['co2'] 
             : (data['co2'] as num).toInt();
       }
       if (data.containsKey('tvoc')) {
-        _sensors['tvoc'] = data['tvoc'] is int 
+        _sensors!['tvoc'] = data['tvoc'] is int 
             ? data['tvoc'] 
             : (data['tvoc'] as num).toInt();
       }
       if (data.containsKey('hcho')) {
-        _sensors['hcho'] = data['hcho'] is int 
+        _sensors!['hcho'] = data['hcho'] is int 
             ? data['hcho'] 
             : (data['hcho'] as num).toInt();
       }
       if (data.containsKey('temp') || data.containsKey('temperature')) {
         final temp = data['temp'] ?? data['temperature'];
-        _sensors['temp'] = temp is double ? temp : (temp as num).toDouble();
+        _sensors!['temp'] = temp is double ? temp : (temp as num).toDouble();
       }
       if (data.containsKey('humi') || data.containsKey('humidity')) {
         final humi = data['humi'] ?? data['humidity'];
-        _sensors['humi'] = humi is double ? humi : (humi as num).toDouble();
+        _sensors!['humi'] = humi is double ? humi : (humi as num).toDouble();
       }
     });
   }
@@ -182,11 +194,75 @@ class _EnvironmentMonitorCardState extends BaseDeviceCardState<EnvironmentMonito
 
   /// 构建环境摘要
   Widget _buildEnvironmentSummary(ThemeData theme, bool isDark) {
-    final pm25 = _sensors['pm25'] as int;
+    // 如果不在线或没有数据，显示占位符
+    if (!isOnline || _sensors == null) {
+      return Row(
+        children: [
+          // PM2.5 圆形显示（占位符）
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isDark ? AppColors.darkBgSecondary : AppColors.lightBgSecondary,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '--',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 18,
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'PM2.5',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary
+                        .withOpacity(0.9),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          // 空气质量文本（占位符）
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '等待数据...',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'CO₂ -- ppm · TVOC -- ppb',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    final pm25 = _sensors!['pm25'] as int;
     final airQualityLevel = _getAirQualityLevel(pm25);
     final airQualityText = _getAirQualityText(pm25);
-    final co2 = _sensors['co2'] as int;
-    final tvoc = _sensors['tvoc'] as int;
+    final co2 = _sensors!['co2'] as int;
+    final tvoc = _sensors!['tvoc'] as int;
 
     return Row(
       children: [
@@ -252,6 +328,9 @@ class _EnvironmentMonitorCardState extends BaseDeviceCardState<EnvironmentMonito
 
   /// 构建传感器网格
   Widget _buildSensorsGrid(ThemeData theme, bool isDark) {
+    // 如果不在线或没有数据，显示占位符
+    final hasData = isOnline && _sensors != null;
+
     return GridView.count(
       crossAxisCount: 3,
       shrinkWrap: true,
@@ -263,49 +342,49 @@ class _EnvironmentMonitorCardState extends BaseDeviceCardState<EnvironmentMonito
         _buildSensorItem(
           icon: Icons.layers_outlined,
           label: 'CO₂',
-          value: '${_sensors['co2']} ppm',
+          value: hasData ? '${_sensors!['co2']} ppm' : '-- ppm',
           theme: theme,
           isDark: isDark,
         ),
         _buildSensorItem(
           icon: Icons.water_drop_outlined,
           label: '甲醛',
-          value: '${_sensors['hcho']} mg/m³',
+          value: hasData ? '${_sensors!['hcho']} mg/m³' : '-- mg/m³',
           theme: theme,
           isDark: isDark,
         ),
         _buildSensorItem(
           icon: Icons.air_outlined,
           label: 'TVOC',
-          value: '${_sensors['tvoc']} ppb',
+          value: hasData ? '${_sensors!['tvoc']} ppb' : '-- ppb',
           theme: theme,
           isDark: isDark,
         ),
         _buildSensorItem(
           icon: Icons.wb_sunny_outlined,
           label: 'PM2.5',
-          value: '${_sensors['pm25']} μg/m³',
+          value: hasData ? '${_sensors!['pm25']} μg/m³' : '-- μg/m³',
           theme: theme,
           isDark: isDark,
         ),
         _buildSensorItem(
           icon: Icons.cloud_outlined,
           label: 'PM10',
-          value: '${_sensors['pm10']} μg/m³',
+          value: hasData ? '${_sensors!['pm10']} μg/m³' : '-- μg/m³',
           theme: theme,
           isDark: isDark,
         ),
         _buildSensorItem(
           icon: Icons.thermostat_outlined,
           label: '温度',
-          value: '${(_sensors['temp'] as double).toStringAsFixed(1)} °C',
+          value: hasData ? '${(_sensors!['temp'] as double).toStringAsFixed(1)} °C' : '-- °C',
           theme: theme,
           isDark: isDark,
         ),
         _buildSensorItem(
           icon: Icons.opacity_outlined,
           label: '湿度',
-          value: '${(_sensors['humi'] as double).toStringAsFixed(1)} %',
+          value: hasData ? '${(_sensors!['humi'] as double).toStringAsFixed(1)} %' : '-- %',
           theme: theme,
           isDark: isDark,
         ),

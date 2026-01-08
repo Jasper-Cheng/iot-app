@@ -26,6 +26,13 @@ class AvatarSelector extends StatefulWidget {
   /// 头像间距（默认12）
   final double spacing;
 
+  /// 资源目录（默认 'avatars'）
+  final String assetDirectory;
+
+  /// 文件名前缀（默认 'avatar'，生成 avatar1.png, avatar2.png...）
+  /// 对于家庭头像，使用 'family_avatar'，生成 family_avatar1.png, family_avatar2.png...
+  final String fileNamePrefix;
+
   const AvatarSelector({
     super.key,
     this.title,
@@ -35,6 +42,8 @@ class AvatarSelector extends StatefulWidget {
     this.onAvatarSelected,
     this.listHeight = 60,
     this.spacing = 12,
+    this.assetDirectory = 'avatars',
+    this.fileNamePrefix = 'avatar',
   });
 
   @override
@@ -56,15 +65,18 @@ class _AvatarSelectorState extends State<AvatarSelector> {
     // 生成头像列表
     _avatars = List.generate(
       widget.avatarCount,
-      (index) => 'assets/avatars/avatar${index + 1}.png',
+      (index) => 'assets/${widget.assetDirectory}/${widget.fileNamePrefix}${index + 1}.png',
     );
 
     // 处理初始选中的头像
     if (widget.initialAvatar != null) {
-      // 如果是服务器路径（/avatars/avatar1.png），转换为assets路径
-      if (widget.initialAvatar!.startsWith('/avatars/')) {
-        final fileName = widget.initialAvatar!.replaceFirst('/avatars/', '');
-        _selectedAvatar = 'assets/avatars/$fileName';
+      // 如果是服务器路径（/avatars/avatar1.png 或 /family/family_avatar1.png），转换为assets路径
+      final serverPathPrefix = '/${widget.assetDirectory}/';
+      if (widget.initialAvatar!.startsWith(serverPathPrefix)) {
+        final fileName = widget.initialAvatar!.replaceFirst(serverPathPrefix, '');
+        _selectedAvatar = 'assets/${widget.assetDirectory}/$fileName';
+      } else if (widget.initialAvatar!.startsWith('assets/${widget.assetDirectory}/')) {
+        _selectedAvatar = widget.initialAvatar;
       } else {
         _selectedAvatar = widget.initialAvatar;
       }

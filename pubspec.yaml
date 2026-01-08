@@ -121,7 +121,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/avatars/
-    - assets/family/
+    - assets/families/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

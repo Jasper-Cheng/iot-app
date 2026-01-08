@@ -57,6 +57,7 @@ class MqttNotifier extends StateNotifier<MqttState> {
   String? _userId;
   String? _username;
   String? _password;
+  String? _clientId; // 保存clientId，重连时使用同一个
   bool _isReconnecting = false;
   bool _isManualDisconnect = false;
   Timer? _reconnectTimer;
@@ -172,20 +173,18 @@ class MqttNotifier extends StateNotifier<MqttState> {
   
   /// 尝试重连
   Future<void> _attemptReconnect() async {
-    if (_userId == null) {
+    if (_userId == null || _clientId == null) {
       _isReconnecting = false;
       return;
     }
     
-    print('[MQTT] 开始第 $_reconnectAttempts 次重连尝试');
+    print('[MQTT] 开始第 $_reconnectAttempts 次重连尝试，使用clientId: $_clientId');
     state = state.copyWith(error: '正在重连...');
     
     try {
-      // 直接调用服务连接，避免触发connect方法中的重连逻辑
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final clientId = '${ApiConstants.mqttClientPrefix}${_userId!}_$timestamp';
+      // 直接调用服务连接，使用保存的clientId
       final success = await _service.connect(
-        clientId: clientId,
+        clientId: _clientId!,
         username: _username,
         password: _password,
       );
@@ -221,10 +220,14 @@ class MqttNotifier extends StateNotifier<MqttState> {
       _password = password;
       _isManualDisconnect = false;
       
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final clientId = '${ApiConstants.mqttClientPrefix}${userId}_$timestamp';
+      // 如果是首次连接，生成clientId；如果已存在，使用之前的clientId
+      if (_clientId == null) {
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        _clientId = '${ApiConstants.mqttClientPrefix}${userId}_$timestamp';
+      }
+      
       final success = await _service.connect(
-        clientId: clientId,
+        clientId: _clientId!,
         username: username,
         password: password,
       );
@@ -233,7 +236,7 @@ class MqttNotifier extends StateNotifier<MqttState> {
         // 输出连接成功信息
         print('[MQTT] 连接成功');
         print('[MQTT]   Broker: ${ApiConstants.mqttBroker}:${ApiConstants.mqttPort}');
-        print('[MQTT]   ClientId: $clientId');
+        print('[MQTT]   ClientId: $_clientId');
         print('[MQTT]   UserId: $userId');
         print('[MQTT]   认证: ${username != null && password != null ? "是" : "否"}');
         
@@ -444,6 +447,7 @@ class MqttNotifier extends StateNotifier<MqttState> {
     _userId = null;
     _username = null;
     _password = null;
+    _clientId = null; // 清除clientId，下次连接时重新生成
     _isReconnecting = false;
     _reconnectAttempts = 0;
     _reconnectTimer?.cancel();

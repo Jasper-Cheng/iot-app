@@ -189,7 +189,7 @@ class MqttNotifier extends StateNotifier<MqttState> {
 
   /// 订阅个人消息通知
   void subscribeClientNotice(String accountId) {
-    subscribe(ApiConstants.mqttClientNotice(accountId));
+    // subscribe(ApiConstants.mqttClientNotice(accountId));暂时注释
   }
 
   /// 发送设备控制指令

@@ -86,7 +86,6 @@ class MqttService {
       await _client!.connect();
 
       if (isConnected) {
-        print('[MQTT] Connected ClientId: $clientId');
 
         _setupMessageListener();
         _resubscribeAllTopics();

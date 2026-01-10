@@ -140,16 +140,12 @@ class _MainScreenState extends ConsumerState<MainScreen> {
           final currentFamilyId = authState.account?.currentFamilyId;
           print('[MQTT] 检查家庭 ID - Account: ${authState.account != null ? "存在" : "null"}, CurrentFamilyId: $currentFamilyId');
           if (currentFamilyId != null) {
-            print('[MQTT] 当前家庭 ID: $currentFamilyId，订阅家庭消息');
             mqttNotifier.subscribeHomeNotice(currentFamilyId);
-          } else {
-            print('[MQTT] 当前无家庭 ID，跳过订阅家庭消息');
           }
 
           // 订阅个人消息通知
           if (authState.account != null) {
             final accountId = authState.account!.id.toString();
-            print('[MQTT] 订阅个人消息通知 (Account ID: $accountId)');
             mqttNotifier.subscribeClientNotice(accountId);
           }
 

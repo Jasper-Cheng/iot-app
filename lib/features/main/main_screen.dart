@@ -88,6 +88,13 @@ class _MainScreenState extends ConsumerState<MainScreen> {
       // 刷新消息列表
       ref.read(messageProvider.notifier).loadMessages();
     });
+
+    // 设置个人消息通知处理器
+    mqttNotifier.setClientNoticeHandler((accountId, data) {
+      print('[MQTT] 收到个人消息通知 (Account ID: $accountId): $data');
+      // 刷新消息列表
+      ref.read(messageProvider.notifier).loadMessages();
+    });
   }
 
   @override
@@ -137,6 +144,13 @@ class _MainScreenState extends ConsumerState<MainScreen> {
             mqttNotifier.subscribeHomeNotice(currentFamilyId);
           } else {
             print('[MQTT] 当前无家庭 ID，跳过订阅家庭消息');
+          }
+
+          // 订阅个人消息通知
+          if (authState.account != null) {
+            final accountId = authState.account!.id.toString();
+            print('[MQTT] 订阅个人消息通知 (Account ID: $accountId)');
+            mqttNotifier.subscribeClientNotice(accountId);
           }
 
           // 订阅所有设备的设备消息通知

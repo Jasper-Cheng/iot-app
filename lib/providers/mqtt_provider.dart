@@ -162,7 +162,6 @@ class MqttNotifier extends StateNotifier<MqttState> {
       state = state.copyWith(
         subscribedTopics: state.subscribedTopics.where((t) => t != topic).toList(),
       );
-      print('[MQTT] 取消订阅主题: $topic');
     } else {
       print('[MQTT] 主题未订阅，跳过取消: $topic');
     }

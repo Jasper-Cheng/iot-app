@@ -195,7 +195,6 @@ class _MainScreenState extends ConsumerState<MainScreen> {
       // 取消订阅已移除设备的设备消息通知
       for (final sn in previousSns) {
         if (!currentSns.contains(sn)) {
-          print('[MQTT] 设备移除，取消订阅设备消息通知 (Device SN: $sn)');
           mqttNotifier.unsubscribe(ApiConstants.mqttDeviceNotice(sn));
         }
       }

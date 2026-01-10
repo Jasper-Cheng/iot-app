@@ -68,6 +68,7 @@ class MqttService {
         ..onConnected = _onConnected
         ..onDisconnected = _onDisconnected
         ..onSubscribed = _onSubscribed
+        ..onUnsubscribed = _onUnSubscribed
         ..setProtocolV311();
 
       final connMessage = MqttConnectMessage()
@@ -135,7 +136,6 @@ class MqttService {
 
     if (isConnected) {
       _client!.subscribe(topic, qos);
-      print('[MQTT] Subscribe: $topic');
     }
   }
 
@@ -220,6 +220,10 @@ class MqttService {
 
   void _onSubscribed(String topic) {
     print('[MQTT] Subscribed OK: $topic');
+  }
+
+  void _onUnSubscribed(String? topic) {
+    print('[MQTT] UnSubscribed OK: $topic');
   }
 
   Future<void> dispose() async {

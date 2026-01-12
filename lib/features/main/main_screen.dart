@@ -9,7 +9,9 @@ import '../../providers/mqtt_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/device_provider.dart';
 import '../../providers/message_provider.dart';
+import '../../providers/family_provider.dart';
 import '../../core/constants/api_constants.dart';
+import '../../data/repositories/auth_repository.dart';
 
 /// 主框架页面（包含底部导航）
 class MainScreen extends ConsumerStatefulWidget {
@@ -139,6 +141,307 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     );
   }
 
+  /// 处理家庭消息
+  Future<void> _handleFamilyMessage(int homeId, Map<String, dynamic> data) async {
+    try {
+      // 提取消息类型和内容
+      final type = data['type']?.toString() ?? '';
+      final message = data['message']?.toString() ?? '';
+      
+      // 检查是否是当前家庭
+      final authState = ref.read(authProvider);
+      final currentFamilyId = authState.account?.currentFamilyId;
+      
+      // 如果消息不是来自当前家庭，不处理（理论上不应该发生，因为只会订阅当前家庭）
+      if (currentFamilyId != homeId) {
+        print('[MQTT] 收到非当前家庭的消息，忽略 (homeId: $homeId, currentFamilyId: $currentFamilyId)');
+        return;
+      }
+
+      // 根据消息类型进行处理
+      switch (type) {
+        case 'family_member_added':
+          await _handleFamilyMemberAdded(message, data);
+          break;
+        case 'family_member_updated':
+          await _handleFamilyMemberUpdated(message, data);
+          break;
+        case 'family_member_removed':
+          await _handleFamilyMemberRemoved(message, data);
+          break;
+        case 'family_deleted':
+          await _handleFamilyDeleted(message, data, homeId);
+          break;
+        case 'device_added_to_family':
+          await _handleDeviceAddedToFamily(message, data);
+          break;
+        case 'device_removed_from_family':
+          await _handleDeviceRemovedFromFamily(message, data);
+          break;
+        default:
+          print('[MQTT] 未知的家庭消息类型: $type');
+          // 显示默认通知
+          if (message.isNotEmpty) {
+            Fluttertoast.showToast(
+              msg: message,
+              toastLength: Toast.LENGTH_LONG,
+              gravity: ToastGravity.TOP,
+              backgroundColor: Colors.blue,
+              textColor: Colors.white,
+              timeInSecForIosWeb: 5,
+            );
+          }
+      }
+    } catch (e) {
+      print('[MQTT] 处理家庭消息失败: $e');
+    }
+  }
+
+  /// 处理成员加入家庭
+  Future<void> _handleFamilyMemberAdded(String message, Map<String, dynamic> data) async {
+    // 显示通知
+    Fluttertoast.showToast(
+      msg: message,
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.TOP,
+      backgroundColor: Colors.green,
+      textColor: Colors.white,
+      timeInSecForIosWeb: 5,
+    );
+
+    // 刷新家庭成员列表
+    final authState = ref.read(authProvider);
+    final currentFamilyId = authState.account?.currentFamilyId;
+    if (currentFamilyId != null) {
+      try {
+        final familyNotifier = ref.read(familyListProvider.notifier);
+        await familyNotifier.loadMembers(currentFamilyId);
+      } catch (e) {
+        print('[MQTT] 刷新家庭成员列表失败: $e');
+      }
+    }
+  }
+
+  /// 处理成员昵称更新
+  Future<void> _handleFamilyMemberUpdated(String message, Map<String, dynamic> data) async {
+    // 显示通知
+    Fluttertoast.showToast(
+      msg: message,
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.TOP,
+      backgroundColor: Colors.blue,
+      textColor: Colors.white,
+      timeInSecForIosWeb: 5,
+    );
+
+    // 刷新家庭成员列表
+    final authState = ref.read(authProvider);
+    final currentFamilyId = authState.account?.currentFamilyId;
+    if (currentFamilyId != null) {
+      try {
+        final familyNotifier = ref.read(familyListProvider.notifier);
+        await familyNotifier.loadMembers(currentFamilyId);
+      } catch (e) {
+        print('[MQTT] 刷新家庭成员列表失败: $e');
+      }
+    }
+  }
+
+  /// 处理成员被移除
+  Future<void> _handleFamilyMemberRemoved(String message, Map<String, dynamic> data) async {
+    // 显示通知
+    Fluttertoast.showToast(
+      msg: message,
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.TOP,
+      backgroundColor: Colors.orange,
+      textColor: Colors.white,
+      timeInSecForIosWeb: 5,
+    );
+
+    // 提取被移除的账户ID
+    final removedAccountId = data['removed_account_id'];
+    final authState = ref.read(authProvider);
+    final currentUserId = authState.account?.id;
+    final currentFamilyId = authState.account?.currentFamilyId;
+
+    // 如果被移除的是当前用户，需要切换到个人模式
+    if (removedAccountId != null && currentUserId != null) {
+      // 处理 removedAccountId 可能是 int 或 String 的情况
+      final removedId = removedAccountId is int 
+          ? removedAccountId 
+          : (removedAccountId is String 
+              ? int.tryParse(removedAccountId) 
+              : null);
+      
+      if (removedId == currentUserId && currentFamilyId != null) {
+        // 当前用户被移除，需要切换回个人模式
+        try {
+          final mqttNotifier = ref.read(mqttProvider.notifier);
+          final mqttState = ref.read(mqttProvider);
+          
+          // 1. 取消订阅家庭通知
+          if (mqttState.isConnected) {
+            final topic = ApiConstants.mqttHomeNotice(currentFamilyId);
+            mqttNotifier.unsubscribe(topic);
+          }
+
+          // 2. 调用接口切换到个人模式
+          final authRepository = AuthRepository();
+          await authRepository.updateCurrentFamily(null);
+
+          // 3. 刷新用户信息
+          await ref.read(authProvider.notifier).refreshProfile();
+
+          // 4. 刷新家庭列表
+          final familyNotifier = ref.read(familyListProvider.notifier);
+          await familyNotifier.loadFamilies();
+
+          // 5. 刷新设备列表
+          final deviceNotifier = ref.read(deviceListProvider.notifier);
+          await deviceNotifier.refresh();
+
+          // 6. 刷新消息列表
+          final messageNotifier = ref.read(messageProvider.notifier);
+          await messageNotifier.refresh();
+
+          print('[MQTT] 当前用户被移除，已切换回个人模式');
+          return; // 已切换模式，不需要刷新成员列表
+        } catch (e) {
+          print('[MQTT] 处理用户被移除失败: $e');
+        }
+      }
+    }
+
+    // 如果不是当前用户被移除，只需要刷新家庭成员列表
+    if (currentFamilyId != null) {
+      try {
+        final familyNotifier = ref.read(familyListProvider.notifier);
+        await familyNotifier.loadMembers(currentFamilyId);
+      } catch (e) {
+        print('[MQTT] 刷新家庭成员列表失败: $e');
+      }
+    }
+  }
+
+  /// 处理家庭被删除
+  Future<void> _handleFamilyDeleted(String message, Map<String, dynamic> data, int homeId) async {
+    // 显示通知
+    Fluttertoast.showToast(
+      msg: message,
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.TOP,
+      backgroundColor: Colors.red,
+      textColor: Colors.white,
+      timeInSecForIosWeb: 5,
+    );
+
+    // 检查是否是当前家庭
+    final authState = ref.read(authProvider);
+    final currentFamilyId = authState.account?.currentFamilyId;
+    final currentUserId = authState.account?.id;
+    
+    // 提取被移除的账户ID（如果是移除创建者导致家庭删除的情况）
+    final removedAccountId = data['removed_account_id'];
+    
+    if (currentFamilyId == homeId) {
+      // 当前家庭被删除，需要切换回个人模式
+      try {
+        final mqttNotifier = ref.read(mqttProvider.notifier);
+        final mqttState = ref.read(mqttProvider);
+        
+        // 1. 取消订阅家庭通知
+        if (mqttState.isConnected) {
+          final topic = ApiConstants.mqttHomeNotice(homeId);
+          mqttNotifier.unsubscribe(topic);
+        }
+
+        // 2. 调用接口切换到个人模式
+        final authRepository = AuthRepository();
+        await authRepository.updateCurrentFamily(null);
+
+        // 3. 刷新用户信息
+        await ref.read(authProvider.notifier).refreshProfile();
+
+        // 4. 刷新家庭列表
+        final familyNotifier = ref.read(familyListProvider.notifier);
+        await familyNotifier.loadFamilies();
+
+        // 5. 刷新设备列表
+        final deviceNotifier = ref.read(deviceListProvider.notifier);
+        await deviceNotifier.refresh();
+
+        // 6. 刷新消息列表
+        final messageNotifier = ref.read(messageProvider.notifier);
+        await messageNotifier.refresh();
+
+        // 记录删除原因（如果是移除创建者导致）
+        if (removedAccountId != null && currentUserId != null) {
+          final removedId = removedAccountId is int 
+              ? removedAccountId 
+              : (removedAccountId is String 
+                  ? int.tryParse(removedAccountId) 
+                  : null);
+          if (removedId == currentUserId) {
+            print('[MQTT] 家庭因创建者被移除而删除');
+          }
+        }
+      } catch (e) {
+        print('[MQTT] 处理家庭删除失败: $e');
+      }
+    } else {
+      // 非当前家庭被删除，只需要刷新家庭列表
+      try {
+        final familyNotifier = ref.read(familyListProvider.notifier);
+        await familyNotifier.loadFamilies();
+      } catch (e) {
+        print('[MQTT] 刷新家庭列表失败: $e');
+      }
+    }
+  }
+
+  /// 处理设备添加到家庭
+  Future<void> _handleDeviceAddedToFamily(String message, Map<String, dynamic> data) async {
+    // 显示通知
+    Fluttertoast.showToast(
+      msg: message,
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.TOP,
+      backgroundColor: Colors.green,
+      textColor: Colors.white,
+      timeInSecForIosWeb: 5,
+    );
+
+    // 刷新设备列表
+    try {
+      final deviceNotifier = ref.read(deviceListProvider.notifier);
+      await deviceNotifier.refresh();
+    } catch (e) {
+      print('[MQTT] 刷新设备列表失败: $e');
+    }
+  }
+
+  /// 处理设备从家庭移除
+  Future<void> _handleDeviceRemovedFromFamily(String message, Map<String, dynamic> data) async {
+    // 显示通知
+    Fluttertoast.showToast(
+      msg: message,
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.TOP,
+      backgroundColor: Colors.orange,
+      textColor: Colors.white,
+      timeInSecForIosWeb: 5,
+    );
+
+    // 刷新设备列表
+    try {
+      final deviceNotifier = ref.read(deviceListProvider.notifier);
+      await deviceNotifier.refresh();
+    } catch (e) {
+      print('[MQTT] 刷新设备列表失败: $e');
+    }
+  }
+
   void _setupMqttHandlers() {
     final mqttNotifier = ref.read(mqttProvider.notifier);
 
@@ -178,8 +481,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     // 设置家庭消息处理器
     mqttNotifier.setFamilyMessageHandler((homeId, data) {
       print('[MQTT] 收到家庭消息 (Home ID: $homeId): $data');
-      // TODO: 具体处理逻辑待实现
-      // 例如：显示通知、更新家庭消息列表等
+      _handleFamilyMessage(homeId, data);
     });
 
     // 设置设备消息通知处理器

@@ -570,6 +570,300 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     }
   }
 
+  /// 处理设备消息通知
+  Future<void> _handleDeviceNotice(String deviceSn, Map<String, dynamic> data) async {
+    try {
+      // 提取消息类型和内容
+      final type = data['type']?.toString() ?? '';
+      final message = data['message']?.toString() ?? '';
+
+      // 获取当前用户ID，用于判断是否是自己的操作
+      final authState = ref.read(authProvider);
+      final currentUserId = authState.account?.id;
+
+      // 提取操作者ID（可能是 int 或 String）
+      final operatorAccountId = data['operator_account_id'];
+
+      // 如果 operator_account_id 和当前用户ID相同，则不处理（避免重复处理自己的操作）
+      // if (currentUserId != null && operatorAccountId != null) {
+      //   final operatorId = operatorAccountId is int
+      //       ? operatorAccountId
+      //       : (operatorAccountId is String
+      //           ? int.tryParse(operatorAccountId)
+      //           : null);
+      //
+      //   if (operatorId == currentUserId) {
+      //     print('[MQTT] 忽略当前用户自己操作的设备消息通知 (type: $type, deviceSn: $deviceSn)');
+      //     return;
+      //   }
+      // }
+
+      // 根据消息类型进行处理
+      switch (type) {
+        case 'message_read':
+          await _handleMessageRead(deviceSn, message, data);
+          break;
+        case 'all_messages_read':
+          await _handleAllMessagesRead(deviceSn, message, data);
+          break;
+        case 'device_name_updated':
+          await _handleDeviceNameUpdated(deviceSn, message, data);
+          break;
+        case 'device_bind':
+          await _handleDeviceBind(deviceSn, message, data);
+          break;
+        case 'device_unbind':
+          await _handleDeviceUnbind(deviceSn, message, data);
+          break;
+        default:
+          print('[MQTT] 未知的设备消息类型: $type');
+          // 对于未知类型，刷新消息列表
+          ref.read(messageProvider.notifier).loadMessages().catchError((error) {
+            print('[MQTT] 刷新消息列表失败: $error');
+          });
+      }
+    } catch (e) {
+      print('[MQTT] 处理设备消息通知失败: $e');
+    }
+  }
+
+  /// 处理单条消息标记为已读
+  Future<void> _handleMessageRead(String deviceSn, String message, Map<String, dynamic> data) async {
+    try {
+      // 提取消息ID
+      final messageId = data['message_id'];
+      if (messageId == null) {
+        print('[MQTT] message_read 消息缺少 message_id 字段');
+        return;
+      }
+
+      // 处理 messageId 可能是 int 或 String 的情况
+      final id = messageId is int
+          ? messageId
+          : (messageId is String
+              ? int.tryParse(messageId)
+              : null);
+
+      if (id == null) {
+        print('[MQTT] message_read 消息的 message_id 格式错误: $messageId');
+        return;
+      }
+
+      // 从消息列表中移除该消息
+      final messageNotifier = ref.read(messageProvider.notifier);
+      final currentState = ref.read(messageProvider);
+      
+      // 检查消息是否在未读列表中
+      final messageExists = currentState.deviceMessages.any((msg) => msg.id == id);
+      if (messageExists) {
+        messageNotifier.removeMessage(id);
+        print('[MQTT] 已从消息列表中移除已读消息 (message_id: $id)');
+      }
+    } catch (e) {
+      print('[MQTT] 处理 message_read 失败: $e');
+    }
+  }
+
+  /// 处理所有消息标记为已读
+  Future<void> _handleAllMessagesRead(String deviceSn, String message, Map<String, dynamic> data) async {
+    try {
+      // 提取设备ID
+      final deviceId = data['device_id'];
+      
+      // 处理 deviceId 可能是 int 或 String 的情况
+      final id = deviceId is int
+          ? deviceId
+          : (deviceId is String
+              ? int.tryParse(deviceId)
+              : null);
+
+      // 如果指定了设备ID，只移除该设备的未读消息；否则移除所有未读消息
+      final messageNotifier = ref.read(messageProvider.notifier);
+      
+      if (id != null) {
+        // 只移除指定设备的未读消息
+        messageNotifier.removeMessagesByDeviceId(id);
+        print('[MQTT] 已移除设备 $deviceSn (device_id: $id) 的所有未读消息');
+      } else {
+        // 移除所有未读消息
+        messageNotifier.clearAllMessages();
+        print('[MQTT] 已移除所有未读消息');
+      }
+    } catch (e) {
+      print('[MQTT] 处理 all_messages_read 失败: $e');
+    }
+  }
+
+  /// 处理设备名称更新
+  Future<void> _handleDeviceNameUpdated(String deviceSn, String message, Map<String, dynamic> data) async {
+    try {
+      // 提取设备ID和新名称
+      final deviceId = data['device_id'];
+      final newName = data['device_name']?.toString();
+
+      if (deviceId == null || newName == null || newName.isEmpty) {
+        print('[MQTT] device_name_updated 消息缺少必要字段');
+        return;
+      }
+
+      // 处理 deviceId 可能是 int 或 String 的情况
+      final id = deviceId is int
+          ? deviceId
+          : (deviceId is String
+              ? int.tryParse(deviceId)
+              : null);
+
+      if (id == null) {
+        print('[MQTT] device_name_updated 消息的 device_id 格式错误: $deviceId');
+        return;
+      }
+
+      // 显示通知
+      if (message.isNotEmpty) {
+        Fluttertoast.showToast(
+          msg: message,
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.TOP,
+          backgroundColor: Colors.blue,
+          textColor: Colors.white,
+          timeInSecForIosWeb: 5,
+        );
+      }
+
+      // 更新设备列表中的设备名称
+      final deviceNotifier = ref.read(deviceListProvider.notifier);
+      final currentState = ref.read(deviceListProvider);
+      
+      // 检查设备是否在列表中
+      final deviceExists = currentState.devices.any((d) => d.id == id);
+      if (deviceExists) {
+        deviceNotifier.updateDeviceNameById(id, newName);
+        print('[MQTT] 已更新设备名称 (device_id: $id, device_sn: $deviceSn, new_name: $newName)');
+      } else {
+        print('[MQTT] 设备不在列表中，无法更新名称 (device_id: $id, device_sn: $deviceSn)');
+        // 如果设备不在列表中，刷新设备列表
+        await deviceNotifier.refresh();
+      }
+    } catch (e) {
+      print('[MQTT] 处理 device_name_updated 失败: $e');
+    }
+  }
+
+  /// 处理设备绑定
+  Future<void> _handleDeviceBind(String deviceSn, String message, Map<String, dynamic> data) async {
+    try {
+      // 提取设备ID
+      final deviceId = data['device_id'];
+
+      if (deviceId == null) {
+        print('[MQTT] device_bind 消息缺少 device_id 字段');
+        return;
+      }
+
+      // 处理 deviceId 可能是 int 或 String 的情况
+      final id = deviceId is int
+          ? deviceId
+          : (deviceId is String
+              ? int.tryParse(deviceId)
+              : null);
+
+      if (id == null) {
+        print('[MQTT] device_bind 消息的 device_id 格式错误: $deviceId');
+        return;
+      }
+
+      // 显示通知
+      if (message.isNotEmpty) {
+        Fluttertoast.showToast(
+          msg: message,
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.TOP,
+          backgroundColor: Colors.green,
+          textColor: Colors.white,
+          timeInSecForIosWeb: 5,
+        );
+      }
+
+      // 刷新设备列表（因为新设备被绑定了）
+      final deviceNotifier = ref.read(deviceListProvider.notifier);
+      await deviceNotifier.refresh();
+      
+      // 刷新消息列表以确保数据一致性
+      final messageNotifier = ref.read(messageProvider.notifier);
+      await messageNotifier.refresh();
+      
+      print('[MQTT] 设备绑定成功，已刷新设备列表 (device_id: $id, device_sn: $deviceSn)');
+    } catch (e) {
+      print('[MQTT] 处理 device_bind 失败: $e');
+    }
+  }
+
+  /// 处理设备解绑
+  Future<void> _handleDeviceUnbind(String deviceSn, String message, Map<String, dynamic> data) async {
+    try {
+      // 提取设备ID
+      final deviceId = data['device_id'];
+
+      if (deviceId == null) {
+        print('[MQTT] device_unbind 消息缺少 device_id 字段');
+        return;
+      }
+
+      // 处理 deviceId 可能是 int 或 String 的情况
+      final id = deviceId is int
+          ? deviceId
+          : (deviceId is String
+              ? int.tryParse(deviceId)
+              : null);
+
+      if (id == null) {
+        print('[MQTT] device_unbind 消息的 device_id 格式错误: $deviceId');
+        return;
+      }
+
+      // 显示通知
+      if (message.isNotEmpty) {
+        Fluttertoast.showToast(
+          msg: message,
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.TOP,
+          backgroundColor: Colors.orange,
+          textColor: Colors.white,
+          timeInSecForIosWeb: 5,
+        );
+      }
+
+      // 从设备列表中移除该设备
+      final deviceNotifier = ref.read(deviceListProvider.notifier);
+      final currentState = ref.read(deviceListProvider);
+      
+      // 检查设备是否在列表中
+      final deviceExists = currentState.devices.any((d) => d.id == id || d.sn == deviceSn);
+      if (deviceExists) {
+        deviceNotifier.removeDeviceByIdOrSn(id, deviceSn);
+        
+        // 取消订阅该设备的 MQTT 主题
+        final mqttNotifier = ref.read(mqttProvider.notifier);
+        mqttNotifier.unsubscribe(ApiConstants.mqttDeviceNotice(deviceSn));
+        mqttNotifier.unsubscribe(ApiConstants.mqttDeviceData(deviceSn));
+        mqttNotifier.unsubscribe(ApiConstants.mqttDeviceStatus(deviceSn));
+        
+        // 刷新消息列表（移除该设备的未读消息）
+        final messageNotifier = ref.read(messageProvider.notifier);
+        messageNotifier.removeMessagesByDeviceId(id);
+        
+        print('[MQTT] 已从设备列表中移除设备 (device_id: $id, device_sn: $deviceSn)');
+      } else {
+        print('[MQTT] 设备不在列表中，无法移除 (device_id: $id, device_sn: $deviceSn)');
+        // 即使设备不在列表中，也刷新消息列表以确保数据一致性
+        final messageNotifier = ref.read(messageProvider.notifier);
+        await messageNotifier.refresh();
+      }
+    } catch (e) {
+      print('[MQTT] 处理 device_unbind 失败: $e');
+    }
+  }
+
   void _setupMqttHandlers() {
     final mqttNotifier = ref.read(mqttProvider.notifier);
 
@@ -615,8 +909,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     // 设置设备消息通知处理器
     mqttNotifier.setDeviceNoticeHandler((deviceSn, data) {
       print('[MQTT] 收到设备消息通知 (Device SN: $deviceSn): $data');
-      // 刷新消息列表
-      ref.read(messageProvider.notifier).loadMessages();
+      _handleDeviceNotice(deviceSn, data);
     });
 
     // 设置个人消息通知处理器（暂时屏蔽）

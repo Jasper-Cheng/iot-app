@@ -196,6 +196,23 @@ class MessageNotifier extends StateNotifier<MessageState> {
   Future<({bool success, String message})> refresh() async {
     return await loadMessages();
   }
+
+  /// 从消息列表中移除指定消息（用于 MQTT 消息处理）
+  void removeMessage(int messageId) {
+    final updatedMessages = state.deviceMessages.where((msg) => msg.id != messageId).toList();
+    state = state.copyWith(deviceMessages: updatedMessages);
+  }
+
+  /// 从消息列表中移除指定设备的所有消息（用于 MQTT 消息处理）
+  void removeMessagesByDeviceId(int deviceId) {
+    final updatedMessages = state.deviceMessages.where((msg) => msg.deviceId != deviceId).toList();
+    state = state.copyWith(deviceMessages: updatedMessages);
+  }
+
+  /// 清空所有未读消息（用于 MQTT 消息处理）
+  void clearAllMessages() {
+    state = state.copyWith(deviceMessages: []);
+  }
 }
 
 /// 消息 Provider

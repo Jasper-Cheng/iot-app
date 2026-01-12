@@ -3,6 +3,7 @@ import '../data/models/device.dart';
 import '../data/repositories/device_repository.dart';
 import '../core/utils/error_handler.dart';
 import 'auth_provider.dart';
+import 'message_provider.dart';
 
 /// 设备列表状态
 class DeviceListState {
@@ -33,9 +34,11 @@ class DeviceListState {
 class DeviceListNotifier extends StateNotifier<DeviceListState> {
   final DeviceRepository _repository;
   final int? _currentFamilyId;
+  final Ref _ref;
 
   DeviceListNotifier(
-    this._repository, {
+    this._repository,
+    this._ref, {
     int? currentFamilyId,
   })  : _currentFamilyId = currentFamilyId,
         super(const DeviceListState()) {
@@ -74,6 +77,12 @@ class DeviceListNotifier extends StateNotifier<DeviceListState> {
       // 如果不在家庭模式下，重新加载设备列表（显示个人设备）
       await loadDevices();
       state = state.copyWith(error: null); // 清除之前的错误
+      
+      // 刷新设备消息列表
+      _ref.read(messageProvider.notifier).loadMessages().catchError((error) {
+        print('[DeviceProvider] 刷新设备消息失败: $error');
+      });
+      
       return (success: true, message: '设备绑定成功');
     } catch (e) {
       final errorMessage = ErrorHandler.extractErrorMessage(e);
@@ -86,11 +95,33 @@ class DeviceListNotifier extends StateNotifier<DeviceListState> {
   /// 返回 ({bool success, String message}) 表示状态和消息
   Future<({bool success, String message})> unbindDevice(String sn) async {
     try {
+      // 获取要解绑的设备ID（用于从消息列表中移除该设备的消息）
+      int? deviceId;
+      try {
+        final deviceToUnbind = state.devices.firstWhere((d) => d.sn == sn);
+        deviceId = deviceToUnbind.id;
+      } catch (e) {
+        // 设备不在列表中，继续执行解绑操作
+        print('[DeviceProvider] 设备不在列表中，继续解绑: $sn');
+      }
+      
       await _repository.unbindDevice(sn);
       state = state.copyWith(
         devices: state.devices.where((d) => d.sn != sn).toList(),
         error: null, // 清除之前的错误
       );
+      
+      // 如果找到了设备ID，从消息列表中移除该设备的未读消息
+      if (deviceId != null) {
+        final messageNotifier = _ref.read(messageProvider.notifier);
+        messageNotifier.removeMessagesByDeviceId(deviceId);
+      }
+      
+      // 刷新消息列表以确保数据一致性
+      _ref.read(messageProvider.notifier).loadMessages().catchError((error) {
+        print('[DeviceProvider] 刷新设备消息失败: $error');
+      });
+      
       return (success: true, message: '设备已解绑');
     } catch (e) {
       final errorMessage = ErrorHandler.extractErrorMessage(e);
@@ -128,6 +159,27 @@ class DeviceListNotifier extends StateNotifier<DeviceListState> {
   Future<({bool success, String message})> refresh() async {
     return await loadDevices();
   }
+
+  /// 更新设备名称（用于 MQTT 消息处理）
+  void updateDeviceNameById(int deviceId, String newName) {
+    final updatedDevices = state.devices.map((device) {
+      if (device.id == deviceId) {
+        return device.copyWith(name: newName);
+      }
+      return device;
+    }).toList();
+    state = state.copyWith(devices: updatedDevices);
+  }
+
+  /// 从设备列表中移除设备（用于 MQTT 消息处理）
+  void removeDeviceByIdOrSn(int? deviceId, String? deviceSn) {
+    final updatedDevices = state.devices.where((d) {
+      if (deviceId != null && d.id == deviceId) return false;
+      if (deviceSn != null && d.sn == deviceSn) return false;
+      return true;
+    }).toList();
+    state = state.copyWith(devices: updatedDevices);
+  }
 }
 
 /// 设备列表 Provider
@@ -138,6 +190,7 @@ final deviceListProvider = StateNotifierProvider<DeviceListNotifier, DeviceListS
   
   return DeviceListNotifier(
     DeviceRepository(),
+    ref,
     currentFamilyId: currentFamilyId,
   );
 });

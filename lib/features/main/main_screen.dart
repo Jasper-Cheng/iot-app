@@ -177,8 +177,18 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     // 设置个人消息通知处理器
     mqttNotifier.setClientNoticeHandler((accountId, data) {
       print('[MQTT] 收到个人消息通知 (Account ID: $accountId): $data');
-      // 刷新消息列表
-      ref.read(messageProvider.notifier).loadMessages();
+      
+      // 提取消息类型
+      final type = data['type']?.toString();
+      
+      // 如果是 feedback_created 类型，且 source 是 app，则不处理（app 主动创建的）
+      if (type == 'feedback_created') {
+        final source = data['source']?.toString();
+        if (source == 'app') {
+          print('[MQTT] 忽略 app 主动创建的反馈通知');
+          return;
+        }
+      }
     });
   }
 

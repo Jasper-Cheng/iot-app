@@ -11,6 +11,7 @@ import '../../providers/device_provider.dart';
 import '../../providers/message_provider.dart';
 import '../../providers/family_provider.dart';
 import '../../core/constants/api_constants.dart';
+import '../../core/utils/error_handler.dart';
 import '../../data/repositories/auth_repository.dart';
 
 /// 主框架页面（包含底部导航）
@@ -512,13 +513,60 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     }
 
     // 刷新家庭成员列表（因为成员账号已注销，应该从列表中移除）
+    // 如果无法访问家庭（可能是因为用户被移除或账号注销），自动切回个人设备管理
     if (currentFamilyId != null) {
       try {
         final familyNotifier = ref.read(familyListProvider.notifier);
         await familyNotifier.loadMembers(currentFamilyId);
       } catch (e) {
         print('[MQTT] 刷新家庭成员列表失败: $e');
+        final errorMessage = ErrorHandler.extractErrorMessage(e);
+        // 如果是"无权访问此家庭"的错误，说明用户已经不在该家庭中，需要切回个人设备管理
+        if (errorMessage.contains('无权访问') || errorMessage.contains('无权访问此家庭')) {
+          print('[MQTT] 检测到无权访问家庭，自动切回个人设备管理');
+          await _switchToPersonalMode(currentFamilyId);
+        }
       }
+    }
+  }
+
+  /// 切换到个人设备管理（从MQTT消息处理中调用）
+  Future<void> _switchToPersonalMode(int? previousFamilyId) async {
+    try {
+      // 1. 取消订阅之前的家庭通知（如果存在）
+      if (previousFamilyId != null) {
+        final mqttNotifier = ref.read(mqttProvider.notifier);
+        final mqttState = ref.read(mqttProvider);
+        if (mqttState.isConnected) {
+          final topic = ApiConstants.mqttHomeNotice(previousFamilyId);
+          mqttNotifier.unsubscribe(topic);
+        }
+      }
+
+      // 2. 调用接口切换到个人模式
+      final authRepository = AuthRepository();
+      await authRepository.updateCurrentFamily(null);
+
+      // 3. 刷新用户信息（更新 authProvider 中的 currentFamilyId 为 null）
+      await ref.read(authProvider.notifier).refreshProfile();
+
+      // 4. 重新获取 notifier（因为 familyListProvider 会重新创建，使用最新的 currentFamilyId）
+      final newNotifier = ref.read(familyListProvider.notifier);
+
+      // 5. 重新加载家庭列表（会使用最新的 currentFamilyId，应该是 null）
+      await newNotifier.loadFamilies();
+
+      // 6. 重新获取设备列表 notifier 并刷新设备列表（确保使用最新的 currentFamilyId）
+      final deviceNotifier = ref.read(deviceListProvider.notifier);
+      await deviceNotifier.refresh();
+
+      // 7. 重新获取消息列表 notifier 并刷新消息列表（确保使用最新的 currentFamilyId）
+      final messageNotifier = ref.read(messageProvider.notifier);
+      await messageNotifier.refresh();
+
+      print('[MQTT] 已自动切回个人设备管理');
+    } catch (e) {
+      print('[MQTT] 切换到个人模式失败: $e');
     }
   }
 

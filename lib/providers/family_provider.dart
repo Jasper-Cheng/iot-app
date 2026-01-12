@@ -1,8 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models/family.dart' as family_models;
 import '../data/repositories/family_repository.dart';
+import '../data/repositories/auth_repository.dart';
 import '../core/utils/error_handler.dart';
 import 'auth_provider.dart';
+import 'device_provider.dart';
+import 'message_provider.dart';
+import 'mqtt_provider.dart';
+import '../core/constants/api_constants.dart';
 
 /// 家庭列表状态
 class FamilyListState {
@@ -46,13 +51,16 @@ class FamilyListNotifier extends StateNotifier<FamilyListState> {
   final FamilyRepository _familyRepository;
   final int? _currentUserId;
   final int? _currentFamilyId;
+  final Ref? _ref; // 用于访问其他 provider
 
   FamilyListNotifier(
     this._familyRepository, {
     int? currentUserId,
     int? currentFamilyId,
+    Ref? ref,
   })  : _currentUserId = currentUserId,
         _currentFamilyId = currentFamilyId,
+        _ref = ref,
         super(const FamilyListState()) {
     // 不在构造函数中自动加载，由 FamilyScreen 统一管理加载时机
   }
@@ -113,9 +121,16 @@ class FamilyListNotifier extends StateNotifier<FamilyListState> {
           // 直接加载当前家庭数据，确保顺序执行
           await loadCurrentFamilyData(_currentFamilyId!);
         } catch (e) {
-          // 当前家庭不在列表中，不加载
-          print('[FamilyProvider] 当前家庭 $_currentFamilyId 不在家庭列表中');
+          // 当前家庭不在列表中，自动切回个人设备管理
+          print('[FamilyProvider] 当前家庭 $_currentFamilyId 不在家庭列表中，自动切回个人设备管理');
+          await _switchToPersonalMode();
         }
+      } else {
+        // 如果没有当前家庭ID，确保清除当前家庭状态
+        state = state.copyWith(
+          currentFamily: null,
+          members: [],
+        );
       }
     } catch (e) {
       state = state.copyWith(
@@ -232,9 +247,19 @@ class FamilyListNotifier extends StateNotifier<FamilyListState> {
       }
     } catch (e) {
       print('[FamilyProvider] 加载家庭成员失败: $e');
+      final errorMessage = ErrorHandler.extractErrorMessage(e);
       state = state.copyWith(
-        error: ErrorHandler.extractErrorMessage(e),
+        error: errorMessage,
       );
+      
+      // 如果是"无权访问此家庭"的错误，说明用户已经不在该家庭中，需要切回个人设备管理
+      if (errorMessage.contains('无权访问') || errorMessage.contains('无权访问此家庭')) {
+        print('[FamilyProvider] 检测到无权访问家庭，自动切回个人设备管理');
+        if (familyId == _currentFamilyId) {
+          // 只有在加载当前家庭成员时遇到此错误才切换
+          await _switchToPersonalMode();
+        }
+      }
     }
   }
 
@@ -317,6 +342,69 @@ class FamilyListNotifier extends StateNotifier<FamilyListState> {
     // 所以这里只需要调用 loadFamilies() 即可，避免重复加载
     await loadFamilies();
   }
+
+  /// 切换到个人设备管理
+  Future<void> _switchToPersonalMode() async {
+    // 如果没有 ref，无法切换，只清除状态
+    if (_ref == null) {
+      if (mounted) {
+        state = state.copyWith(
+          currentFamily: null,
+          members: [],
+        );
+      }
+      return;
+    }
+
+    try {
+      final previousFamilyId = _currentFamilyId;
+      
+      // 1. 先清除当前家庭状态（在 refreshProfile 之前）
+      if (mounted) {
+        state = state.copyWith(
+          currentFamily: null,
+          members: [],
+        );
+      }
+      
+      // 2. 调用接口切换到个人模式
+      final authRepository = AuthRepository();
+      await authRepository.updateCurrentFamily(null);
+
+      // 3. 刷新用户信息（更新 authProvider 中的 currentFamilyId 为 null）
+      // 注意：这会导致 familyListProvider 重建，所以之后不能再访问 state
+      await _ref!.read(authProvider.notifier).refreshProfile();
+
+      // 4. 刷新设备列表（在新的 provider 实例中）
+      final deviceNotifier = _ref!.read(deviceListProvider.notifier);
+      await deviceNotifier.refresh();
+
+      // 5. 刷新消息列表
+      final messageNotifier = _ref!.read(messageProvider.notifier);
+      await messageNotifier.refresh();
+
+      // 6. 取消订阅之前的家庭通知（如果存在）
+      if (previousFamilyId != null) {
+        final mqttNotifier = _ref!.read(mqttProvider.notifier);
+        final mqttState = _ref!.read(mqttProvider);
+        if (mqttState.isConnected) {
+          final topic = ApiConstants.mqttHomeNotice(previousFamilyId);
+          mqttNotifier.unsubscribe(topic);
+        }
+      }
+
+      print('[FamilyProvider] 已自动切回个人设备管理');
+    } catch (e) {
+      print('[FamilyProvider] 切换到个人模式失败: $e');
+      // 即使失败，也清除当前家庭状态（如果还 mounted）
+      if (mounted) {
+        state = state.copyWith(
+          currentFamily: null,
+          members: [],
+        );
+      }
+    }
+  }
 }
 
 /// 家庭列表 Provider
@@ -330,6 +418,7 @@ final familyListProvider = StateNotifierProvider<FamilyListNotifier, FamilyListS
     FamilyRepository(),
     currentUserId: currentUserId,
     currentFamilyId: currentFamilyId,
+    ref: ref, // 传递 ref 以便访问其他 provider
   );
 });
 

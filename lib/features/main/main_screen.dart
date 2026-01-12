@@ -178,6 +178,12 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         case 'device_removed_from_family':
           await _handleDeviceRemovedFromFamily(message, data);
           break;
+        case 'member_info_updated':
+          await _handleMemberInfoUpdated(message, data);
+          break;
+        case 'account_deleted':
+          await _handleAccountDeleted(message, data);
+          break;
         default:
           print('[MQTT] 未知的家庭消息类型: $type');
           // 显示默认通知
@@ -439,6 +445,80 @@ class _MainScreenState extends ConsumerState<MainScreen> {
       await deviceNotifier.refresh();
     } catch (e) {
       print('[MQTT] 刷新设备列表失败: $e');
+    }
+  }
+
+  /// 处理成员信息更新
+  Future<void> _handleMemberInfoUpdated(String message, Map<String, dynamic> data) async {
+    // 显示通知
+    Fluttertoast.showToast(
+      msg: message,
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.TOP,
+      backgroundColor: Colors.blue,
+      textColor: Colors.white,
+      timeInSecForIosWeb: 5,
+    );
+
+    // 提取更新的字段信息（用于日志）
+    final updatedFields = data['updated_fields'];
+    if (updatedFields != null && updatedFields is List) {
+      print('[MQTT] 成员信息更新，更新的字段: ${updatedFields.join(", ")}');
+    }
+
+    // 刷新家庭成员列表（因为成员信息可能更新了）
+    final authState = ref.read(authProvider);
+    final currentFamilyId = authState.account?.currentFamilyId;
+    if (currentFamilyId != null) {
+      try {
+        final familyNotifier = ref.read(familyListProvider.notifier);
+        await familyNotifier.loadMembers(currentFamilyId);
+      } catch (e) {
+        print('[MQTT] 刷新家庭成员列表失败: $e');
+      }
+    }
+  }
+
+  /// 处理账号注销
+  Future<void> _handleAccountDeleted(String message, Map<String, dynamic> data) async {
+    // 显示通知
+    Fluttertoast.showToast(
+      msg: message,
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.TOP,
+      backgroundColor: Colors.red,
+      textColor: Colors.white,
+      timeInSecForIosWeb: 5,
+    );
+
+    // 提取注销的账户ID
+    final accountId = data['account_id'];
+    final authState = ref.read(authProvider);
+    final currentUserId = authState.account?.id;
+    final currentFamilyId = authState.account?.currentFamilyId;
+
+    // 处理 accountId 可能是 int 或 String 的情况
+    final deletedAccountId = accountId is int 
+        ? accountId 
+        : (accountId is String 
+            ? int.tryParse(accountId) 
+            : null);
+
+    // 如果注销的是当前用户（理论上不应该发生，因为账号已注销，但为了安全起见还是处理）
+    if (deletedAccountId != null && currentUserId != null && deletedAccountId == currentUserId) {
+      print('[MQTT] 当前用户账号已注销');
+      // 账号已注销，理论上不会收到消息，但为了安全起见，可以做一些清理工作
+      // 这里不需要特殊处理，因为账号注销后用户应该已经退出登录
+    }
+
+    // 刷新家庭成员列表（因为成员账号已注销，应该从列表中移除）
+    if (currentFamilyId != null) {
+      try {
+        final familyNotifier = ref.read(familyListProvider.notifier);
+        await familyNotifier.loadMembers(currentFamilyId);
+      } catch (e) {
+        print('[MQTT] 刷新家庭成员列表失败: $e');
+      }
     }
   }
 

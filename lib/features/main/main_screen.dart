@@ -99,6 +99,46 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     }
   }
 
+  /// 处理个人消息通知
+  void _handlePersonalNotice(String? type, String message, Map<String, dynamic> data) {
+    Color backgroundColor;
+    
+    // 根据消息类型设置颜色
+    if (type == 'feedback_replied') {
+      // 反馈回复通知 - 蓝色
+      backgroundColor = Colors.blue;
+    } else if (type == 'check_in_success') {
+      // 签到成功通知 - 绿色
+      backgroundColor = Colors.green;
+    } else if (type == 'feedback_created') {
+      // 反馈创建通知 - 绿色
+      backgroundColor = Colors.green;
+    } else {
+      // 积分调整或其他通知 - 根据积分正负判断颜色
+      final points = data['points'];
+      if (points != null) {
+        final pointsValue = points is int ? points : (points is String ? int.tryParse(points) : null);
+        if (pointsValue != null) {
+          backgroundColor = pointsValue > 0 ? Colors.green : Colors.orange;
+        } else {
+          backgroundColor = Colors.blue;
+        }
+      } else {
+        backgroundColor = Colors.blue;
+      }
+    }
+    
+    // 显示 Toast 通知
+    Fluttertoast.showToast(
+      msg: message,
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.TOP,
+      backgroundColor: backgroundColor,
+      textColor: Colors.white,
+      timeInSecForIosWeb: 5, // 显示 5 秒
+    );
+  }
+
   void _setupMqttHandlers() {
     final mqttNotifier = ref.read(mqttProvider.notifier);
 
@@ -178,6 +218,12 @@ class _MainScreenState extends ConsumerState<MainScreen> {
             return;
           }
         }
+      }
+      
+      // 根据消息类型进行处理
+      final message = data['message']?.toString() ?? '';
+      if (message.isNotEmpty) {
+        _handlePersonalNotice(type, message, data);
       }
     });
   }

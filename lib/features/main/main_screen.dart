@@ -181,12 +181,27 @@ class _MainScreenState extends ConsumerState<MainScreen> {
       // 提取消息类型
       final type = data['type']?.toString();
       
-      // 如果是 feedback_created 类型，且 source 是 app，则不处理（app 主动创建的）
-      if (type == 'feedback_created') {
-        final source = data['source']?.toString();
-        if (source == 'app') {
-          print('[MQTT] 忽略 app 主动创建的反馈通知');
-          return;
+      // 获取当前用户ID
+      final authState = ref.read(authProvider);
+      final currentUserId = authState.account?.id;
+      
+      // 提取操作者ID（可能是 int 或 String）
+      final operatorAccountId = data['operator_account_id'];
+      
+      // feedback_replied 和 points_adjusted 类型除外，其他类型如果是当前用户操作的则不处理
+      if (type != 'feedback_replied' && type != 'points_adjusted') {
+        if (currentUserId != null && operatorAccountId != null) {
+          // 处理 operatorAccountId 可能是 int 或 String 的情况
+          final operatorId = operatorAccountId is int 
+              ? operatorAccountId 
+              : (operatorAccountId is String 
+                  ? int.tryParse(operatorAccountId) 
+                  : null);
+          
+          if (operatorId == currentUserId) {
+            print('[MQTT] 忽略当前用户自己操作的消息通知 (type: $type, operator_account_id: $operatorAccountId)');
+            return;
+          }
         }
       }
     });

@@ -189,40 +189,42 @@ class _MainScreenState extends ConsumerState<MainScreen> {
       ref.read(messageProvider.notifier).loadMessages();
     });
 
-    // 设置个人消息通知处理器
+    // 设置个人消息通知处理器（暂时屏蔽）
     mqttNotifier.setClientNoticeHandler((accountId, data) {
       print('[MQTT] 收到个人消息通知 (Account ID: $accountId): $data');
+      // 暂时屏蔽个人消息处理
+      return;
       
       // 提取消息类型
-      final type = data['type']?.toString();
+      // final type = data['type']?.toString();
       
       // 获取当前用户ID
-      final authState = ref.read(authProvider);
-      final currentUserId = authState.account?.id;
+      // final authState = ref.read(authProvider);
+      // final currentUserId = authState.account?.id;
       
       // 提取操作者ID（可能是 int 或 String）
-      final operatorAccountId = data['operator_account_id'];
+      // final operatorAccountId = data['operator_account_id'];
       
       // 如果 operator_account_id 和当前用户ID相同，则不处理
-      if (currentUserId != null && operatorAccountId != null) {
-        // 处理 operatorAccountId 可能是 int 或 String 的情况
-        final operatorId = operatorAccountId is int 
-            ? operatorAccountId 
-            : (operatorAccountId is String 
-                ? int.tryParse(operatorAccountId) 
-                : null);
-        
-        if (operatorId == currentUserId) {
-          print('[MQTT] 忽略当前用户自己操作的消息通知 (type: $type, operator_account_id: $operatorAccountId)');
-          return;
-        }
-      }
+      // if (currentUserId != null && operatorAccountId != null) {
+      //   // 处理 operatorAccountId 可能是 int 或 String 的情况
+      //   final operatorId = operatorAccountId is int 
+      //       ? operatorAccountId 
+      //       : (operatorAccountId is String 
+      //           ? int.tryParse(operatorAccountId) 
+      //           : null);
+      
+      //   if (operatorId == currentUserId) {
+      //     print('[MQTT] 忽略当前用户自己操作的消息通知 (type: $type, operator_account_id: $operatorAccountId)');
+      //     return;
+      //   }
+      // }
       
       // 根据消息类型进行处理
-      final message = data['message']?.toString() ?? '';
-      if (message.isNotEmpty) {
-        _handlePersonalNotice(type, message, data);
-      }
+      // final message = data['message']?.toString() ?? '';
+      // if (message.isNotEmpty) {
+      //   _handlePersonalNotice(type, message, data);
+      // }
     });
   }
 
@@ -272,11 +274,11 @@ class _MainScreenState extends ConsumerState<MainScreen> {
             mqttNotifier.subscribeHomeNotice(currentFamilyId);
           }
 
-          // 订阅个人消息通知
-          if (authState.account != null) {
-            final accountId = authState.account!.id.toString();
-            mqttNotifier.subscribeClientNotice(accountId);
-          }
+          // 订阅个人消息通知（暂时屏蔽）
+          // if (authState.account != null) {
+          //   final accountId = authState.account!.id.toString();
+          //   mqttNotifier.subscribeClientNotice(accountId);
+          // }
 
           // 订阅所有设备的设备消息通知
           final deviceState = ref.read(deviceListProvider);

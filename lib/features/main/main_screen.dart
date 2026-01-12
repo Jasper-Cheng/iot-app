@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mqtt_client/mqtt_client.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import '../home/screens/home_screen.dart';
 import '../family/screens/family_screen.dart';
 import '../settings/screens/settings_screen.dart';
@@ -65,14 +66,93 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     }
   }
 
+  /// 根据消息类型获取中文名称
+  String _getMessageTypeName(String type) {
+    switch (type) {
+      case 'notification':
+        return '通知';
+      case 'announcement':
+        return '公告';
+      case 'alert':
+        return '警告';
+      case 'maintenance':
+        return '维护';
+      case 'update':
+        return '更新';
+      default:
+        return '通知';
+    }
+  }
+
+  /// 根据消息类型和优先级获取 toast 背景颜色
+  Color _getToastColor(String type, String priority) {
+    // 根据优先级确定颜色深度
+    int colorShade;
+    switch (priority) {
+      case 'urgent':
+        colorShade = 900; // 最深
+        break;
+      case 'high':
+        colorShade = 700;
+        break;
+      case 'normal':
+        colorShade = 600;
+        break;
+      case 'low':
+      default:
+        colorShade = 400; // 最浅
+        break;
+    }
+
+    // 根据类型选择基础颜色
+    switch (type) {
+      case 'notification': // 通知 - 蓝色系
+        return Colors.blue[colorShade] ?? Colors.blue;
+      case 'announcement': // 公告 - 绿色系
+        return Colors.green[colorShade] ?? Colors.green;
+      case 'alert': // 警告 - 橙色/黄色系
+        if (priority == 'urgent') {
+          return Colors.red[900] ?? Colors.red; // 紧急警告用红色
+        }
+        return Colors.orange[colorShade] ?? Colors.orange;
+      case 'maintenance': // 维护 - 灰色/蓝色系
+        return Colors.blueGrey[colorShade] ?? Colors.blueGrey;
+      case 'update': // 更新 - 紫色/蓝色系
+        return Colors.purple[colorShade] ?? Colors.purple;
+      default:
+        return Colors.blue[colorShade] ?? Colors.blue;
+    }
+  }
+
   void _setupMqttHandlers() {
     final mqttNotifier = ref.read(mqttProvider.notifier);
 
     // 设置系统消息处理器
     mqttNotifier.setSystemMessageHandler((data) {
       print('[MQTT] 收到系统消息: $data');
-      // TODO: 具体处理逻辑待实现
-      // 例如：显示通知、更新系统消息列表等
+      // 提取消息内容、类型和优先级
+      final message = data['message']?.toString() ?? '';
+      final type = data['type']?.toString() ?? 'notification';
+      final priority = data['priority']?.toString() ?? 'normal';
+      
+      if (message.isNotEmpty) {
+        // 根据类型和优先级获取颜色
+        final backgroundColor = _getToastColor(type, priority);
+        // 获取类型中文名称
+        final typeName = _getMessageTypeName(type);
+        // 在消息前添加类型标签
+        final displayMessage = '[$typeName] $message';
+        
+        // 在顶部显示 toast
+        Fluttertoast.showToast(
+          msg: displayMessage,
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.TOP,
+          backgroundColor: backgroundColor,
+          textColor: Colors.white,
+          timeInSecForIosWeb: 5, // 显示 5 秒
+        );
+      }
     });
 
     // 设置家庭消息处理器

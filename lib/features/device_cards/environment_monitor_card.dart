@@ -39,7 +39,13 @@ class _EnvironmentMonitorCardState extends BaseDeviceCardState<EnvironmentMonito
   @override
   void onDeviceDataReceived(Map<String, dynamic> data) {
     // 数据格式：{'co2': 517, 'hcho': 10, 'tvoc': 15, 'pm25': 22, 'pm10': 27, 'temp': 19.0, 'humi': 39.0, 'sn': 'M701001-220403-000001'}
+    final wasOffline = !isOnline;
     setState(() {
+      // 如果设备当前是离线状态，收到数据则将其设置为在线
+      if (!isOnline) {
+        isOnline = true;
+      }
+      
       // 初始化传感器数据（如果还没有数据）
       _sensors ??= {};
       // 更新传感器数据
@@ -77,6 +83,11 @@ class _EnvironmentMonitorCardState extends BaseDeviceCardState<EnvironmentMonito
         _sensors!['humi'] = humi is double ? humi : (humi as num).toDouble();
       }
     });
+    
+    // 如果状态从离线变为在线，触发状态变更回调
+    if (wasOffline) {
+      onDeviceStatusChanged(true);
+    }
   }
 
   @override

@@ -38,11 +38,19 @@ class DeviceRepository {
   }
 
   /// 修改设备名称
-  Future<Device> updateDeviceName(int id, String name) async {
+  /// [id] 设备ID
+  /// [name] 新设备名称
+  /// [familyId] 家庭ID，如果不为 null 则作为查询参数传递
+  Future<Device> updateDeviceName(int id, String name, {int? familyId}) async {
     final request = UpdateDeviceNameRequest(name: name);
+    final queryParameters = <String, dynamic>{};
+    if (familyId != null) {
+      queryParameters['family_id'] = familyId;
+    }
     final response = await _dio.patch(
       ApiConstants.updateDeviceName(id),
       data: request.toJson(),
+      queryParameters: queryParameters.isNotEmpty ? queryParameters : null,
     );
     return Device.fromJson(response.data);
   }

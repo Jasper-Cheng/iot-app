@@ -103,7 +103,11 @@ class DeviceListNotifier extends StateNotifier<DeviceListState> {
   /// 返回 ({bool success, String message}) 表示状态和消息
   Future<({bool success, String message})> updateDeviceName(int id, String name) async {
     try {
-      final updatedDevice = await _repository.updateDeviceName(id, name);
+      final updatedDevice = await _repository.updateDeviceName(
+        id,
+        name,
+        familyId: _currentFamilyId,
+      );
       final devices = state.devices.map((d) {
         return d.id == id ? updatedDevice : d;
       }).toList();

@@ -153,6 +153,11 @@ class _MainScreenState extends ConsumerState<MainScreen> {
           timeInSecForIosWeb: 5, // 显示 5 秒
         );
       }
+      
+      // 刷新系统消息列表
+      ref.read(messageProvider.notifier).loadSystemMessages().catchError((error) {
+        print('[MainScreen] 加载系统消息失败: $error');
+      });
     });
 
     // 设置家庭消息处理器

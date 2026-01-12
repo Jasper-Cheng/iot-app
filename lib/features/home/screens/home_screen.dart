@@ -1183,8 +1183,6 @@ class _AnimatedDeviceMessageItemState extends State<_AnimatedDeviceMessageItem> 
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                   fontWeight: FontWeight.w500,
                                 ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 4),
                           Row(
@@ -1428,8 +1426,6 @@ class _MessageLogDialogState extends State<_MessageLogDialog> {
                             fontWeight: FontWeight.w500,
                             color: Theme.of(context).textTheme.bodyMedium?.color,
                           ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
                     Row(
@@ -1564,6 +1560,23 @@ class _SystemMessagesTab extends ConsumerWidget {
       }
     }
 
+    String getTypeName() {
+      switch (message.type) {
+        case 'notification':
+          return '通知';
+        case 'announcement':
+          return '公告';
+        case 'alert':
+          return '警告';
+        case 'maintenance':
+          return '维护';
+        case 'update':
+          return '更新';
+        default:
+          return '通知';
+      }
+    }
+
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: InkWell(
@@ -1584,6 +1597,27 @@ class _SystemMessagesTab extends ConsumerWidget {
                     color: getPriorityColor(),
                   ),
                   const SizedBox(width: 8),
+                  // 类型标签
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: getPriorityColor().withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
+                        color: getPriorityColor().withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Text(
+                      getTypeName(),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: getPriorityColor(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       message.title,
@@ -1598,6 +1632,7 @@ class _SystemMessagesTab extends ConsumerWidget {
                     AppDateUtils.formatDateTime(message.createdAt, format: 'yyyy-MM-dd HH:mm:ss'),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Theme.of(context).hintColor,
+                          fontSize: 11,
                         ),
                   ),
                 ],
@@ -1606,8 +1641,6 @@ class _SystemMessagesTab extends ConsumerWidget {
               Text(
                 message.content,
                 style: Theme.of(context).textTheme.bodyMedium,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),

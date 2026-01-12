@@ -84,43 +84,18 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     }
   }
 
-  /// 根据消息类型和优先级获取 toast 背景颜色
-  Color _getToastColor(String type, String priority) {
-    // 根据优先级确定颜色深度
-    int colorShade;
+  /// 根据优先级获取 toast 背景颜色
+  Color _getToastColor(String priority) {
     switch (priority) {
       case 'urgent':
-        colorShade = 900; // 最深
-        break;
+        return Colors.red;
       case 'high':
-        colorShade = 700;
-        break;
+        return Colors.yellow;
       case 'normal':
-        colorShade = 600;
-        break;
+        return Colors.green;
       case 'low':
       default:
-        colorShade = 400; // 最浅
-        break;
-    }
-
-    // 根据类型选择基础颜色
-    switch (type) {
-      case 'notification': // 通知 - 蓝色系
-        return Colors.blue[colorShade] ?? Colors.blue;
-      case 'announcement': // 公告 - 绿色系
-        return Colors.green[colorShade] ?? Colors.green;
-      case 'alert': // 警告 - 橙色/黄色系
-        if (priority == 'urgent') {
-          return Colors.red[900] ?? Colors.red; // 紧急警告用红色
-        }
-        return Colors.orange[colorShade] ?? Colors.orange;
-      case 'maintenance': // 维护 - 灰色/蓝色系
-        return Colors.blueGrey[colorShade] ?? Colors.blueGrey;
-      case 'update': // 更新 - 紫色/蓝色系
-        return Colors.purple[colorShade] ?? Colors.purple;
-      default:
-        return Colors.blue[colorShade] ?? Colors.blue;
+        return Colors.green;
     }
   }
 
@@ -136,8 +111,8 @@ class _MainScreenState extends ConsumerState<MainScreen> {
       final priority = data['priority']?.toString() ?? 'normal';
       
       if (message.isNotEmpty) {
-        // 根据类型和优先级获取颜色
-        final backgroundColor = _getToastColor(type, priority);
+        // 根据优先级获取颜色
+        final backgroundColor = _getToastColor(priority);
         // 获取类型中文名称
         final typeName = _getMessageTypeName(type);
         // 在消息前添加类型标签

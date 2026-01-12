@@ -610,7 +610,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
           await _handleDeviceNameUpdated(deviceSn, message, data);
           break;
         case 'device_bind':
-          await _handleDeviceBind(deviceSn, message, data);
+          // await _handleDeviceBind(deviceSn, message, data);
           break;
         case 'device_unbind':
           await _handleDeviceUnbind(deviceSn, message, data);

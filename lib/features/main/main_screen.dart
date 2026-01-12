@@ -203,20 +203,18 @@ class _MainScreenState extends ConsumerState<MainScreen> {
       // 提取操作者ID（可能是 int 或 String）
       final operatorAccountId = data['operator_account_id'];
       
-      // feedback_replied 和 points_adjusted 类型除外，其他类型如果是当前用户操作的则不处理
-      if (type != 'feedback_replied' && type != 'points_adjusted') {
-        if (currentUserId != null && operatorAccountId != null) {
-          // 处理 operatorAccountId 可能是 int 或 String 的情况
-          final operatorId = operatorAccountId is int 
-              ? operatorAccountId 
-              : (operatorAccountId is String 
-                  ? int.tryParse(operatorAccountId) 
-                  : null);
-          
-          if (operatorId == currentUserId) {
-            print('[MQTT] 忽略当前用户自己操作的消息通知 (type: $type, operator_account_id: $operatorAccountId)');
-            return;
-          }
+      // 如果 operator_account_id 和当前用户ID相同，则不处理
+      if (currentUserId != null && operatorAccountId != null) {
+        // 处理 operatorAccountId 可能是 int 或 String 的情况
+        final operatorId = operatorAccountId is int 
+            ? operatorAccountId 
+            : (operatorAccountId is String 
+                ? int.tryParse(operatorAccountId) 
+                : null);
+        
+        if (operatorId == currentUserId) {
+          print('[MQTT] 忽略当前用户自己操作的消息通知 (type: $type, operator_account_id: $operatorAccountId)');
+          return;
         }
       }
       

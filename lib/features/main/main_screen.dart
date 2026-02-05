@@ -62,6 +62,8 @@ class _MainScreenState extends ConsumerState<MainScreen> {
       if (mqttState.connectionState != MqttConnectionState.connected) {
         ref.read(mqttProvider.notifier).connect(
           userId: authState.account!.id.toString(),
+          username: '',
+          password: authState.token,
         ).catchError((error) {
           print('[MQTT] 连接失败: $error');
         });

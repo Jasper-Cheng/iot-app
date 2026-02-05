@@ -59,9 +59,17 @@ class MqttService {
     await _disposeClient();
 
     try {
-      _client = MqttServerClient(ApiConstants.mqttBroker, clientId);
+      final brokerUrl =
+          'ws://${ApiConstants.mqttBroker}${ApiConstants.mqttPath}';
+
+      _client = MqttServerClient.withPort(
+        brokerUrl,
+        clientId,
+        ApiConstants.mqttPort,
+      );
       _client!
-        ..port = ApiConstants.mqttPort
+        ..useWebSocket = true
+        ..websocketProtocols = MqttClientConstants.protocolsSingleDefault
         ..logging(on: false)
         ..keepAlivePeriod = 60
         ..autoReconnect = false

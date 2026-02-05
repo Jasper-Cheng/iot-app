@@ -4,7 +4,7 @@ import '../core/storage/storage_service.dart';
 import '../data/repositories/auth_repository.dart';
 import '../core/utils/error_handler.dart';
 import '../core/utils/rsa_helper.dart';
-import '../core/network/api_interceptor.dart';
+import 'mqtt_provider.dart';
 import 'dart:convert';
 
 /// 认证状态
@@ -43,9 +43,10 @@ class AuthState {
 /// 认证状态管理
 class AuthNotifier extends StateNotifier<AuthState> {
   final StorageService _storage;
+  final Ref _ref;
   final AuthRepository _authRepository = AuthRepository();
 
-  AuthNotifier(this._storage) : super(const AuthState()) {
+  AuthNotifier(this._storage, this._ref) : super(const AuthState()) {
     _checkAuthStatus();
   }
 
@@ -216,6 +217,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
       // 即使后端登出失败，也要清除本地数据
       print('Logout error: $e');
     } finally {
+      // 断开 MQTT，确保下次登录时使用新账号的 clientId 和 token 重连
+      _disconnectMqtt();
       // 清除本地存储
       await _storage.remove(StorageService.keyToken);
       await _storage.remove(StorageService.keyTokenType);
@@ -232,24 +235,31 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<({bool success, String message})> deleteAccount() async {
     try {
       await _authRepository.deleteAccount();
-      // 清除本地存储
+      _disconnectMqtt();
       await _storage.remove(StorageService.keyToken);
       await _storage.remove(StorageService.keyTokenType);
       await _storage.remove(StorageService.keyUserInfo);
       await _storage.remove(StorageService.keyCurrentFamilyId);
-
       state = const AuthState();
       return (success: true, message: '账号已注销');
     } catch (e) {
       final errorMessage = ErrorHandler.extractErrorMessage(e);
       // 即使后端注销失败，也要清除本地数据
+      _disconnectMqtt();
       await _storage.remove(StorageService.keyToken);
       await _storage.remove(StorageService.keyTokenType);
       await _storage.remove(StorageService.keyUserInfo);
       await _storage.remove(StorageService.keyCurrentFamilyId);
-
       state = const AuthState();
       return (success: false, message: errorMessage);
+    }
+  }
+
+  void _disconnectMqtt() {
+    try {
+      _ref.read(mqttProvider.notifier).disconnect();
+    } catch (e) {
+      print('MQTT disconnect: $e');
     }
   }
 
@@ -335,6 +345,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
 /// 认证 Provider
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
-  return AuthNotifier(StorageService());
+  return AuthNotifier(StorageService(), ref);
 });
 

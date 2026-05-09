@@ -4,7 +4,7 @@ class ApiConstants {
 
   // Base URL
   // 注意: 移动平台需要完整的 URL (包含协议和域名)
-  static const String baseUrl = 'http://f6f9f48a.natappfree.cc/api/v1/client';//测试
+  static const String baseUrl = 'http://1so075gz41866.vicp.fun:21885/api/v1/client';//测试
   // static const String baseUrl = 'http://192.168.3.214:8000/api/v1/client';//生产
   // 超时时间
   static const Duration connectTimeout = Duration(seconds: 30);
@@ -67,8 +67,8 @@ class ApiConstants {
   static const String versionInfo = '/version-info/';
 
   // MQTT 配置（WebSocket）
-  static const String mqttBroker = '192.168.3.214';
-  static const int mqttPort = 8884;//测试
+  static const String mqttBroker = '1so075gz41866.vicp.fun';
+  static const int mqttPort = 26861;//测试
   // static const int mqttPort = 8083;//生产
   // WebSocket subprotocol for MQTT handshake
   static const String mqttProtocol = 'mqtt';

@@ -4,7 +4,7 @@ class ApiConstants {
 
   // Base URL
   // 注意: 移动平台需要完整的 URL (包含协议和域名)
-  static const String baseUrl = 'http://192.168.3.214:8001/api/v1/client';//测试
+  static const String baseUrl = 'http://f6f9f48a.natappfree.cc/api/v1/client';//测试
   // static const String baseUrl = 'http://192.168.3.214:8000/api/v1/client';//生产
   // 超时时间
   static const Duration connectTimeout = Duration(seconds: 30);

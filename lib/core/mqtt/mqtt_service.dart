@@ -59,8 +59,10 @@ class MqttService {
     await _disposeClient();
 
     try {
+      final scheme =
+          ApiConstants.mqttSecureWebSocket ? 'wss' : 'ws';
       final brokerUrl =
-          'ws://${ApiConstants.mqttBroker}${ApiConstants.mqttPath}';
+          '$scheme://${ApiConstants.mqttBroker}${ApiConstants.mqttPath}';
 
       _client = MqttServerClient.withPort(
         brokerUrl,

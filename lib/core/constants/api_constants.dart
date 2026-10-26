@@ -3,9 +3,10 @@ class ApiConstants {
   ApiConstants._();
 
   // Base URL
-  // 注意: 移动平台需要完整的 URL (包含协议和域名)
+  // 注意: 移动平台需要完整的 URL (包含协议和域名)；真机访问本机服务请用局域网 IP，勿用 127.0.0.1
   static const String baseUrl = 'http://212.129.243.155:8001/api/v1/client';//测试
   // static const String baseUrl = 'http://212.129.243.155:8000/api/v1/client';//生产
+  // static const String baseUrl = 'https://4f807344.r12.cpolar.top/api/v1/client'; // cpolar
   // 超时时间
   static const Duration connectTimeout = Duration(seconds: 30);
   static const Duration receiveTimeout = Duration(seconds: 30);
@@ -70,6 +71,11 @@ class ApiConstants {
   static const String mqttBroker = '212.129.243.155';
   static const int mqttPort = 8884;//测试
   // static const int mqttPort = 8083;//生产
+  /// 为 true 时使用 wss://（HTTPS 穿透）；直连本地/服务器 http 时改为 false
+  static const bool mqttSecureWebSocket = false;
+  // static const String mqttBroker = '4a48eac5.r12.cpolar.top';
+  // static const int mqttPort = 443;
+  // static const bool mqttSecureWebSocket = true;
   // WebSocket subprotocol for MQTT handshake
   static const String mqttProtocol = 'mqtt';
   static const String mqttPath = '/mqtt';

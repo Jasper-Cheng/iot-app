@@ -4,8 +4,8 @@ class ApiConstants {
 
   // Base URL
   // 注意: 移动平台需要完整的 URL (包含协议和域名)
-  static const String baseUrl = 'http://192.168.3.214:8001/api/v1/client';//测试
-  // static const String baseUrl = 'http://192.168.3.214:8000/api/v1/client';//生产
+  static const String baseUrl = 'http://212.129.243.155:8001/api/v1/client';//测试
+  // static const String baseUrl = 'http://212.129.243.155:8000/api/v1/client';//生产
   // 超时时间
   static const Duration connectTimeout = Duration(seconds: 30);
   static const Duration receiveTimeout = Duration(seconds: 30);
@@ -67,7 +67,7 @@ class ApiConstants {
   static const String versionInfo = '/version-info/';
 
   // MQTT 配置（WebSocket）
-  static const String mqttBroker = '192.168.3.214';
+  static const String mqttBroker = '212.129.243.155';
   static const int mqttPort = 8884;//测试
   // static const int mqttPort = 8083;//生产
   // WebSocket subprotocol for MQTT handshake

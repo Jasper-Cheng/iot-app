@@ -82,8 +82,8 @@ dependencies:
   encrypt: ^5.0.3
   pointycastle: ^3.9.1
   
-  # Toast提示
-  fluttertoast: ^8.2.4
+  # Toast提示（8.2.13+ 要求 Kotlin 2.1，暂固定 8.2.12 以兼容当前 Kotlin 1.8.22）
+  fluttertoast: 8.2.12
   
   # 微信登录
   fluwx: ^4.0.0

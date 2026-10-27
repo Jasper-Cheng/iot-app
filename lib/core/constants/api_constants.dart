@@ -4,8 +4,8 @@ class ApiConstants {
 
   // Base URL
   // 注意: 移动平台需要完整的 URL (包含协议和域名)；真机访问本机服务请用局域网 IP，勿用 127.0.0.1
-  static const String baseUrl = 'http://212.129.243.155:8001/api/v1/client';//测试
-  // static const String baseUrl = 'http://212.129.243.155:8000/api/v1/client';//生产
+  // static const String baseUrl = 'http://212.129.243.155:8001/api/v1/client';//测试
+  static const String baseUrl = 'http://212.129.243.155:8000/api/v1/client';//生产
   // static const String baseUrl = 'https://4f807344.r12.cpolar.top/api/v1/client'; // cpolar
   // 超时时间
   static const Duration connectTimeout = Duration(seconds: 30);

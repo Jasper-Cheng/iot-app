@@ -69,8 +69,8 @@ class ApiConstants {
 
   // MQTT 配置（WebSocket）
   static const String mqttBroker = '212.129.243.155';
-  static const int mqttPort = 8884;//测试
-  // static const int mqttPort = 8083;//生产
+  // static const int mqttPort = 8884;//测试
+  static const int mqttPort = 8083;//生产
   /// 为 true 时使用 wss://（HTTPS 穿透）；直连本地/服务器 http 时改为 false
   static const bool mqttSecureWebSocket = false;
   // static const String mqttBroker = '4a48eac5.r12.cpolar.top';
